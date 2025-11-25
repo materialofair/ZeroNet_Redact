@@ -1,0 +1,38 @@
+/* SimpleBrushEditor */
+"editor.title" = "Edit";
+"editor.cancel" = "Cancel";
+"editor.done" = "Done";
+"editor.loading" = "Decrypting image...";
+"editor.loadFailed" = "Failed to load image";
+"editor.loadFailedHint" = "Please go back and try again";
+
+/* Group */
+"group.default" = "Default Group";
+"group.moveTo" = "Move to Group";
+
+/* PDF Navigation */
+"pdf.prevPage" = "Previous";
+"pdf.nextPage" = "Next";
+"pdf.pageInfo" = "Page %d / %d";
+"pdf.switchHint" = "Switching pages will clear current strokes";
+
+/* Effects */
+"effect.label" = "Effect";
+"effect.mosaic" = "Mosaic";
+"effect.black" = "Black";
+"effect.white" = "White";
+"effect.blur" = "Blur";
+
+/* Modes */
+"mode.brush" = "Brush";
+"mode.drag" = "Drag";
+
+/* Actions */
+"action.undoStroke" = "Undo";
+"action.undoRedaction" = "Redo";
+"action.applyRedaction" = "Apply";
+
+/* Scale Control */
+"scale.title" = "Scale";
+"scale.enableDragHint" = "Enable Drag";
+"scale.selectHint" = "Tap to Select";

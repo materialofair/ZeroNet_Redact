@@ -1,0 +1,38 @@
+/* SimpleBrushEditor */
+"editor.title" = "编辑";
+"editor.cancel" = "取消";
+"editor.done" = "完成";
+"editor.loading" = "正在解密图片...";
+"editor.loadFailed" = "图片加载失败";
+"editor.loadFailedHint" = "请返回重试";
+
+/* Group */
+"group.default" = "默认分组";
+"group.moveTo" = "移动到分组";
+
+/* PDF Navigation */
+"pdf.prevPage" = "上一页";
+"pdf.nextPage" = "下一页";
+"pdf.pageInfo" = "第 %d / %d 页";
+"pdf.switchHint" = "切换页面会清空当前涂抹";
+
+/* Effects */
+"effect.label" = "效果";
+"effect.mosaic" = "马赛克";
+"effect.black" = "黑色";
+"effect.white" = "白色";
+"effect.blur" = "模糊";
+
+/* Modes */
+"mode.brush" = "涂抹";
+"mode.drag" = "拖拽";
+
+/* Actions */
+"action.undoStroke" = "撤销";
+"action.undoRedaction" = "重做";
+"action.applyRedaction" = "应用";
+
+/* Scale Control */
+"scale.title" = "缩放";
+"scale.enableDragHint" = "开启拖拽";
+"scale.selectHint" = "点击选中";

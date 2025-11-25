@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="FileGroup" representedClassName="FileGroup" syncable="YES" codeGenerationType="class">
+        <attribute name="colorTag" attributeType="String" defaultValueString="#8E8E93"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="iconName" attributeType="String" defaultValueString="folder.fill"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String" defaultValueString="未命名分组"/>
+        <attribute name="sortOrder" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="files" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="OriginalFile" inverseName="group" inverseEntity="OriginalFile"/>
+        <relationship name="redactedFiles" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RedactedFile" inverseName="group" inverseEntity="RedactedFile"/>
+    </entity>
+    <entity name="OriginalFile" representedClassName="OriginalFile" isAbstract="YES" syncable="YES">
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="encryptedDataPath" attributeType="String"/>
+        <attribute name="encryptedThumbnailPath" attributeType="String"/>
+        <attribute name="fileSize" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="fileTypeRaw" attributeType="String"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="metadataJSON" optional="YES" attributeType="String"/>
+        <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="FileGroup" inverseName="files" inverseEntity="FileGroup"/>
+        <relationship name="redactedVersions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RedactedFile" inverseName="originalFile" inverseEntity="RedactedFile"/>
+    </entity>
+    <entity name="OriginalImage" representedClassName="OriginalImage" parentEntity="OriginalFile" syncable="YES">
+        <attribute name="height" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="orientationRaw" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="width" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="OriginalPDF" representedClassName="OriginalPDF" parentEntity="OriginalFile" syncable="YES">
+        <attribute name="author" attributeType="String" defaultValueString=""/>
+        <attribute name="creator" attributeType="String" defaultValueString=""/>
+        <attribute name="isEncrypted" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="pageCount" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="title" attributeType="String" defaultValueString=""/>
+    </entity>
+    <entity name="RedactedFile" representedClassName="RedactedFile" syncable="YES">
+        <attribute name="exportedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="filePath" attributeType="String"/>
+        <attribute name="fileSize" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="fileTypeRaw" attributeType="String"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="thumbnailPath" attributeType="String" defaultValueString=""/>
+        <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="FileGroup" inverseName="redactedFiles" inverseEntity="FileGroup"/>
+        <relationship name="originalFile" maxCount="1" deletionRule="Nullify" destinationEntity="OriginalFile" inverseName="redactedVersions" inverseEntity="OriginalFile"/>
+    </entity>
+</model>
