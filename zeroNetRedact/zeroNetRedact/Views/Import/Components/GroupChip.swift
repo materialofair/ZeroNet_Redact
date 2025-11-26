@@ -20,7 +20,7 @@ struct GroupChip: View {
             Text(group.name ?? "未命名")
                 .font(.subheadline)
                 .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .foregroundColor(isSelected ? Color.accentColor : Color(uiColor: .secondaryLabel))
                 .lineLimit(1)
 
             // 选中状态的高亮线条
@@ -30,6 +30,7 @@ struct GroupChip: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
 

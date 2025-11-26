@@ -22,7 +22,9 @@ struct GroupSelectorBar: View {
                         fileCount: GroupManager.shared.getFiles(in: defaultGroup).count
                     )
                     .onTapGesture {
-                        viewModel.selectGroup(defaultGroup)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectGroup(defaultGroup)
+                        }
                     }
                 }
 
@@ -34,7 +36,9 @@ struct GroupSelectorBar: View {
                         fileCount: GroupManager.shared.getFiles(in: group).count
                     )
                     .onTapGesture {
-                        viewModel.selectGroup(group)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectGroup(group)
+                        }
                     }
                 }
 

@@ -6,7 +6,6 @@ import SwiftUI
 
 extension PDFDocument: @retroactive Identifiable {
     public var id: String {
-        // 使用文档的内存地址作为唯一标识
         return String(describing: Unmanaged.passUnretained(self).toOpaque())
     }
 }
@@ -24,39 +23,47 @@ struct AlbumView: View {
     @State private var selectedRedactedFile: RedactedFile?
     @State private var previewImage: UIImage?
     @State private var previewPDFDocument: PDFDocument?
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // 分组选择器
-                RedactedGroupSelectorBar(viewModel: viewModel)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemBackground))
+            ZStack {
+                // 背景色
+                DesignSystem.Colors.backgroundPrimary
+                    .ignoresSafeArea()
 
-                Divider()
+                VStack(spacing: 0) {
+                    // 统计卡片（只有在有文件时显示）
+                    if !viewModel.redactedFiles.isEmpty {
+                        statisticsCard
+                            .padding(.horizontal, DesignSystem.Spacing.lg)
+                            .padding(.top, DesignSystem.Spacing.md)
+                    }
 
-                // 主内容
-                Group {
-                    if viewModel.redactedFiles.isEmpty {
-                        // 空状态
-                        emptyStateView
-                    } else {
-                        // 脱敏文件网格
-                        redactedFilesGridView
+                    // 分组选择器
+                    RedactedGroupSelectorBar(viewModel: viewModel)
+                        .padding(.vertical, 12)
+
+                    // 主内容
+                    Group {
+                        if viewModel.redactedFiles.isEmpty {
+                            // 空状态
+                            emptyStateView
+                        } else {
+                            // 脱敏文件网格
+                            redactedFilesGridView
+                        }
                     }
                 }
             }
             .navigationTitle("脱敏文件")
             .navigationBarTitleDisplayMode(.large)
-
             .fullScreenCover(item: $previewImage) { image in
                 ImagePreviewView(image: image)
             }
             .fullScreenCover(item: $previewPDFDocument) { document in
-                let _ = print("📄 [AlbumView] fullScreenCover被触发，文档页数: \(document.pageCount)")
                 PDFPreviewView(pdfDocument: document)
             }
-
             .onAppear {
                 viewModel.loadFiles()
             }
@@ -67,111 +74,119 @@ struct AlbumView: View {
         }
     }
 
+    // MARK: - 统计卡片
+
+    private var statisticsCard: some View {
+        HStack(spacing: DesignSystem.Spacing.lg) {
+            // 盾牌图标
+            ZStack {
+                Circle()
+                    .fill(DesignSystem.Gradients.success)
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: "checkmark.shield.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .shadow(color: DesignSystem.Colors.successGreen.opacity(0.3), radius: 6, x: 0, y: 3)
+
+            // 统计信息
+            VStack(alignment: .leading, spacing: 4) {
+                Text("已安全保护")
+                    .font(.subheadline)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+
+                HStack(spacing: 4) {
+                    Text("\(viewModel.redactedFiles.count)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                    Text("个文件")
+                        .font(.subheadline)
+                        .foregroundColor(DesignSystem.Colors.textSecondary)
+                }
+            }
+
+            Spacer()
+
+            // 类型分布
+            VStack(alignment: .trailing, spacing: 4) {
+                let imageCount = viewModel.redactedFiles.filter { $0.fileType == .image }.count
+                let pdfCount = viewModel.redactedFiles.filter { $0.fileType == .pdf }.count
+
+                if imageCount > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "photo.fill")
+                            .font(.caption)
+                            .foregroundColor(DesignSystem.Colors.primaryBlue)
+                        Text("\(imageCount)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                    }
+                }
+
+                if pdfCount > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.fill")
+                            .font(.caption)
+                            .foregroundColor(DesignSystem.Colors.warningOrange)
+                        Text("\(pdfCount)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                    }
+                }
+            }
+        }
+        .padding(DesignSystem.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                .fill(DesignSystem.Colors.backgroundCard)
+                .shadow(
+                    color: DesignSystem.Shadow.cardShadow(for: colorScheme), radius: 12, x: 0, y: 4
+                )
+                .shadow(
+                    color: DesignSystem.Shadow.cardShadowSecondary(for: colorScheme), radius: 1,
+                    x: 0, y: 1
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                        .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
+                )
+        )
+    }
+
     // MARK: - 空状态视图
 
     private var emptyStateView: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 24) {
-                // 图标组 - 多层叠加效果
+            VStack(spacing: 28) {
+                // 图标
                 ZStack {
-                    // 背景圆圈
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.1), Color.purple.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 120, height: 120)
+                        .fill(DesignSystem.Gradients.lightBackground)
+                        .frame(width: 100, height: 100)
 
-                    // 主图标
                     Image(systemName: "checkmark.shield.fill")
-                        .font(.system(size: 50))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .font(.system(size: 44, weight: .medium))
+                        .foregroundStyle(DesignSystem.Gradients.success)
                 }
-                .padding(.bottom, 8)
 
                 // 标题
                 Text("还没有脱敏文件")
                     .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
+                    .fontWeight(.bold)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
 
-                // 描述
-                VStack(spacing: 8) {
-                    Text("从导入页面添加文件并完成脱敏")
-                        .font(.body)
-                        .foregroundColor(.secondary)
-
-                    Text("脱敏后的文件会出现在这里")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary.opacity(0.8))
-                }
-
-                // 步骤提示
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 12) {
-                        Text("1")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(width: 24, height: 24)
-                            .background(Circle().fill(Color.blue))
-
-                        Text("导入图片或PDF文件")
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-
-                        Spacer()
-                    }
-
-                    HStack(spacing: 12) {
-                        Text("2")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(width: 24, height: 24)
-                            .background(Circle().fill(Color.blue))
-
-                        Text("使用涂抹工具进行脱敏")
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-
-                        Spacer()
-                    }
-
-                    HStack(spacing: 12) {
-                        Text("3")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(width: 24, height: 24)
-                            .background(Circle().fill(Color.blue))
-
-                        Text("点击\"应用\"完成导出")
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-
-                        Spacer()
-                    }
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemGray6))
-                )
-                .padding(.top, 8)
+                // 步骤指示器
+                StepIndicator()
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, DesignSystem.Spacing.xxxl)
 
             Spacer()
             Spacer()
@@ -184,11 +199,11 @@ struct AlbumView: View {
         ScrollView {
             LazyVGrid(
                 columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12),
                 ],
-                spacing: 12
+                spacing: 16
             ) {
                 ForEach(viewModel.redactedFiles, id: \.id) { file in
                     RedactedFileGridItem(file: file)
@@ -199,7 +214,9 @@ struct AlbumView: View {
                         }
                 }
             }
-            .padding()
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            .padding(.top, DesignSystem.Spacing.md)
+            .padding(.bottom, 20)
         }
     }
 
@@ -207,52 +224,85 @@ struct AlbumView: View {
 
     private func loadAndShowPreview(file: RedactedFile) async {
         do {
-            print("🔍 [直接预览] 开始加载: \(file.id)")
-            print("🔍 文件类型: \(file.fileType)")
-            print("🔍 文件路径: \(file.fullFilePath)")
-
-            // 验证文件存在
             guard FileManager.default.fileExists(atPath: file.fullFilePath) else {
                 print("❌ 文件不存在: \(file.fullFilePath)")
                 return
             }
 
-            // 读取脱敏文件
             let data = try StorageManager.shared.loadRedactedFile(
                 id: file.id,
                 type: file.fileType
             )
-            print("🔍 文件数据大小: \(data.count) bytes")
 
             if file.fileType == .pdf {
-                // PDF类型：加载文档对象
-                print("🔍 开始创建PDFDocument...")
                 if let document = PDFDocument(data: data) {
-                    print("✅ PDFDocument创建成功，共\(document.pageCount)页")
-                    // 使用item绑定，直接设置文档即可触发fullScreenCover
                     await MainActor.run {
                         self.previewPDFDocument = document
                     }
-                    print("✅ PDF预览已触发显示")
-                } else {
-                    print("❌ 无法创建PDFDocument")
                 }
             } else {
-                // 图片类型
-                print("🔍 开始创建UIImage...")
                 if let image = UIImage(data: data) {
-                    print("✅ UIImage创建成功，尺寸: \(image.size)")
                     await MainActor.run {
                         self.previewImage = image
                     }
-                    print("✅ 图片预览已触发显示")
-                } else {
-                    print("❌ 无法创建UIImage")
                 }
             }
         } catch {
             print("❌ 加载预览失败: \(error)")
-            print("❌ 错误详情: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - 步骤指示器
+
+struct StepIndicator: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            // 步骤 1
+            stepItem(number: "1", icon: "square.and.arrow.down", title: "导入")
+
+            // 连接线
+            Rectangle()
+                .fill(DesignSystem.Colors.primaryBlue.opacity(0.3))
+                .frame(height: 2)
+                .frame(maxWidth: .infinity)
+
+            // 步骤 2
+            stepItem(number: "2", icon: "hand.draw", title: "涂抹")
+
+            // 连接线
+            Rectangle()
+                .fill(DesignSystem.Colors.primaryBlue.opacity(0.3))
+                .frame(height: 2)
+                .frame(maxWidth: .infinity)
+
+            // 步骤 3
+            stepItem(number: "3", icon: "checkmark.circle", title: "完成")
+        }
+        .padding(.vertical, DesignSystem.Spacing.lg)
+        .padding(.horizontal, DesignSystem.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                .fill(Color.gray.opacity(0.06))
+        )
+    }
+
+    private func stepItem(number: String, icon: String, title: String) -> some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(DesignSystem.Gradients.primary)
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+
+            Text(title)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(DesignSystem.Colors.textSecondary)
         }
     }
 }
@@ -263,49 +313,85 @@ struct RedactedFileGridItem: View {
     let file: RedactedFile
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        VStack(spacing: 4) {
-            // 缩略图
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.2))
-                .aspectRatio(1, contentMode: .fit)
-                .overlay {
-                    Group {
-                        if isLoading {
-                            ProgressView()
-                        } else if let thumbnail = thumbnailImage {
-                            Image(uiImage: thumbnail)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            VStack {
-                                Image(systemName: file.fileType == .image ? "photo" : "doc.text")
-                                    .font(.largeTitle)
-                                    .foregroundColor(.blue)
-                                Text("已脱敏")
-                                    .font(.caption2)
-                                    .foregroundColor(.blue)
+        VStack(spacing: 8) {
+            // 缩略图卡片
+            ZStack {
+                // 卡片背景
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                    .fill(DesignSystem.Colors.backgroundCard)
+                    .shadow(
+                        color: DesignSystem.Shadow.cardShadow(for: colorScheme), radius: 8, x: 0,
+                        y: 3
+                    )
+                    .shadow(
+                        color: DesignSystem.Shadow.cardShadowSecondary(for: colorScheme), radius: 1,
+                        x: 0, y: 1
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                            .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
+                    )
+
+                // 内容区域
+                GeometryReader { geometry in
+                    let innerSize = geometry.size.width - 12  // 6pt padding on each side
+
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 2)
+                        .fill(Color.gray.opacity(0.08))
+                        .frame(width: innerSize, height: innerSize)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                        .overlay {
+                            Group {
+                                if isLoading {
+                                    ProgressView()
+                                        .tint(DesignSystem.Colors.successGreen)
+                                } else if let thumbnail = thumbnailImage {
+                                    Image(uiImage: thumbnail)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: innerSize, height: innerSize)
+                                        .clipShape(
+                                            RoundedRectangle(
+                                                cornerRadius: DesignSystem.CornerRadius.medium - 2))
+                                } else {
+                                    VStack(spacing: 6) {
+                                        Image(
+                                            systemName: file.fileType == .image
+                                                ? "photo.fill" : "doc.text.fill"
+                                        )
+                                        .font(.system(size: 28, weight: .medium))
+                                        .foregroundStyle(DesignSystem.Gradients.success)
+                                        Text("已脱敏")
+                                            .font(.caption2)
+                                            .foregroundColor(DesignSystem.Colors.successGreen)
+                                    }
+                                }
                             }
                         }
-                    }
+                        // 脱敏徽章
+                        .overlay(alignment: .topTrailing) {
+                            RedactedBadge(size: 26)
+                                .padding(4)
+                        }
                 }
-                .clipped()
-                .overlay(alignment: .topTrailing) {
-                    // 脱敏标记
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(4)
-                        .background(Color.green)
-                        .clipShape(Circle())
-                        .offset(x: -4, y: 4)
-                }
+                .aspectRatio(1, contentMode: .fit)
+                .padding(6)
+            }
 
             // 文件信息
-            Text(file.exportedAt, style: .date)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            VStack(spacing: 2) {
+                Text("已脱敏")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(DesignSystem.Colors.successGreen)
+
+                Text(file.exportedAt, style: .date)
+                    .font(.caption2)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+            }
         }
         .task {
             await loadThumbnail()
@@ -315,7 +401,6 @@ struct RedactedFileGridItem: View {
     private func loadThumbnail() async {
         let cacheKey = "redacted_thumbnail_\(file.id.uuidString)"
 
-        // 先检查缓存
         if let cachedImage = ImageCache.shared.getImage(forKey: cacheKey) {
             await MainActor.run {
                 thumbnailImage = cachedImage
@@ -327,42 +412,27 @@ struct RedactedFileGridItem: View {
         defer { isLoading = false }
 
         do {
-            print("📷 [RedactedFile缩略图] 开始加载: \(file.id)")
-            print("📷 文件路径: \(file.filePath)")
-            print("📷 文件类型: \(file.fileType)")
-
-            // 检查缩略图路径是否存在
             let fullThumbnailPath = file.fullThumbnailPath
             if !fullThumbnailPath.isEmpty {
-                print("📷 尝试加载已保存的缩略图: \(fullThumbnailPath)")
                 if FileManager.default.fileExists(atPath: fullThumbnailPath) {
                     let thumbData = try Data(contentsOf: URL(fileURLWithPath: fullThumbnailPath))
                     if let image = UIImage(data: thumbData) {
-                        print("✅ 缩略图加载成功")
                         ImageCache.shared.setImage(image, forKey: cacheKey)
                         await MainActor.run {
                             thumbnailImage = image
                         }
                         return
                     }
-                } else {
-                    print("⚠️ 缩略图文件不存在: \(fullThumbnailPath)")
                 }
             }
 
-            // 如果没有缩略图，直接读取脱敏文件（明文存储）
-            print("📷 加载完整文件作为缩略图")
             let data = try StorageManager.shared.loadRedactedFile(
                 id: file.id,
                 type: file.fileType
             )
-            print("📷 文件数据大小: \(data.count) bytes")
 
-            // 根据文件类型创建缩略图
             let image: UIImage?
             if file.fileType == .pdf {
-                // PDF类型：使用PDFKit生成缩略图
-                print("📷 PDF文件，使用PDFKit生成缩略图")
                 if let pdfDocument = PDFDocument(data: data),
                     let firstPage = pdfDocument.page(at: 0)
                 {
@@ -383,22 +453,13 @@ struct RedactedFileGridItem: View {
                         context.cgContext.scaleBy(x: scale, y: -scale)
                         firstPage.draw(with: .mediaBox, to: context.cgContext)
                     }
-                    print("✅ PDF缩略图生成成功")
                 } else {
-                    print("❌ 无法创建PDFDocument")
                     image = nil
                 }
             } else {
-                // 图片类型：直接创建UIImage
                 image = UIImage(data: data)
-                if image != nil {
-                    print("✅ 图片创建成功，尺寸: \(image!.size)")
-                } else {
-                    print("❌ 无法从数据创建UIImage")
-                }
             }
 
-            // 缓存并显示
             if let finalImage = image {
                 ImageCache.shared.setImage(finalImage, forKey: cacheKey)
                 await MainActor.run {
@@ -407,7 +468,6 @@ struct RedactedFileGridItem: View {
             }
         } catch {
             print("❌ 加载脱敏文件缩略图失败: \(error)")
-            print("❌ 错误详情: \(error.localizedDescription)")
         }
     }
 }
@@ -430,12 +490,10 @@ struct RedactedFileDetailView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                // 文件预览
                 if isLoading {
                     ProgressView("加载中...")
                         .frame(maxWidth: .infinity, maxHeight: 300)
                 } else if redactedFile.fileType == .pdf && pdfDocument != nil {
-                    // PDF预览 - 显示封面和打开全屏按钮
                     VStack(spacing: 12) {
                         if let image = previewImage {
                             Image(uiImage: image)
@@ -451,10 +509,8 @@ struct RedactedFileDetailView: View {
                             Label("查看完整PDF", systemImage: "doc.text.magnifyingglass")
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
                         }
+                        .buttonStyle(GradientButtonStyle())
                     }
                 } else if let image = previewImage {
                     Image(uiImage: image)
@@ -481,29 +537,23 @@ struct RedactedFileDetailView: View {
                         }
                 }
 
-                // 文件信息
                 VStack(alignment: .leading, spacing: 8) {
                     InfoRow(label: "导出时间", value: redactedFile.formattedExportedAt)
                     InfoRow(label: "文件大小", value: redactedFile.formattedFileSize)
                     InfoRow(label: "文件类型", value: redactedFile.fileType == .image ? "图片" : "PDF")
                 }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
+                .cardStyle()
 
                 Spacer()
 
-                // 分享按钮
                 Button(action: {
                     showShareSheet = true
                 }) {
                     Label("分享文件", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
                 }
+                .buttonStyle(GradientButtonStyle())
                 .padding(.horizontal)
             }
             .padding()
@@ -572,29 +622,17 @@ struct RedactedFileDetailView: View {
         defer { isLoading = false }
 
         do {
-            print("🔍 [RedactedFile预览] 开始加载: \(redactedFile.id)")
-            print("🔍 相对路径: \(redactedFile.filePath)")
-            print("🔍 完整路径: \(redactedFile.fullFilePath)")
-            print("🔍 文件类型: \(redactedFile.fileType)")
-
-            // 验证文件是否存在（使用完整路径）
             if !FileManager.default.fileExists(atPath: redactedFile.fullFilePath) {
-                print("❌ 文件不存在: \(redactedFile.fullFilePath)")
                 return
             }
 
-            // 读取脱敏文件
             let data = try StorageManager.shared.loadRedactedFile(
                 id: redactedFile.id,
                 type: redactedFile.fileType
             )
-            print("🔍 文件数据大小: \(data.count) bytes")
 
-            // 根据文件类型创建预览
             let image: UIImage?
             if redactedFile.fileType == .pdf {
-                // PDF类型：加载文档对象并生成第一页预览
-                print("🔍 PDF文件，加载PDF文档")
                 if let document = PDFDocument(data: data) {
                     await MainActor.run {
                         pdfDocument = document
@@ -616,26 +654,16 @@ struct RedactedFileDetailView: View {
                             context.cgContext.scaleBy(x: scale, y: -scale)
                             firstPage.draw(with: .mediaBox, to: context.cgContext)
                         }
-                        print("✅ PDF预览生成成功，共\(document.pageCount)页")
                     } else {
-                        print("❌ 无法获取PDF第一页")
                         image = nil
                     }
                 } else {
-                    print("❌ 无法创建PDFDocument")
                     image = nil
                 }
             } else {
-                // 图片类型
                 image = UIImage(data: data)
-                if image != nil {
-                    print("✅ 预览图片创建成功，尺寸: \(image!.size)")
-                } else {
-                    print("❌ 无法从数据创建UIImage")
-                }
             }
 
-            // 显示预览
             if let finalImage = image {
                 await MainActor.run {
                     previewImage = finalImage
@@ -643,7 +671,6 @@ struct RedactedFileDetailView: View {
             }
         } catch {
             print("❌ 加载脱敏文件预览失败: \(error)")
-            print("❌ 错误详情: \(error.localizedDescription)")
         }
     }
 
@@ -656,7 +683,6 @@ struct RedactedFileDetailView: View {
         do {
             allGroups = try viewContext.fetch(fetchRequest)
             currentGroup = redactedFile.group
-            print("📁 [分组加载] 共\(allGroups.count)个分组，当前分组: \(currentGroup?.name ?? "无")")
         } catch {
             print("❌ 加载分组失败: \(error)")
         }
@@ -669,7 +695,6 @@ struct RedactedFileDetailView: View {
             try viewContext.save()
             currentGroup = newGroup
             showGroupPicker = false
-            print("✅ 脱敏文件已移动到分组: \(newGroup.name ?? "未命名")")
         } catch {
             print("❌ 移动分组失败: \(error)")
         }
@@ -686,11 +711,12 @@ struct InfoRow: View {
         HStack {
             Text(label)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(DesignSystem.Colors.textSecondary)
             Spacer()
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.medium)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
         }
     }
 }
@@ -773,7 +799,6 @@ struct RedactedFileGroupPicker: View {
                         onGroupSelected(group)
                     }) {
                         HStack(spacing: 12) {
-                            // 分组图标
                             Image(systemName: group.iconName ?? "folder.fill")
                                 .font(.title3)
                                 .foregroundColor(Color(hex: group.colorTag ?? "#8E8E93"))
@@ -783,32 +808,30 @@ struct RedactedFileGroupPicker: View {
                                         .fill(Color(hex: group.colorTag ?? "#8E8E93").opacity(0.15))
                                 )
 
-                            // 分组信息
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(group.name ?? "未命名分组")
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(DesignSystem.Colors.textPrimary)
 
                                 let fileCount = GroupManager.shared.getRedactedFiles(in: group)
                                     .count
                                 if fileCount > 0 {
                                     Text("\(fileCount)个脱敏文件")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(DesignSystem.Colors.textSecondary)
                                 } else {
                                     Text("空分组")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(DesignSystem.Colors.textSecondary)
                                 }
                             }
 
                             Spacer()
 
-                            // 当前分组标记
                             if group.id == currentGroup?.id {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(DesignSystem.Colors.primaryBlue)
                             }
                         }
                         .padding(.vertical, 8)

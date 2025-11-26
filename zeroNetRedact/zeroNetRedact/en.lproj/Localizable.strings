@@ -9,6 +9,7 @@
 /* Group */
 "group.default" = "Default Group";
 "group.moveTo" = "Move to Group";
+"group.unnamed" = "Unnamed Group";
 
 /* PDF Navigation */
 "pdf.prevPage" = "Previous";
@@ -36,3 +37,117 @@
 "scale.title" = "Scale";
 "scale.enableDragHint" = "Enable Drag";
 "scale.selectHint" = "Tap to Select";
+
+/* Actions */
+"action.rotate" = "Rotate";
+"action.scaleBar" = "Scale";
+
+/* Export */
+"export.success" = "Export Successful";
+"export.failed" = "Export Failed";
+
+/* Common */
+"common.cancel" = "Cancel";
+"common.close" = "Close";
+"common.confirm" = "Confirm";
+
+/* Password Setup - Brand */
+"passwordSetup.brand.slogan" = "Offline Privacy Redaction Tool";
+"passwordSetup.brand.subtitle" = "Set a password to protect your data";
+
+/* Password Setup - Features */
+"feature.zeroNetwork.title" = "Zero Network";
+"feature.zeroNetwork.desc" = "Fully offline, no network access";
+"feature.localRedact.title" = "Local Redaction";
+"feature.localRedact.desc" = "All processing on device";
+"feature.privacy.title" = "Privacy First";
+"feature.privacy.desc" = "No tracking, no accounts";
+"feature.openSource.title" = "Open Source";
+"feature.openSource.desc" = "Transparent & auditable";
+
+/* Password */
+"password.enter" = "Enter password";
+"password.confirm" = "Confirm password";
+"password.match" = "Passwords match";
+"password.mismatch" = "Passwords don't match";
+"password.setup" = "Set Password";
+"password.setupLater" = "Set Up Later";
+"password.current" = "Current Password";
+"password.current.enter" = "Enter current password";
+"password.new" = "New Password";
+"password.new.enter" = "Enter new password";
+"password.new.confirm" = "Confirm new password";
+"password.change.title" = "Change Password";
+"password.change.subtitle" = "Enter your current and new password";
+"password.change.confirm" = "Confirm Change";
+
+/* Biometric */
+"biometric.enable" = "Enable %@";
+"biometric.description" = "Quick and secure app unlock";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.security" = "Security";
+"settings.about" = "About";
+"settings.data" = "Data";
+"settings.fileCount" = "%d files";
+"settings.passwordProtection" = "Password Protection";
+"settings.changePassword" = "Change Password";
+"settings.autoLock" = "Auto Lock";
+"settings.lockTimeout" = "Lock Timeout";
+"settings.lockTimeout.immediate" = "Immediately";
+"settings.lockTimeout.1min" = "1 minute";
+"settings.lockTimeout.5min" = "5 minutes";
+"settings.lockTimeout.15min" = "15 minutes";
+
+/* Settings - About */
+"settings.aboutApp" = "About";
+"settings.clearAllFiles" = "Clear All Files";
+
+/* About View */
+"about.title" = "About";
+"about.version" = "Version %@";
+"about.tagline" = "A completely offline privacy redaction tool. Your sensitive data never uploads, never leaks.";
+
+/* About - Philosophy */
+"about.philosophy.title" = "Our Philosophy";
+"about.philosophy.offline.title" = "Zero Network";
+"about.philosophy.offline.desc" = "The app runs completely offline with no network permissions. Your photos never leave your device.";
+"about.philosophy.local.title" = "Local Processing";
+"about.philosophy.local.desc" = "All redaction happens on your phone. No cloud, no servers.";
+"about.philosophy.privacy.title" = "Privacy First";
+"about.philosophy.privacy.desc" = "No accounts, no tracking, no ads. We don't know who you are, and we don't want to.";
+"about.philosophy.openSource.title" = "Open Source";
+"about.philosophy.openSource.desc" = "In an era where data is stolen at will, open source isn't about being free—it's about letting you verify our promises and building mutual trust.";
+
+/* About - Links */
+"about.github" = "GitHub Project";
+"about.github.desc" = "View source code, contribute";
+"about.feedback" = "Feedback";
+"about.feedback.desc" = "Report issues, suggestions";
+"about.privacy" = "Privacy Policy";
+"about.privacy.desc" = "How we protect your data";
+
+/* Privacy Policy */
+"privacy.title" = "Privacy Policy";
+"privacy.promise.title" = "Our Promise";
+"privacy.promise.content" = "ZeroNet Redact is a completely offline app. We believe the best privacy protection is to collect no data at all. Your photos, your privacy, belong only to you.";
+"privacy.data.title" = "Data Handling";
+"privacy.data.item1" = "All image processing happens locally";
+"privacy.data.item2" = "Encrypted files are stored only on your device";
+"privacy.data.item3" = "You can delete all data at any time";
+"privacy.data.item4" = "We never upload any images or data";
+"privacy.data.item5" = "We never track your usage";
+"privacy.contact.title" = "Contact Us";
+"privacy.contact.content" = "If you have any questions or suggestions, feel free to reach out via GitHub Issues.";
+
+/* Common */
+"common.done" = "Done";
+
+/* Settings - Alerts */
+"settings.clearAll.title" = "Clear All Files";
+"settings.clearAll.confirm" = "Clear All";
+"settings.clearAll.message" = "This will permanently delete all encrypted files. This cannot be undone.";
+"settings.disablePassword.title" = "Disable Password Protection";
+"settings.disablePassword.confirm" = "Disable";
+"settings.disablePassword.message" = "After disabling password protection, the app will no longer require a password to unlock.";

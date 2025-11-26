@@ -2,18 +2,18 @@
 //  RedactedGroupSelectorBar.swift
 //  zeroNetRedact
 //
-//  分组选择器 - 用于脱敏文件
+//  分组选择器 - 用于脱敏文件（iOS Tab样式）
 //
 
 import SwiftUI
 
-/// 脱敏文件分组选择器（横向滚动）
+/// 脱敏文件分组选择器（横向滚动）- iOS Tab样式
 struct RedactedGroupSelectorBar: View {
     @ObservedObject var viewModel: AlbumViewModel
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: 0) {
                 // 默认分组（始终第一位）
                 if let defaultGroup = viewModel.defaultGroup {
                     GroupChip(
@@ -22,7 +22,9 @@ struct RedactedGroupSelectorBar: View {
                         fileCount: GroupManager.shared.getRedactedFiles(in: defaultGroup).count
                     )
                     .onTapGesture {
-                        viewModel.selectGroup(defaultGroup)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectGroup(defaultGroup)
+                        }
                     }
                 }
 
@@ -34,7 +36,9 @@ struct RedactedGroupSelectorBar: View {
                         fileCount: GroupManager.shared.getRedactedFiles(in: group).count
                     )
                     .onTapGesture {
-                        viewModel.selectGroup(group)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectGroup(group)
+                        }
                     }
                 }
             }

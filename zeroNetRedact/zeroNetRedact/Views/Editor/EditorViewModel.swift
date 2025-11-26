@@ -175,6 +175,20 @@ class EditorViewModel: ObservableObject {
         updateUndoRedoState()
     }
 
+    /// 旋转当前图片
+    func rotateCurrentImage(to rotatedImage: UIImage) {
+        // 更新编辑器中的原始图片
+        if let imageEditor = editor?.baseEditor as? ImageRedactionEditor {
+            imageEditor.replaceOriginalImage(with: rotatedImage)
+        }
+
+        // 更新显示的图片
+        currentImage = rotatedImage
+
+        // 清除撤销历史（旋转后坐标系变化）
+        updateUndoRedoState()
+    }
+
     func exportFile() async {
         isExporting = true
         defer { isExporting = false }

@@ -171,6 +171,15 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         applyRedaction(at: operation.region, effect: operation.effect)
     }
 
+    /// 替换原始图片（用于旋转等操作）
+    func replaceOriginalImage(with newImage: UIImage) {
+        originalImage = newImage
+        currentImage = newImage
+        // 清空编辑历史（因为坐标系已改变）
+        editHistory.removeAll()
+        redoStack.removeAll()
+    }
+
     func exportRedactedFile() async throws -> Data {
         guard let finalImage = currentImage else {
             throw EditorError.noImageLoaded

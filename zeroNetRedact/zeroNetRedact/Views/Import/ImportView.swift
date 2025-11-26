@@ -10,13 +10,14 @@ struct ImportView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .bottom) {
+                // 背景色
+                DesignSystem.Colors.backgroundPrimary
+                    .ignoresSafeArea()
+
                 VStack(spacing: 0) {
                     // 分组选择器
                     GroupSelectorBar(viewModel: viewModel)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemBackground))
-
-                    Divider()
+                        .padding(.vertical, 12)
 
                     // 主内容区
                     Group {
@@ -43,6 +44,7 @@ struct ImportView: View {
                         viewModel.showManageGroups = true
                     }) {
                         Image(systemName: "folder.badge.gearshape")
+                            .foregroundColor(DesignSystem.Colors.primaryBlue)
                     }
                 }
             }
@@ -81,11 +83,23 @@ struct ImportView: View {
             }
             .overlay {
                 if viewModel.isImporting {
-                    ProgressView("正在导入...")
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(12)
-                        .shadow(radius: 10)
+                    // 导入中遮罩
+                    ZStack {
+                        Color.black.opacity(0.3)
+                            .ignoresSafeArea()
+
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                                .tint(.white)
+                            Text("正在导入...")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        .padding(32)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(20)
+                    }
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) {
@@ -98,65 +112,93 @@ struct ImportView: View {
     // MARK: - 空状态视图
 
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            // 导入说明
-            VStack(spacing: 12) {
-                Image(systemName: "lock.shield")
-                    .font(.system(size: 60))
-                    .foregroundColor(.blue)
+        VStack(spacing: 0) {
+            Spacer()
 
-                Text("零网隐私保护")
-                    .font(.title2)
-                    .fontWeight(.bold)
+            VStack(spacing: 24) {
+                // 图标组合 - 盾牌 + 光晕
+                ZStack {
+                    // 外层光晕
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    DesignSystem.Colors.primaryBlue.opacity(0.15),
+                                    DesignSystem.Colors.primaryPurple.opacity(0.05),
+                                    Color.clear,
+                                ],
+                                center: .center,
+                                startRadius: 30,
+                                endRadius: 80
+                            )
+                        )
+                        .frame(width: 160, height: 160)
 
-                Text("导入文件后将被加密存储,只有你能访问")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+                    // 内层圆形背景
+                    Circle()
+                        .fill(DesignSystem.Gradients.lightBackground)
+                        .frame(width: 100, height: 100)
+
+                    // 盾牌图标
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 44, weight: .medium))
+                        .foregroundStyle(DesignSystem.Gradients.primary)
+                }
+                .padding(.bottom, 8)
+
+                // 标题和描述
+                VStack(spacing: 10) {
+                    Text("零网隐私保护")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                    Text("导入的文件将被加密存储在本地\n只有你能访问，安全无忧")
+                        .font(.body)
+                        .foregroundColor(DesignSystem.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                }
             }
-            .padding(.top, 40)
 
             Spacer()
 
             // 导入按钮组
-            VStack(spacing: 16) {
-                // 从相册导入图片
+            VStack(spacing: 12) {
+                // 从相册导入图片 - 主按钮
                 Button(action: {
                     viewModel.showPhotosPicker = true
                 }) {
-                    HStack {
-                        Image(systemName: "photo.on.rectangle")
-                            .font(.title2)
-                        Text("从相册导入图片")
-                            .fontWeight(.medium)
+                    HStack(spacing: 10) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 18, weight: .medium))
+                        Text("从相册选择图片")
+                            .font(.body)
+                            .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .padding(.vertical, 16)
                 }
+                .buttonStyle(GradientButtonStyle())
 
-                // 导入PDF文件
+                // 导入PDF文件 - 次按钮
                 Button(action: {
                     viewModel.showDocumentPicker = true
                 }) {
-                    HStack {
-                        Image(systemName: "doc.text")
-                            .font(.title2)
-                        Text("导入PDF文件")
-                            .fontWeight(.medium)
+                    HStack(spacing: 10) {
+                        Image(systemName: "doc.text.fill")
+                            .font(.system(size: 18, weight: .medium))
+                        Text("选择 PDF 文件")
+                            .font(.body)
+                            .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.orange)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .padding(.vertical, 16)
                 }
+                .buttonStyle(OutlineButtonStyle(color: DesignSystem.Colors.warningOrange))
             }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 60)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 40)
         }
     }
 
@@ -166,11 +208,11 @@ struct ImportView: View {
         ScrollView {
             LazyVGrid(
                 columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12),
                 ],
-                spacing: 12
+                spacing: 16
             ) {
                 ForEach(viewModel.originalFiles, id: \.id) { file in
                     OriginalFileGridItem(file: file, viewModel: viewModel)
@@ -179,8 +221,9 @@ struct ImportView: View {
                         }
                 }
             }
-            .padding()
-            .padding(.bottom, 80)  // 为底部按钮栏留出空间
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            .padding(.top, DesignSystem.Spacing.md)
+            .padding(.bottom, 100)  // 为底部按钮栏留出空间
         }
     }
 
@@ -192,56 +235,46 @@ struct ImportView: View {
             Button(action: {
                 viewModel.showPhotosPicker = true
             }) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "photo.on.rectangle.angled")
-                        .font(.body)
+                        .font(.system(size: 15, weight: .medium))
                     Text("导入图片")
-                        .font(.callout)
-                        .fontWeight(.medium)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(
-                    LinearGradient(
-                        colors: [Color.blue, Color.blue.opacity(0.85)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .background(DesignSystem.Gradients.primary)
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .cornerRadius(DesignSystem.CornerRadius.medium)
             }
 
             // 导入PDF按钮
             Button(action: {
                 viewModel.showDocumentPicker = true
             }) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "doc.text.fill")
-                        .font(.body)
+                        .font(.system(size: 15, weight: .medium))
                     Text("导入PDF")
-                        .font(.callout)
-                        .fontWeight(.medium)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(
-                    LinearGradient(
-                        colors: [Color.orange, Color.orange.opacity(0.85)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .background(DesignSystem.Gradients.pdfType)
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .cornerRadius(DesignSystem.CornerRadius.medium)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, DesignSystem.Spacing.lg)
         .padding(.top, 12)
-        .padding(.bottom, 16)
+        .padding(.bottom, 20)
         .background(
-            Color(.systemBackground)
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: -5)
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: -4)
+                .ignoresSafeArea(edges: .bottom)
         )
     }
 }
@@ -253,62 +286,77 @@ struct OriginalFileGridItem: View {
     @ObservedObject var viewModel: ImportViewModel
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             // 缩略图卡片
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
-
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.gray.opacity(0.1), Color.gray.opacity(0.15)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                // 卡片背景
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                    .fill(DesignSystem.Colors.backgroundCard)
+                    .shadow(
+                        color: DesignSystem.Shadow.cardShadow(for: colorScheme), radius: 8, x: 0,
+                        y: 3
                     )
-                    .aspectRatio(1, contentMode: .fit)
-                    .overlay {
-                        Group {
-                            if isLoading {
-                                ProgressView()
-                            } else if let thumbnail = thumbnailImage {
-                                Image(uiImage: thumbnail)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                VStack(spacing: 8) {
-                                    Image(
-                                        systemName: file.fileType == .image
-                                            ? "photo.circle.fill" : "doc.text.fill"
-                                    )
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(
-                                        file.fileType == .image
-                                            ? LinearGradient(
-                                                colors: [.blue, .cyan], startPoint: .topLeading,
-                                                endPoint: .bottomTrailing)
-                                            : LinearGradient(
-                                                colors: [.orange, .red], startPoint: .topLeading,
-                                                endPoint: .bottomTrailing)
-                                    )
-                                    Text("原文件")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
+                    .shadow(
+                        color: DesignSystem.Shadow.cardShadowSecondary(for: colorScheme), radius: 1,
+                        x: 0, y: 1
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                            .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
+                    )
+
+                // 内容区域
+                GeometryReader { geometry in
+                    let innerSize = geometry.size.width - 12  // 6pt padding on each side
+
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 2)
+                        .fill(Color.gray.opacity(0.08))
+                        .frame(width: innerSize, height: innerSize)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                        .overlay {
+                            Group {
+                                if isLoading {
+                                    ProgressView()
+                                        .tint(DesignSystem.Colors.primaryBlue)
+                                } else if let thumbnail = thumbnailImage {
+                                    Image(uiImage: thumbnail)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: innerSize, height: innerSize)
+                                        .clipShape(
+                                            RoundedRectangle(
+                                                cornerRadius: DesignSystem.CornerRadius.medium - 2))
+                                } else {
+                                    // 占位图标
+                                    VStack(spacing: 6) {
+                                        Image(
+                                            systemName: file.fileType == .image
+                                                ? "photo.fill" : "doc.text.fill"
+                                        )
+                                        .font(.system(size: 28, weight: .medium))
+                                        .foregroundStyle(
+                                            file.fileType == .image
+                                                ? DesignSystem.Gradients.imageType
+                                                : DesignSystem.Gradients.pdfType
+                                        )
+                                        Text("原文件")
+                                            .font(.caption2)
+                                            .foregroundColor(DesignSystem.Colors.textTertiary)
+                                    }
                                 }
                             }
                         }
-                    }
-                    .overlay(alignment: .topLeading) {
                         // 类型徽章
-                        CategoryBadge(fileType: file.fileType)
-                            .padding(8)
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(alignment: .topLeading) {
+                            FileTypeBadge(fileType: file.fileType)
+                                .padding(4)
+                        }
+                }
+                .aspectRatio(1, contentMode: .fit)
+                .padding(6)
             }
 
             // 文件信息
@@ -316,11 +364,11 @@ struct OriginalFileGridItem: View {
                 Text(file.createdAt, style: .date)
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundColor(.primary)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
 
                 Text(file.createdAt, style: .time)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
             }
         }
         .task {

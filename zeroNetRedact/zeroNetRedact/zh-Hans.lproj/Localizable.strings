@@ -9,6 +9,7 @@
 /* Group */
 "group.default" = "默认分组";
 "group.moveTo" = "移动到分组";
+"group.unnamed" = "未命名分组";
 
 /* PDF Navigation */
 "pdf.prevPage" = "上一页";
@@ -36,3 +37,117 @@
 "scale.title" = "缩放";
 "scale.enableDragHint" = "开启拖拽";
 "scale.selectHint" = "点击选中";
+
+/* Actions */
+"action.rotate" = "旋转";
+"action.scaleBar" = "缩放";
+
+/* Export */
+"export.success" = "导出成功";
+"export.failed" = "导出失败";
+
+/* Common */
+"common.cancel" = "取消";
+"common.close" = "关闭";
+"common.confirm" = "确认";
+
+/* Password Setup - Brand */
+"passwordSetup.brand.slogan" = "完全离线的隐私脱敏工具";
+"passwordSetup.brand.subtitle" = "设置密码保护您的隐私数据";
+
+/* Password Setup - Features */
+"feature.zeroNetwork.title" = "零网络";
+"feature.zeroNetwork.desc" = "完全离线，无网络权限";
+"feature.localRedact.title" = "本地脱敏";
+"feature.localRedact.desc" = "所有处理在设备端完成";
+"feature.privacy.title" = "隐私保护";
+"feature.privacy.desc" = "零追踪、零账号";
+"feature.openSource.title" = "开源透明";
+"feature.openSource.desc" = "代码公开，接受审查";
+
+/* Password */
+"password.enter" = "输入密码";
+"password.confirm" = "确认密码";
+"password.match" = "密码匹配";
+"password.mismatch" = "密码不匹配";
+"password.setup" = "设置密码";
+"password.setupLater" = "稍后设置";
+"password.current" = "当前密码";
+"password.current.enter" = "输入原密码";
+"password.new" = "新密码";
+"password.new.enter" = "输入新密码";
+"password.new.confirm" = "确认新密码";
+"password.change.title" = "修改密码";
+"password.change.subtitle" = "请输入原密码和新密码";
+"password.change.confirm" = "确认修改";
+
+/* Biometric */
+"biometric.enable" = "启用 %@";
+"biometric.description" = "快速安全地解锁应用";
+
+/* Settings */
+"settings.title" = "设置";
+"settings.security" = "安全";
+"settings.about" = "关于";
+"settings.data" = "数据";
+"settings.fileCount" = "%d 个文件";
+"settings.passwordProtection" = "密码保护";
+"settings.changePassword" = "修改密码";
+"settings.autoLock" = "自动锁定";
+"settings.lockTimeout" = "锁定时间";
+"settings.lockTimeout.immediate" = "立即";
+"settings.lockTimeout.1min" = "1 分钟";
+"settings.lockTimeout.5min" = "5 分钟";
+"settings.lockTimeout.15min" = "15 分钟";
+
+/* Settings - About */
+"settings.aboutApp" = "关于";
+"settings.clearAllFiles" = "清空所有文件";
+
+/* About View */
+"about.title" = "关于";
+"about.version" = "版本 %@";
+"about.tagline" = "完全离线的隐私脱敏工具，让敏感信息真正做到「不会上传、不可能泄露」";
+
+/* About - Philosophy */
+"about.philosophy.title" = "我们的理念";
+"about.philosophy.offline.title" = "零网络依赖";
+"about.philosophy.offline.desc" = "应用完全离线运行，没有网络权限，您的照片永远不会离开设备";
+"about.philosophy.local.title" = "本地处理";
+"about.philosophy.local.desc" = "所有脱敏操作都在您的手机上完成，没有云端、没有服务器";
+"about.philosophy.privacy.title" = "隐私至上";
+"about.philosophy.privacy.desc" = "无账号、无追踪、无广告，我们不知道您是谁，也不想知道";
+"about.philosophy.openSource.title" = "开源透明";
+"about.philosophy.openSource.desc" = "在这个数据被肆意窃取的时代，开源不是为了免费，而是为了让您可以验证我们的承诺，建立彼此的信任";
+
+/* About - Links */
+"about.github" = "GitHub 项目";
+"about.github.desc" = "查看源代码、参与贡献";
+"about.feedback" = "反馈建议";
+"about.feedback.desc" = "报告问题、提出建议";
+"about.privacy" = "隐私政策";
+"about.privacy.desc" = "了解我们如何保护您的数据";
+
+/* Privacy Policy */
+"privacy.title" = "隐私政策";
+"privacy.promise.title" = "我们的承诺";
+"privacy.promise.content" = "ZeroNet Redact 是一款完全离线的应用。我们坚信，最好的隐私保护就是根本不收集数据。您的照片、您的隐私，只属于您自己。";
+"privacy.data.title" = "数据处理";
+"privacy.data.item1" = "所有图片处理都在本地完成";
+"privacy.data.item2" = "加密文件仅存储在您的设备上";
+"privacy.data.item3" = "您可以随时删除所有数据";
+"privacy.data.item4" = "我们不会上传任何图片或数据";
+"privacy.data.item5" = "我们不会追踪您的使用行为";
+"privacy.contact.title" = "联系我们";
+"privacy.contact.content" = "如果您有任何疑问或建议，欢迎通过 GitHub Issues 与我们联系。";
+
+/* Common */
+"common.done" = "完成";
+
+/* Settings - Alerts */
+"settings.clearAll.title" = "清空所有文件";
+"settings.clearAll.confirm" = "确认清空";
+"settings.clearAll.message" = "此操作将永久删除所有加密文件，无法恢复";
+"settings.disablePassword.title" = "关闭密码保护";
+"settings.disablePassword.confirm" = "确认关闭";
+"settings.disablePassword.message" = "关闭密码保护后，应用将不再需要密码解锁";
