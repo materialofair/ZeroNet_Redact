@@ -7,19 +7,23 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             ImportView()
                 .tabItem {
-                    Label("导入", systemImage: "square.and.arrow.down")
+                    Label(
+                        NSLocalizedString("tab.import", comment: ""),
+                        systemImage: "square.and.arrow.down")
                 }
                 .tag(0)
 
             AlbumView()
                 .tabItem {
-                    Label("脱敏文件", systemImage: "checkmark.shield.fill")
+                    Label(
+                        NSLocalizedString("tab.redacted", comment: ""),
+                        systemImage: "checkmark.shield.fill")
                 }
                 .tag(1)
 
             SettingsView()
                 .tabItem {
-                    Label("设置", systemImage: "gearshape")
+                    Label(NSLocalizedString("tab.settings", comment: ""), systemImage: "gearshape")
                 }
                 .tag(2)
         }

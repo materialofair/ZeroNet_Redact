@@ -198,15 +198,15 @@ enum EditorError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noFileLoaded:
-            return "未加载文件"
+            return NSLocalizedString("editor.error.noFileLoaded", comment: "")
         case .noImageLoaded:
-            return "未加载图片"
+            return NSLocalizedString("editor.error.noImageLoaded", comment: "")
         case .noPDFLoaded:
-            return "未加载PDF"
+            return NSLocalizedString("editor.error.noPDFLoaded", comment: "")
         case .exportFailed:
-            return "导出失败"
+            return NSLocalizedString("export.failed", comment: "")
         case .applyRedactionFailed:
-            return "应用脱敏失败"
+            return NSLocalizedString("editor.error.applyRedactionFailed", comment: "")
         }
     }
 }

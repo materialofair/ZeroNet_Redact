@@ -43,7 +43,7 @@ class GroupManager {
     private func createDefaultGroup() {
         let defaultGroup = FileGroup(context: context)
         defaultGroup.id = Self.defaultGroupID
-        defaultGroup.name = "默认分组"
+        defaultGroup.name = NSLocalizedString("group.default", comment: "")
         defaultGroup.createdAt = Date()
         defaultGroup.iconName = "folder.fill"
         defaultGroup.sortOrder = 0
@@ -112,7 +112,7 @@ class GroupManager {
         guard group.id != Self.defaultGroupID else {
             return DeleteGroupResult(
                 success: false,
-                message: "默认分组无法删除",
+                message: NSLocalizedString("group.cannotDeleteDefault", comment: ""),
                 originalFilesCount: 0,
                 redactedFilesCount: 0
             )
@@ -122,7 +122,7 @@ class GroupManager {
         guard let defaultGroup = getDefaultGroup() else {
             return DeleteGroupResult(
                 success: false,
-                message: "无法获取默认分组",
+                message: NSLocalizedString("group.cannotGetDefault", comment: ""),
                 originalFilesCount: 0,
                 redactedFilesCount: 0
             )
@@ -151,13 +151,19 @@ class GroupManager {
         if saveContext() {
             let message: String
             if originalCount == 0 && redactedCount == 0 {
-                message = "已删除空分组"
+                message = NSLocalizedString("group.deletedEmpty", comment: "")
             } else if redactedCount == 0 {
-                message = "已删除分组，\(originalCount)个原文件已移至默认分组"
+                message = String(
+                    format: NSLocalizedString("group.deletedWithOriginals", comment: ""),
+                    originalCount)
             } else if originalCount == 0 {
-                message = "已删除分组，\(redactedCount)个脱敏文件已移至默认分组"
+                message = String(
+                    format: NSLocalizedString("group.deletedWithRedacted", comment: ""),
+                    redactedCount)
             } else {
-                message = "已删除分组，\(originalCount)个原文件和\(redactedCount)个脱敏文件已移至默认分组"
+                message = String(
+                    format: NSLocalizedString("group.deletedWithBoth", comment: ""), originalCount,
+                    redactedCount)
             }
 
             return DeleteGroupResult(
@@ -169,7 +175,7 @@ class GroupManager {
         } else {
             return DeleteGroupResult(
                 success: false,
-                message: "删除失败，请重试",
+                message: NSLocalizedString("group.deleteFailed", comment: ""),
                 originalFilesCount: 0,
                 redactedFilesCount: 0
             )

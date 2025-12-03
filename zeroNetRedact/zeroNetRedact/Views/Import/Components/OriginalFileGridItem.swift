@@ -94,7 +94,7 @@ struct OriginalFileGridItem: View {
                     ? DesignSystem.Gradients.imageType
                     : DesignSystem.Gradients.pdfType
             )
-            Text("原文件")
+            Text(NSLocalizedString("file.original", comment: ""))
                 .font(.caption2)
                 .foregroundColor(DesignSystem.Colors.textTertiary)
         }

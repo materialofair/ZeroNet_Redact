@@ -42,11 +42,11 @@ struct ManualImageEditorView: View {
                     }
                 }
             }
-            .navigationTitle("图片脱敏")
+            .navigationTitle(NSLocalizedString("editor.imageRedact", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(NSLocalizedString("common.cancel", comment: "")) {
                         dismiss()
                     }
                 }
@@ -59,7 +59,9 @@ struct ManualImageEditorView: View {
                                 await viewModel.detectSensitiveRegions()
                             }
                         } label: {
-                            Label("AI检测", systemImage: "wand.and.stars")
+                            Label(
+                                NSLocalizedString("editor.aiDetect", comment: ""),
+                                systemImage: "wand.and.stars")
                         }
                         .disabled(viewModel.isDetecting)
 
@@ -69,7 +71,9 @@ struct ManualImageEditorView: View {
                         Button {
                             applyDrawnRegions()
                         } label: {
-                            Label("应用脱敏", systemImage: "checkmark.circle")
+                            Label(
+                                NSLocalizedString("editor.applyRedact", comment: ""),
+                                systemImage: "checkmark.circle")
                         }
                         .disabled(drawingTool.drawnRegions.isEmpty)
 
@@ -79,7 +83,9 @@ struct ManualImageEditorView: View {
                                 await exportImage()
                             }
                         } label: {
-                            Label("导出", systemImage: "square.and.arrow.up")
+                            Label(
+                                NSLocalizedString("editor.export", comment: ""),
+                                systemImage: "square.and.arrow.up")
                         }
 
                         Divider()
@@ -91,7 +97,9 @@ struct ManualImageEditorView: View {
                             }
                         } label: {
                             Label(
-                                showToolbar ? "隐藏工具栏" : "显示工具栏",
+                                showToolbar
+                                    ? NSLocalizedString("editor.hideToolbar", comment: "")
+                                    : NSLocalizedString("editor.showToolbar", comment: ""),
                                 systemImage: showToolbar ? "eye.slash" : "eye"
                             )
                         }
@@ -122,7 +130,7 @@ struct ManualImageEditorView: View {
                     .ignoresSafeArea()
 
                 if viewModel.isLoading {
-                    ProgressView("加载中...")
+                    ProgressView(NSLocalizedString("common.loading", comment: ""))
                 } else if let error = viewModel.errorMessage {
                     errorView(error)
                 } else if let image = viewModel.currentImage {

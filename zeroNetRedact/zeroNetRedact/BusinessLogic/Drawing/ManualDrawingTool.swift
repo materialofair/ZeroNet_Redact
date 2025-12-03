@@ -10,8 +10,17 @@ import SwiftUI
 
 /// 绘制模式
 enum DrawingMode: String, CaseIterable {
-    case freehand = "涂抹"
-    case rectangle = "矩形"
+    case freehand
+    case rectangle
+
+    var displayName: String {
+        switch self {
+        case .freehand:
+            return NSLocalizedString("drawing.mode.freehand", comment: "Freehand drawing mode")
+        case .rectangle:
+            return NSLocalizedString("drawing.mode.rectangle", comment: "Rectangle drawing mode")
+        }
+    }
 
     var icon: String {
         switch self {

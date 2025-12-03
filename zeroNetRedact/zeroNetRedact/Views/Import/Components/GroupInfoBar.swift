@@ -24,7 +24,7 @@ struct GroupInfoBar: View {
                 Image(systemName: group.iconName ?? "folder.fill")
                     .foregroundColor(colorFromHex(group.colorTag ?? "#8E8E93"))
 
-                Text(group.name ?? "未命名")
+                Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
                     .font(.headline)
             }
 
@@ -50,7 +50,7 @@ struct GroupInfoBar: View {
                 }
 
                 if statistics.totalCount == 0 {
-                    Text("空")
+                    Text(NSLocalizedString("group.empty", comment: ""))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

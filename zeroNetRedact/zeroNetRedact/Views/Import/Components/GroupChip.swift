@@ -17,7 +17,7 @@ struct GroupChip: View {
     var body: some View {
         VStack(spacing: 6) {
             // 纯文本显示
-            Text(group.name ?? "未命名")
+            Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
                 .font(.subheadline)
                 .fontWeight(isSelected ? .semibold : .regular)
                 .foregroundColor(isSelected ? Color.accentColor : Color(uiColor: .secondaryLabel))

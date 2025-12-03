@@ -13,7 +13,7 @@ struct PasswordStrengthView: View {
         VStack(spacing: 6) {
             // 强度标题和等级
             HStack {
-                Text("密码强度")
+                Text(NSLocalizedString("password.strength", comment: ""))
                     .font(.caption)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
 
@@ -89,17 +89,17 @@ struct PasswordRequirementsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             PasswordRequirementRow(
-                text: "至少6个字符",
+                text: NSLocalizedString("password.requirement.minChars", comment: ""),
                 isMet: password.count >= 6
             )
 
             PasswordRequirementRow(
-                text: "建议12+字符更安全",
+                text: NSLocalizedString("password.requirement.recommended", comment: ""),
                 isMet: password.count >= 12
             )
 
             PasswordRequirementRow(
-                text: "包含字母和数字",
+                text: NSLocalizedString("password.requirement.alphanumeric", comment: ""),
                 isMet: password.contains(where: { $0.isLetter })
                     && password.contains(where: { $0.isNumber })
             )

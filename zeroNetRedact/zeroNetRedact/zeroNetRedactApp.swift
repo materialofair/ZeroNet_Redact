@@ -31,6 +31,9 @@ struct zeroNetRedactApp: App {
         // 初始化默认分组和迁移现有文件
         GroupManager.shared.ensureDefaultGroup()
         GroupManager.shared.migrateExistingFiles()
+
+        // 预初始化 StoreManager，确保内购服务尽早启动
+        _ = StoreManager.shared
     }
 
     var body: some Scene {

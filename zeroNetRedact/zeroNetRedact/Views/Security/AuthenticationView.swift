@@ -66,7 +66,7 @@ struct AuthenticationView: View {
                 .fontWeight(.bold)
                 .foregroundColor(DesignSystem.Colors.textPrimary)
 
-            Text("欢迎回来")
+            Text(NSLocalizedString("auth.welcome", comment: ""))
                 .font(.subheadline)
                 .foregroundColor(DesignSystem.Colors.textSecondary)
         }
@@ -109,20 +109,24 @@ struct AuthenticationView: View {
                 .foregroundColor(DesignSystem.Colors.textSecondary)
 
             if viewModel.showPassword {
-                TextField("输入密码", text: $viewModel.passwordInput)
-                    .textContentType(.password)
-                    .autocapitalization(.none)
-                    .submitLabel(.done)
-                    .onSubmit {
-                        Task { await attemptLogin() }
-                    }
+                TextField(
+                    NSLocalizedString("password.enter", comment: ""), text: $viewModel.passwordInput
+                )
+                .textContentType(.password)
+                .autocapitalization(.none)
+                .submitLabel(.done)
+                .onSubmit {
+                    Task { await attemptLogin() }
+                }
             } else {
-                SecureField("输入密码", text: $viewModel.passwordInput)
-                    .textContentType(.password)
-                    .submitLabel(.done)
-                    .onSubmit {
-                        Task { await attemptLogin() }
-                    }
+                SecureField(
+                    NSLocalizedString("password.enter", comment: ""), text: $viewModel.passwordInput
+                )
+                .textContentType(.password)
+                .submitLabel(.done)
+                .onSubmit {
+                    Task { await attemptLogin() }
+                }
             }
 
             Button {
@@ -148,7 +152,10 @@ struct AuthenticationView: View {
         } label: {
             HStack {
                 Image(systemName: viewModel.biometricIcon)
-                Text("使用 \(viewModel.biometricTypeText)")
+                Text(
+                    String(
+                        format: NSLocalizedString("auth.useBiometric", comment: ""),
+                        viewModel.biometricTypeText))
             }
             .frame(maxWidth: .infinity)
         }
@@ -170,13 +177,17 @@ struct AuthenticationView: View {
     // MARK: - Remaining Attempts
 
     private var remainingAttemptsText: some View {
-        Text("剩余尝试次数: \(viewModel.remainingAttempts)")
-            .font(.caption)
-            .foregroundColor(
-                viewModel.remainingAttempts <= 2
-                    ? DesignSystem.Colors.dangerRed
-                    : DesignSystem.Colors.warningOrange
-            )
+        Text(
+            String(
+                format: NSLocalizedString("auth.remainingAttempts", comment: ""),
+                viewModel.remainingAttempts)
+        )
+        .font(.caption)
+        .foregroundColor(
+            viewModel.remainingAttempts <= 2
+                ? DesignSystem.Colors.dangerRed
+                : DesignSystem.Colors.warningOrange
+        )
     }
 
     // MARK: - Unlock Button
@@ -189,7 +200,7 @@ struct AuthenticationView: View {
                 ProgressView()
                     .tint(.white)
             } else {
-                Text("解锁")
+                Text(NSLocalizedString("auth.unlock", comment: ""))
             }
         }
         .buttonStyle(GradientButtonStyle())

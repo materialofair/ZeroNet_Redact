@@ -42,7 +42,7 @@ struct ImportView: View {
                     )
                 }
             }
-            .navigationTitle("导入")
+            .navigationTitle(NSLocalizedString("import.title", comment: ""))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -80,8 +80,10 @@ struct ImportView: View {
             .sheet(isPresented: $viewModel.showManageGroups) {
                 GroupManagementSheet(viewModel: viewModel)
             }
-            .alert("导入失败", isPresented: $viewModel.showError) {
-                Button("确定", role: .cancel) {}
+            .alert(
+                NSLocalizedString("import.failed", comment: ""), isPresented: $viewModel.showError
+            ) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
             } message: {
                 if let error = viewModel.errorMessage {
                     Text(error)
@@ -135,7 +137,7 @@ struct ImportView: View {
                 ProgressView()
                     .scaleEffect(1.2)
                     .tint(.white)
-                Text("正在导入...")
+                Text(NSLocalizedString("import.loading", comment: ""))
                     .font(.headline)
                     .foregroundColor(.white)
             }

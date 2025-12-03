@@ -26,18 +26,22 @@ struct GroupPickerSheet: View {
 
                             // 分组信息
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(group.name ?? "未命名分组")
+                                Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
                                     .font(.body)
                                     .fontWeight(.medium)
                                     .foregroundColor(.primary)
 
                                 let stats = GroupManager.shared.getGroupStatistics(group)
                                 if stats.totalCount > 0 {
-                                    Text("\(stats.totalCount)个文件")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    Text(
+                                        String(
+                                            format: NSLocalizedString(
+                                                "group.fileCount", comment: ""), stats.totalCount)
+                                    )
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 } else {
-                                    Text("空分组")
+                                    Text(NSLocalizedString("group.empty", comment: ""))
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -56,11 +60,11 @@ struct GroupPickerSheet: View {
                     .buttonStyle(.plain)
                 }
             }
-            .navigationTitle("移动到分组")
+            .navigationTitle(NSLocalizedString("group.moveTo", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("取消") {
+                    Button(NSLocalizedString("common.cancel", comment: "")) {
                         dismiss()
                     }
                 }

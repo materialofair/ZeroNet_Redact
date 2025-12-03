@@ -25,7 +25,7 @@ class AlbumViewModel: ObservableObject {
     func loadGroups() {
         allGroups = GroupManager.shared.getAllGroups()
         defaultGroup = GroupManager.shared.getDefaultGroup()
-        customGroups = allGroups.filter { !($0.name == "默认分组" && $0.sortOrder == 0) }
+        customGroups = allGroups.filter { $0.sortOrder != 0 }
 
         // 如果没有选中分组，默认选中默认分组
         if selectedGroup == nil {

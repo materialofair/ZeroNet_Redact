@@ -225,19 +225,19 @@ enum ImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedSource:
-            return "不支持的导入源"
+            return NSLocalizedString("import.error.unsupportedSource", comment: "")
         case .invalidImageData:
-            return "无效的图片数据"
+            return NSLocalizedString("import.error.invalidImageData", comment: "")
         case .invalidPDFData:
-            return "无效的PDF数据"
+            return NSLocalizedString("import.error.invalidPDFData", comment: "")
         case .photoLoadFailed:
-            return "照片加载失败"
+            return NSLocalizedString("import.error.photoLoadFailed", comment: "")
         case .thumbnailGenerationFailed:
-            return "缩略图生成失败"
+            return NSLocalizedString("import.error.thumbnailFailed", comment: "")
         case .encryptionFailed:
-            return "加密失败"
+            return NSLocalizedString("crypto.error.encryptionFailed", comment: "")
         case .saveFailed:
-            return "保存失败"
+            return NSLocalizedString("import.error.saveFailed", comment: "")
         }
     }
 }

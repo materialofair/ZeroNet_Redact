@@ -21,7 +21,7 @@ struct GroupManagementSheet: View {
         NavigationView {
             List {
                 // 默认分组（不可删除，仅可重命名）
-                Section(header: Text("系统分组")) {
+                Section(header: Text(NSLocalizedString("group.system", comment: ""))) {
                     if let defaultGroup = viewModel.defaultGroup {
                         GroupEditRow(
                             group: defaultGroup,
@@ -32,7 +32,7 @@ struct GroupManagementSheet: View {
                 }
 
                 // 自定义分组
-                Section(header: Text("自定义分组")) {
+                Section(header: Text(NSLocalizedString("group.custom", comment: ""))) {
                     ForEach(viewModel.customGroups, id: \.id) { group in
                         GroupEditRow(
                             group: group,
@@ -46,43 +46,59 @@ struct GroupManagementSheet: View {
                     }
                 }
             }
-            .navigationTitle("管理分组")
+            .navigationTitle(NSLocalizedString("group.manage", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("完成") {
+                    Button(NSLocalizedString("common.done", comment: "")) {
                         dismiss()
                     }
                 }
             }
-            .alert("删除分组", isPresented: $showDeleteConfirmation) {
-                Button("取消", role: .cancel) {}
-                Button("删除", role: .destructive) {
+            .alert(
+                NSLocalizedString("group.delete", comment: ""), isPresented: $showDeleteConfirmation
+            ) {
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+                Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
                     if let group = groupToDelete {
                         deleteGroup(group)
                     }
                 }
             } message: {
                 if let group = groupToDelete {
-                    let groupName = group.name ?? "未命名"
+                    let groupName = group.name ?? NSLocalizedString("group.unnamed", comment: "")
                     let originalCount = GroupManager.shared.getFiles(in: group).count
                     let redactedCount = GroupManager.shared.getRedactedFiles(in: group).count
 
                     if originalCount == 0 && redactedCount == 0 {
-                        Text("确定删除「\(groupName)」吗？")
+                        Text(
+                            String(
+                                format: NSLocalizedString("group.deleteConfirm", comment: ""),
+                                groupName))
                     } else if redactedCount == 0 {
-                        Text("删除「\(groupName)」后，\(originalCount)个原文件将移至默认分组")
+                        Text(
+                            String(
+                                format: NSLocalizedString(
+                                    "group.deleteOriginalMessage", comment: ""), groupName,
+                                originalCount))
                     } else if originalCount == 0 {
-                        Text("删除「\(groupName)」后，\(redactedCount)个脱敏文件将移至默认分组")
+                        Text(
+                            String(
+                                format: NSLocalizedString(
+                                    "group.deleteRedactedMessage", comment: ""), groupName,
+                                redactedCount))
                     } else {
                         Text(
-                            "删除「\(groupName)」后：\n• \(originalCount)个原文件\n• \(redactedCount)个脱敏文件\n将全部移至默认分组"
-                        )
+                            String(
+                                format: NSLocalizedString("group.deleteBothMessage", comment: ""),
+                                groupName, originalCount, redactedCount))
                     }
                 }
             }
-            .alert("删除结果", isPresented: $showDeleteResult) {
-                Button("确定", role: .cancel) {}
+            .alert(
+                NSLocalizedString("group.deleteResult", comment: ""), isPresented: $showDeleteResult
+            ) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
             } message: {
                 Text(deleteResultMessage)
             }
@@ -157,14 +173,14 @@ struct GroupEditRow: View {
                 // 名称编辑
                 if isEditing {
                     TextField(
-                        "分组名称", text: $editedName,
+                        NSLocalizedString("group.name", comment: ""), text: $editedName,
                         onCommit: {
                             saveName()
                         }
                     )
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 } else {
-                    Text(group.name ?? "未命名")
+                    Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
                         .font(.headline)
                 }
 
@@ -195,7 +211,7 @@ struct GroupEditRow: View {
                 Button(role: .destructive) {
                     onDelete?()
                 } label: {
-                    Label("删除", systemImage: "trash")
+                    Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
                 }
             }
         }
@@ -211,16 +227,16 @@ struct GroupEditRow: View {
 
     private func iconName(_ systemName: String) -> String {
         switch systemName {
-        case "folder.fill": return "文件夹"
-        case "briefcase.fill": return "公文包"
-        case "house.fill": return "房子"
-        case "star.fill": return "星星"
-        case "heart.fill": return "心形"
-        case "camera.fill": return "相机"
-        case "doc.fill": return "文档"
-        case "photo.fill": return "照片"
-        case "film.fill": return "影片"
-        case "book.fill": return "书籍"
+        case "folder.fill": return NSLocalizedString("icon.folder", comment: "")
+        case "briefcase.fill": return NSLocalizedString("icon.briefcase", comment: "")
+        case "house.fill": return NSLocalizedString("icon.house", comment: "")
+        case "star.fill": return NSLocalizedString("icon.star", comment: "")
+        case "heart.fill": return NSLocalizedString("icon.heart", comment: "")
+        case "camera.fill": return NSLocalizedString("icon.camera", comment: "")
+        case "doc.fill": return NSLocalizedString("icon.doc", comment: "")
+        case "photo.fill": return NSLocalizedString("icon.photo", comment: "")
+        case "film.fill": return NSLocalizedString("icon.film", comment: "")
+        case "book.fill": return NSLocalizedString("icon.book", comment: "")
         default: return systemName
         }
     }

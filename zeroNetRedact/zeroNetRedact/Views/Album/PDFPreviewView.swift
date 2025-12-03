@@ -34,8 +34,12 @@ struct PDFPreviewView: View {
 
                 Spacer()
 
-                Text("PDF预览 (\(pdfDocument.pageCount)页)")
-                    .font(.headline)
+                Text(
+                    String(
+                        format: NSLocalizedString("pdf.preview", comment: ""), pdfDocument.pageCount
+                    )
+                )
+                .font(.headline)
 
                 Spacer()
 
@@ -98,6 +102,6 @@ struct PDFKitView: UIViewRepresentable {
     {
         PDFPreviewView(pdfDocument: document)
     } else {
-        Text("无法加载PDF")
+        Text(NSLocalizedString("pdf.loadFailed", comment: ""))
     }
 }

@@ -15,31 +15,34 @@ enum SecurityError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidPassword:
-            return "密码格式无效"
+            return NSLocalizedString("security.error.invalidPassword", comment: "")
         case .passwordTooShort:
-            return "密码至少需要6个字符"
+            return NSLocalizedString("security.error.passwordTooShort", comment: "")
         case .passwordMismatch:
-            return "两次输入的密码不一致"
+            return NSLocalizedString("security.error.passwordMismatch", comment: "")
         case .keychainError(let status):
-            return "密码存储失败 (错误代码: \(status))"
+            return String(
+                format: NSLocalizedString("security.error.keychainError", comment: ""), status)
         case .biometricNotAvailable:
-            return "生物识别不可用"
+            return NSLocalizedString("security.error.biometricNotAvailable", comment: "")
         case .biometricFailed:
-            return "生物识别验证失败"
+            return NSLocalizedString("security.error.biometricFailed", comment: "")
         case .tooManyAttempts(let date):
             let formatter = DateComponentsFormatter()
             formatter.allowedUnits = [.minute, .second]
             formatter.unitsStyle = .full
             let remaining = date.timeIntervalSinceNow
             if remaining > 0, let timeString = formatter.string(from: remaining) {
-                return "尝试次数过多，请在 \(timeString) 后重试"
+                return String(
+                    format: NSLocalizedString(
+                        "security.error.tooManyAttemptsWithTime", comment: ""), timeString)
             } else {
-                return "尝试次数过多，请稍后重试"
+                return NSLocalizedString("security.error.tooManyAttempts", comment: "")
             }
         case .noPasswordSet:
-            return "未设置密码"
+            return NSLocalizedString("security.error.noPasswordSet", comment: "")
         case .oldPasswordIncorrect:
-            return "原密码不正确"
+            return NSLocalizedString("security.error.oldPasswordIncorrect", comment: "")
         }
     }
 }
@@ -53,10 +56,10 @@ enum PasswordStrength {
 
     var description: String {
         switch self {
-        case .weak: return "弱"
-        case .fair: return "中等"
-        case .good: return "强"
-        case .strong: return "非常强"
+        case .weak: return NSLocalizedString("password.strength.weak", comment: "")
+        case .fair: return NSLocalizedString("password.strength.fair", comment: "")
+        case .good: return NSLocalizedString("password.strength.good", comment: "")
+        case .strong: return NSLocalizedString("password.strength.strong", comment: "")
         }
     }
 

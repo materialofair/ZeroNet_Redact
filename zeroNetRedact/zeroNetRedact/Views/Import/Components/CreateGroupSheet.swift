@@ -27,13 +27,13 @@ struct CreateGroupSheet: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("分组信息")) {
+                Section(header: Text(NSLocalizedString("group.info", comment: ""))) {
                     // 名称输入
-                    TextField("分组名称", text: $groupName)
+                    TextField(NSLocalizedString("group.name", comment: ""), text: $groupName)
                         .autocapitalization(.none)
                 }
 
-                Section(header: Text("图标")) {
+                Section(header: Text(NSLocalizedString("group.icon", comment: ""))) {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 50))], spacing: 12) {
                         ForEach(availableIcons, id: \.self) { icon in
                             Button(action: {
@@ -56,34 +56,37 @@ struct CreateGroupSheet: View {
                 }
 
                 // 预览
-                Section(header: Text("预览")) {
+                Section(header: Text(NSLocalizedString("group.preview", comment: ""))) {
                     HStack {
                         Image(systemName: selectedIcon)
                             .foregroundColor(.accentColor)
-                        Text(groupName.isEmpty ? "新分组" : groupName)
-                            .font(.headline)
+                        Text(
+                            groupName.isEmpty
+                                ? NSLocalizedString("group.new", comment: "") : groupName
+                        )
+                        .font(.headline)
                     }
                     .padding(.vertical, 4)
                 }
             }
-            .navigationTitle("新建分组")
+            .navigationTitle(NSLocalizedString("group.create", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button(NSLocalizedString("common.cancel", comment: "")) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("创建") {
+                    Button(NSLocalizedString("common.create", comment: "")) {
                         createGroup()
                     }
                     .disabled(groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .alert("错误", isPresented: $showError) {
-                Button("确定", role: .cancel) {}
+            .alert(NSLocalizedString("common.error", comment: ""), isPresented: $showError) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
             } message: {
                 Text(errorMessage)
             }
@@ -94,7 +97,7 @@ struct CreateGroupSheet: View {
         let trimmedName = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedName.isEmpty else {
-            errorMessage = "分组名称不能为空"
+            errorMessage = NSLocalizedString("group.nameEmpty", comment: "")
             showError = true
             return
         }
@@ -106,7 +109,7 @@ struct CreateGroupSheet: View {
             viewModel.loadGroups()
             dismiss()
         } else {
-            errorMessage = "创建分组失败，请重试"
+            errorMessage = NSLocalizedString("group.createFailed", comment: "")
             showError = true
         }
     }

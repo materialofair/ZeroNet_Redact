@@ -151,3 +151,262 @@
 "settings.disablePassword.title" = "关闭密码保护";
 "settings.disablePassword.confirm" = "确认关闭";
 "settings.disablePassword.message" = "关闭密码保护后，应用将不再需要密码解锁";
+
+/* Settings - Premium */
+"settings.premium" = "高级版";
+"settings.premium.unlocked" = "已解锁 Pro";
+"settings.premium.unlocked.desc" = "无限脱敏已启用";
+"settings.premium.todayQuota" = "今日配额";
+"settings.premium.upgrade" = "升级到 Pro";
+"settings.premium.upgrade.desc" = "解锁无限脱敏功能";
+
+/* Settings - Review Mode */
+"settings.reviewMode.title" = "审核模式";
+"settings.reviewMode.placeholder" = "输入审核码";
+"settings.reviewMode.message" = "请输入审核码以激活审核模式";
+"settings.reviewMode.success.title" = "激活成功";
+"settings.reviewMode.success.message" = "审核模式已激活，您现在可以无限使用所有功能";
+"settings.reviewMode.error.title" = "激活失败";
+"settings.reviewMode.error.message" = "审核码无效或已过期";
+
+/* Premium View */
+"premium.title" = "高级版";
+"premium.header.title" = "解锁无限脱敏";
+"premium.header.subtitle" = "移除每日限制，随心所欲脱敏文件";
+"premium.feature.unlimitedImages" = "无限图片脱敏";
+"premium.feature.unlimitedImages.desc" = "图片导出不限次数";
+"premium.feature.unlimitedDocs" = "无限文档脱敏";
+"premium.feature.unlimitedDocs.desc" = "PDF 导出不限次数";
+"premium.feature.lifetime" = "永久使用";
+"premium.feature.lifetime.desc" = "一次购买，终身有效";
+"premium.feature.support" = "支持开发";
+"premium.feature.support.desc" = "帮助我们打造更好的隐私工具";
+"premium.purchase.oneTime" = "一次性购买";
+"premium.purchase.retry" = "重新加载";
+"premium.alreadyPurchased" = "已购买";
+"premium.restore" = "恢复购买";
+"premium.restore.notFound" = "未找到之前的购买记录";
+"premium.error.title" = "购买失败";
+"premium.success.title" = "购买成功";
+"premium.success.message" = "感谢支持！您现在可以无限使用所有功能";
+
+/* Store */
+"store.product.premium.name" = "无限脱敏";
+
+/* Usage */
+"usage.status.format" = "图片: %d/%d, 文档: %d/%d";
+"usage.limit.title" = "今日配额已用完";
+"usage.limit.message" = "免费用户每天最多可导出 3 张图片和 3 个文档。升级到 Pro 可解锁无限使用。";
+"usage.limit.upgrade" = "立即升级";
+
+/* Common */
+"common.ok" = "好的";
+"common.empty" = "空";
+
+/* Editor - Additional */
+"editor.aiDetect" = "AI检测";
+"editor.export" = "导出";
+"editor.detectedRegions" = "检测到 %d 处敏感信息";
+"editor.pdfPlaceholder" = "PDF编辑画布 - 待实现";
+"editor.loadFileFailed" = "加载文件失败: %@";
+"editor.detectFailed" = "检测失败: %@";
+"editor.exportFailed" = "导出失败: %@";
+
+/* Album */
+"album.title" = "脱敏文件";
+"album.secured" = "已安全保护";
+"album.files" = "个文件";
+"album.empty" = "还没有脱敏文件";
+"album.redacted" = "已脱敏";
+"album.previewUnavailable" = "预览不可用";
+"album.redactedCount" = "%d个脱敏文件";
+"album.viewFullPDF" = "查看完整PDF";
+"album.shareFile" = "分享文件";
+"album.fileType" = "文件类型";
+"album.fileType.image" = "图片";
+"album.fileType.pdf" = "PDF";
+"album.exportTime" = "导出时间";
+"album.fileSize" = "文件大小";
+"album.step.import" = "导入";
+"album.step.redact" = "涂抹";
+"album.step.done" = "完成";
+
+/* Authentication */
+"auth.welcome" = "欢迎回来";
+"auth.useBiometric" = "使用 %@";
+"auth.remainingAttempts" = "剩余尝试次数: %d";
+"auth.unlock" = "解锁";
+
+/* Biometric */
+"biometric.usePassword" = "使用密码";
+
+/* Group - Additional */
+"group.empty" = "空分组";
+"group.fileCount" = "%d个文件";
+"group.system" = "系统分组";
+"group.custom" = "自定义分组";
+"group.deleteConfirm" = "确定删除「%@」吗？";
+"group.deleteOriginalMessage" = "删除「%@」后，%d个原文件将移至默认分组";
+"group.deleteRedactedMessage" = "删除「%@」后，%d个脱敏文件将移至默认分组";
+"group.info" = "分组信息";
+"group.icon" = "图标";
+"group.preview" = "预览";
+"group.new" = "新分组";
+"group.name" = "分组名称";
+"group.create" = "新建分组";
+"group.nameEmpty" = "分组名称不能为空";
+"group.createFailed" = "创建分组失败，请重试";
+"group.manage" = "管理分组";
+"group.delete" = "删除分组";
+"group.deleteResult" = "删除结果";
+"group.deleteBothMessage" = "删除「%@」后：\n• %d个原文件\n• %d个脱敏文件\n将全部移至默认分组";
+"group.cannotDeleteDefault" = "默认分组无法删除";
+"group.cannotGetDefault" = "无法获取默认分组";
+"group.deletedEmpty" = "已删除空分组";
+"group.deletedWithOriginals" = "已删除分组，%d个原文件已移至默认分组";
+"group.deletedWithRedacted" = "已删除分组，%d个脱敏文件已移至默认分组";
+"group.deletedWithBoth" = "已删除分组，%d个原文件和%d个脱敏文件已移至默认分组";
+"group.deleteFailed" = "删除失败，请重试";
+
+/* Icons */
+"icon.folder" = "文件夹";
+"icon.briefcase" = "公文包";
+"icon.house" = "房子";
+"icon.star" = "星星";
+"icon.heart" = "心形";
+"icon.camera" = "相机";
+"icon.doc" = "文档";
+"icon.photo" = "照片";
+"icon.film" = "影片";
+"icon.book" = "书籍";
+
+/* Common - Additional */
+"common.create" = "创建";
+"common.error" = "错误";
+"common.delete" = "删除";
+
+/* Import */
+"import.title" = "导入";
+"import.loading" = "正在导入...";
+"import.failed" = "导入失败";
+"import.empty.title" = "零网隐私保护";
+"import.empty.description" = "文件加密存储，只有你能访问";
+"import.selectPhotos" = "选择图片";
+"import.selectPDF" = "选择 PDF";
+"import.maxSelection" = "最多选择10张";
+
+/* PDF */
+"pdf.preview" = "PDF预览 (%d页)";
+"pdf.loadFailed" = "无法加载PDF";
+
+/* Store - Additional */
+"store.loadFailed" = "加载产品失败: %@";
+"store.restoreFailed" = "恢复购买失败: %@";
+
+/* Drawing */
+"drawing.mode" = "绘制模式";
+"drawing.effect" = "脱敏效果";
+"drawing.clearAll" = "清空";
+"drawing.commonEffects" = "常用效果";
+"drawing.customCover" = "自定义遮盖";
+"drawing.whiteCover" = "白色遮盖";
+"drawing.redCover" = "红色遮盖";
+"drawing.selectEffect" = "选择脱敏效果";
+
+/* File */
+"file.original" = "原文件";
+
+/* Tab Bar */
+"tab.import" = "导入";
+"tab.redacted" = "脱敏文件";
+"tab.settings" = "设置";
+
+/* Editor - Additional */
+"editor.imageRedact" = "图片脱敏";
+"editor.applyRedact" = "应用脱敏";
+"editor.hideToolbar" = "隐藏工具栏";
+"editor.showToolbar" = "显示工具栏";
+
+/* Common - Loading */
+"common.loading" = "加载中...";
+
+/* Password */
+"password.strength" = "密码强度";
+"password.strength.weak" = "弱";
+"password.strength.fair" = "中等";
+"password.strength.good" = "强";
+"password.strength.strong" = "非常强";
+"password.requirement.minChars" = "至少6个字符";
+"password.requirement.recommended" = "建议12+字符更安全";
+"password.requirement.alphanumeric" = "包含字母和数字";
+
+/* Security Errors */
+"security.error.invalidPassword" = "密码格式无效";
+"security.error.passwordTooShort" = "密码至少需要6个字符";
+"security.error.passwordMismatch" = "两次输入的密码不一致";
+"security.error.keychainError" = "密码存储失败 (错误代码: %d)";
+"security.error.biometricNotAvailable" = "生物识别不可用";
+"security.error.biometricFailed" = "生物识别验证失败";
+"security.error.tooManyAttemptsWithTime" = "尝试次数过多，请在 %@ 后重试";
+"security.error.tooManyAttempts" = "尝试次数过多，请稍后重试";
+"security.error.noPasswordSet" = "未设置密码";
+"security.error.oldPasswordIncorrect" = "原密码不正确";
+
+/* Drawing Mode */
+"drawing.mode.freehand" = "涂抹";
+"drawing.mode.rectangle" = "矩形";
+
+/* File Types */
+"fileType.image" = "图片";
+"fileType.pdf" = "PDF";
+"fileType.unknown" = "未知";
+
+/* Sensitive Types */
+"sensitiveType.idCard" = "身份证";
+"sensitiveType.bankCard" = "银行卡";
+"sensitiveType.phone" = "手机号";
+"sensitiveType.name" = "姓名";
+"sensitiveType.address" = "地址";
+"sensitiveType.email" = "邮箱";
+"sensitiveType.plate" = "车牌";
+"sensitiveType.manual" = "手动选择";
+"sensitiveType.unknown" = "未知";
+
+/* Redaction Effects */
+"redactionEffect.mosaic" = "马赛克";
+"redactionEffect.blur" = "模糊";
+"redactionEffect.solidBlack" = "纯黑遮盖";
+"redactionEffect.rectangle" = "矩形遮盖";
+
+/* Crypto Errors */
+"crypto.error.encryptionFailed" = "数据加密失败";
+"crypto.error.decryptionFailed" = "数据解密失败，文件可能已损坏或密码错误";
+"crypto.error.keyGenerationFailed" = "加密密钥生成失败";
+"crypto.error.invalidData" = "数据格式无效";
+
+/* Recognition Errors */
+"recognition.error.imageConversionFailed" = "图像格式转换失败";
+"recognition.error.noTextFound" = "未检测到文字内容";
+"recognition.error.recognitionFailed" = "文字识别失败：%@";
+"recognition.error.noSensitiveInfo" = "未发现敏感信息";
+
+/* Editor Errors */
+"editor.error.unsupportedType" = "不支持的文件类型";
+"editor.error.noOriginalFile" = "找不到原文件数据";
+"editor.error.decryptionFailed" = "解密失败，请检查密码";
+
+/* Import Errors */
+"import.error.loadPhotoFailed" = "从相册加载照片失败";
+"import.error.unsupportedFormat" = "不支持的图片格式";
+"import.error.fileAccessFailed" = "无法访问文件，请检查权限";
+"import.error.pdfLoadFailed" = "PDF文件加载失败";
+"import.error.createThumbnailFailed" = "缩略图创建失败";
+"import.error.saveFailed" = "文件保存失败";
+
+/* Authentication */
+"auth.enterPassword" = "请输入密码";
+"auth.wrongPassword" = "密码错误，还剩 %d 次尝试机会";
+"auth.checkPassword" = "请检查密码输入";
+
+/* Common - Additional */
+"common.calculating" = "正在计算...";

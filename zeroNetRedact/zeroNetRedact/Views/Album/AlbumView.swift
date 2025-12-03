@@ -56,7 +56,7 @@ struct AlbumView: View {
                     }
                 }
             }
-            .navigationTitle("脱敏文件")
+            .navigationTitle(NSLocalizedString("album.title", comment: ""))
             .navigationBarTitleDisplayMode(.large)
             .fullScreenCover(item: $previewImage) { image in
                 ImagePreviewView(image: image)
@@ -92,7 +92,7 @@ struct AlbumView: View {
 
             // 统计信息
             VStack(alignment: .leading, spacing: 4) {
-                Text("已安全保护")
+                Text(NSLocalizedString("album.secured", comment: ""))
                     .font(.subheadline)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
 
@@ -101,7 +101,7 @@ struct AlbumView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(DesignSystem.Colors.textPrimary)
-                    Text("个文件")
+                    Text(NSLocalizedString("album.files", comment: ""))
                         .font(.subheadline)
                         .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
@@ -176,7 +176,7 @@ struct AlbumView: View {
                 }
 
                 // 标题
-                Text("还没有脱敏文件")
+                Text(NSLocalizedString("album.empty", comment: ""))
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(DesignSystem.Colors.textPrimary)
@@ -259,7 +259,9 @@ struct StepIndicator: View {
     var body: some View {
         HStack(spacing: 0) {
             // 步骤 1
-            stepItem(number: "1", icon: "square.and.arrow.down", title: "导入")
+            stepItem(
+                number: "1", icon: "square.and.arrow.down",
+                title: NSLocalizedString("album.step.import", comment: ""))
 
             // 连接线
             Rectangle()
@@ -268,7 +270,9 @@ struct StepIndicator: View {
                 .frame(maxWidth: .infinity)
 
             // 步骤 2
-            stepItem(number: "2", icon: "hand.draw", title: "涂抹")
+            stepItem(
+                number: "2", icon: "hand.draw",
+                title: NSLocalizedString("album.step.redact", comment: ""))
 
             // 连接线
             Rectangle()
@@ -277,7 +281,9 @@ struct StepIndicator: View {
                 .frame(maxWidth: .infinity)
 
             // 步骤 3
-            stepItem(number: "3", icon: "checkmark.circle", title: "完成")
+            stepItem(
+                number: "3", icon: "checkmark.circle",
+                title: NSLocalizedString("album.step.done", comment: ""))
         }
         .padding(.vertical, DesignSystem.Spacing.lg)
         .padding(.horizontal, DesignSystem.Spacing.md)
@@ -364,7 +370,7 @@ struct RedactedFileGridItem: View {
                                         )
                                         .font(.system(size: 28, weight: .medium))
                                         .foregroundStyle(DesignSystem.Gradients.success)
-                                        Text("已脱敏")
+                                        Text(NSLocalizedString("album.redacted", comment: ""))
                                             .font(.caption2)
                                             .foregroundColor(DesignSystem.Colors.successGreen)
                                     }
@@ -383,7 +389,7 @@ struct RedactedFileGridItem: View {
 
             // 文件信息
             VStack(spacing: 2) {
-                Text("已脱敏")
+                Text(NSLocalizedString("album.redacted", comment: ""))
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(DesignSystem.Colors.successGreen)
@@ -491,7 +497,7 @@ struct RedactedFileDetailView: View {
         NavigationView {
             VStack(spacing: 20) {
                 if isLoading {
-                    ProgressView("加载中...")
+                    ProgressView(NSLocalizedString("editor.loading", comment: ""))
                         .frame(maxWidth: .infinity, maxHeight: 300)
                 } else if redactedFile.fileType == .pdf && pdfDocument != nil {
                     VStack(spacing: 12) {
@@ -506,9 +512,12 @@ struct RedactedFileDetailView: View {
                         Button {
                             showPDFViewer = true
                         } label: {
-                            Label("查看完整PDF", systemImage: "doc.text.magnifyingglass")
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                            Label(
+                                NSLocalizedString("album.viewFullPDF", comment: ""),
+                                systemImage: "doc.text.magnifyingglass"
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding()
                         }
                         .buttonStyle(GradientButtonStyle())
                     }
@@ -530,7 +539,7 @@ struct RedactedFileDetailView: View {
                                 )
                                 .font(.largeTitle)
                                 .foregroundColor(.gray)
-                                Text("预览不可用")
+                                Text(NSLocalizedString("album.previewUnavailable", comment: ""))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -538,9 +547,17 @@ struct RedactedFileDetailView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    InfoRow(label: "导出时间", value: redactedFile.formattedExportedAt)
-                    InfoRow(label: "文件大小", value: redactedFile.formattedFileSize)
-                    InfoRow(label: "文件类型", value: redactedFile.fileType == .image ? "图片" : "PDF")
+                    InfoRow(
+                        label: NSLocalizedString("album.exportTime", comment: ""),
+                        value: redactedFile.formattedExportedAt)
+                    InfoRow(
+                        label: NSLocalizedString("album.fileSize", comment: ""),
+                        value: redactedFile.formattedFileSize)
+                    InfoRow(
+                        label: NSLocalizedString("album.fileType", comment: ""),
+                        value: redactedFile.fileType == .image
+                            ? NSLocalizedString("album.fileType.image", comment: "")
+                            : NSLocalizedString("album.fileType.pdf", comment: ""))
                 }
                 .cardStyle()
 
@@ -549,19 +566,22 @@ struct RedactedFileDetailView: View {
                 Button(action: {
                     showShareSheet = true
                 }) {
-                    Label("分享文件", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
-                        .padding()
+                    Label(
+                        NSLocalizedString("album.shareFile", comment: ""),
+                        systemImage: "square.and.arrow.up"
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding()
                 }
                 .buttonStyle(GradientButtonStyle())
                 .padding(.horizontal)
             }
             .padding()
-            .navigationTitle("脱敏文件")
+            .navigationTitle(NSLocalizedString("album.redacted", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(NSLocalizedString("common.close", comment: "")) {
                         dismiss()
                     }
                 }
@@ -573,9 +593,12 @@ struct RedactedFileDetailView: View {
                         HStack(spacing: 4) {
                             Image(systemName: currentGroup?.iconName ?? "folder.fill")
                                 .font(.callout)
-                            Text(currentGroup?.name ?? "默认分组")
-                                .font(.callout)
-                                .fontWeight(.medium)
+                            Text(
+                                currentGroup?.name
+                                    ?? NSLocalizedString("group.default", comment: "")
+                            )
+                            .font(.callout)
+                            .fontWeight(.medium)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -809,7 +832,7 @@ struct RedactedFileGroupPicker: View {
                                 )
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(group.name ?? "未命名分组")
+                                Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
                                     .font(.body)
                                     .fontWeight(.medium)
                                     .foregroundColor(DesignSystem.Colors.textPrimary)
@@ -817,11 +840,15 @@ struct RedactedFileGroupPicker: View {
                                 let fileCount = GroupManager.shared.getRedactedFiles(in: group)
                                     .count
                                 if fileCount > 0 {
-                                    Text("\(fileCount)个脱敏文件")
-                                        .font(.caption)
-                                        .foregroundColor(DesignSystem.Colors.textSecondary)
+                                    Text(
+                                        String(
+                                            format: NSLocalizedString(
+                                                "album.redactedCount", comment: ""), fileCount)
+                                    )
+                                    .font(.caption)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
                                 } else {
-                                    Text("空分组")
+                                    Text(NSLocalizedString("group.empty", comment: ""))
                                         .font(.caption)
                                         .foregroundColor(DesignSystem.Colors.textSecondary)
                                 }
@@ -839,11 +866,11 @@ struct RedactedFileGroupPicker: View {
                     .buttonStyle(.plain)
                 }
             }
-            .navigationTitle("移动到分组")
+            .navigationTitle(NSLocalizedString("group.moveTo", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("取消") {
+                    Button(NSLocalizedString("common.cancel", comment: "")) {
                         dismiss()
                     }
                 }

@@ -2,7 +2,18 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    @ObservedObject private var appState = AppState.shared
+    @ObservedObject private var usageTracker = UsageTracker.shared
+
     @State private var showAboutView = false
+    @State private var showPremiumView = false
+
+    // 审核模式相关
+    @State private var iconTapCount = 0
+    @State private var showReviewCodeInput = false
+    @State private var reviewCodeInput = ""
+    @State private var showReviewModeSuccess = false
+    @State private var showReviewModeError = false
 
     var body: some View {
         NavigationView {
@@ -11,17 +22,21 @@ struct SettingsView: View {
                     // MARK: - 品牌卡片
                     brandCard
 
+                    // MARK: - 付费状态
+                    premiumSection
+                        .padding(.top, DesignSystem.Spacing.md)
+
                     // MARK: - 安全设置
-                    SectionHeader(title: NSLocalizedString("settings.security", comment: ""))
                     securitySection
+                        .padding(.top, DesignSystem.Spacing.md)
 
                     // MARK: - 关于
-                    SectionHeader(title: NSLocalizedString("settings.about", comment: ""))
                     aboutSection
+                        .padding(.top, DesignSystem.Spacing.md)
 
                     // MARK: - 危险区域
-                    SectionHeader(title: NSLocalizedString("settings.data", comment: ""))
                     dangerSection
+                        .padding(.top, DesignSystem.Spacing.md)
 
                     Spacer(minLength: 40)
                 }
@@ -71,8 +86,52 @@ struct SettingsView: View {
             .sheet(isPresented: $viewModel.showChangePassword) {
                 ChangePasswordSheet()
             }
+            .sheet(isPresented: $showPremiumView) {
+                PremiumView()
+            }
+            // 审核模式输入框
+            .alert(
+                NSLocalizedString("settings.reviewMode.title", comment: ""),
+                isPresented: $showReviewCodeInput
+            ) {
+                TextField(
+                    NSLocalizedString("settings.reviewMode.placeholder", comment: ""),
+                    text: $reviewCodeInput)
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {
+                    reviewCodeInput = ""
+                }
+                Button(NSLocalizedString("common.confirm", comment: "")) {
+                    if appState.activateReviewMode(with: reviewCodeInput) {
+                        showReviewModeSuccess = true
+                    } else {
+                        showReviewModeError = true
+                    }
+                    reviewCodeInput = ""
+                }
+            } message: {
+                Text(NSLocalizedString("settings.reviewMode.message", comment: ""))
+            }
+            // 审核模式激活成功
+            .alert(
+                NSLocalizedString("settings.reviewMode.success.title", comment: ""),
+                isPresented: $showReviewModeSuccess
+            ) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("settings.reviewMode.success.message", comment: ""))
+            }
+            // 审核模式激活失败
+            .alert(
+                NSLocalizedString("settings.reviewMode.error.title", comment: ""),
+                isPresented: $showReviewModeError
+            ) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("settings.reviewMode.error.message", comment: ""))
+            }
             .onAppear {
                 viewModel.loadStorageInfo()
+                usageTracker.refresh()
             }
         }
     }
@@ -83,20 +142,57 @@ struct SettingsView: View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             // App 图标和名称
             HStack(spacing: DesignSystem.Spacing.md) {
-                // App 图标 - 使用真实的 App Icon
+                // App 图标 - 使用真实的 App Icon (点击7次触发审核模式)
                 Image("AppIconImage")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 60, height: 60)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .shadow(
-                        color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                        color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4
+                    )
+                    .onTapGesture {
+                        iconTapCount += 1
+                        if iconTapCount >= 7 {
+                            iconTapCount = 0
+                            showReviewCodeInput = true
+                        }
+                        // 2秒后重置计数
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            if iconTapCount < 7 {
+                                iconTapCount = 0
+                            }
+                        }
+                    }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("ZeroNet Redact")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                    HStack(spacing: 6) {
+                        Text("ZeroNet Redact")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                        // 已购买或审核模式徽章
+                        if appState.isPremium {
+                            Text("Pro")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(DesignSystem.Gradients.primary)
+                                .cornerRadius(4)
+                        } else if appState.isReviewModeActive {
+                            Text("Review")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(DesignSystem.Colors.warningOrange)
+                                .cornerRadius(4)
+                        }
+                    }
 
                     Text("v1.0.0")
                         .font(.subheadline)
@@ -160,6 +256,149 @@ struct SettingsView: View {
         }
         .cardStyle()
         .padding(.top, DesignSystem.Spacing.lg)
+    }
+
+    // MARK: - 付费状态
+
+    private var premiumSection: some View {
+        VStack(spacing: 0) {
+            if appState.isPremium || appState.isReviewModeActive {
+                // 已解锁状态
+                HStack(spacing: DesignSystem.Spacing.md) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(DesignSystem.Colors.successGreen)
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(NSLocalizedString("settings.premium.unlocked", comment: ""))
+                            .font(.body)
+                            .fontWeight(.medium)
+                            .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                        Text(NSLocalizedString("settings.premium.unlocked.desc", comment: ""))
+                            .font(.caption)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "infinity")
+                        .font(.title2)
+                        .foregroundColor(DesignSystem.Colors.successGreen)
+                }
+                .padding(.vertical, DesignSystem.Spacing.md)
+                .padding(.horizontal, DesignSystem.Spacing.lg)
+            } else {
+                // 免费用户状态
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    // 今日剩余配额
+                    HStack(spacing: DesignSystem.Spacing.md) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(DesignSystem.Colors.primaryBlue)
+                            )
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(NSLocalizedString("settings.premium.todayQuota", comment: ""))
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                            HStack(spacing: 12) {
+                                // 图片配额 (已使用/限制)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "photo.fill")
+                                        .font(.caption)
+                                        .foregroundColor(DesignSystem.Colors.primaryBlue)
+                                    Text(
+                                        "\(usageTracker.usedImageExports)/\(UsageTracker.dailyImageLimit)"
+                                    )
+                                    .font(.caption)
+                                    .foregroundColor(
+                                        usageTracker.usedImageExports
+                                            >= UsageTracker.dailyImageLimit
+                                            ? DesignSystem.Colors.dangerRed
+                                            : DesignSystem.Colors.textSecondary)
+                                }
+
+                                // 文档配额 (已使用/限制)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "doc.fill")
+                                        .font(.caption)
+                                        .foregroundColor(DesignSystem.Colors.warningOrange)
+                                    Text(
+                                        "\(usageTracker.usedDocExports)/\(UsageTracker.dailyDocLimit)"
+                                    )
+                                    .font(.caption)
+                                    .foregroundColor(
+                                        usageTracker.usedDocExports >= UsageTracker.dailyDocLimit
+                                            ? DesignSystem.Colors.dangerRed
+                                            : DesignSystem.Colors.textSecondary)
+                                }
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.vertical, DesignSystem.Spacing.sm)
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+
+                    Divider()
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+
+                    // 升级按钮
+                    Button {
+                        showPremiumView = true
+                    } label: {
+                        HStack(spacing: DesignSystem.Spacing.md) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(DesignSystem.Gradients.primary)
+                                )
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(NSLocalizedString("settings.premium.upgrade", comment: ""))
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                                Text(
+                                    NSLocalizedString("settings.premium.upgrade.desc", comment: "")
+                                )
+                                .font(.caption)
+                                .foregroundColor(DesignSystem.Colors.textSecondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(DesignSystem.Colors.textTertiary)
+                        }
+                        .padding(.vertical, DesignSystem.Spacing.sm)
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .background(DesignSystem.Colors.backgroundCard)
+        .cornerRadius(DesignSystem.CornerRadius.large)
+        .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.04), radius: 1, x: 0, y: 1)
     }
 
     // MARK: - 安全设置

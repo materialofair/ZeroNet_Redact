@@ -37,10 +37,10 @@ enum RedactionEffect: Equatable, Hashable {
     /// 显示名称
     var displayName: String {
         switch self {
-        case .mosaic: return "马赛克"
-        case .blur: return "模糊"
-        case .rectangle: return "矩形遮盖"
-        case .solidBlack: return "纯黑遮盖"
+        case .mosaic: return NSLocalizedString("effect.mosaic", comment: "")
+        case .blur: return NSLocalizedString("effect.blur", comment: "")
+        case .rectangle: return NSLocalizedString("effect.rectangle", comment: "")
+        case .solidBlack: return NSLocalizedString("effect.solidBlack", comment: "")
         }
     }
 

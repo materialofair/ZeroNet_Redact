@@ -265,11 +265,11 @@ enum RecognitionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidImageData:
-            return "无效的图片数据"
+            return NSLocalizedString("recognition.error.invalidImageData", comment: "")
         case .invalidPDFData:
-            return "无效的PDF数据"
+            return NSLocalizedString("recognition.error.invalidPDFData", comment: "")
         case .recognitionFailed:
-            return "文字识别失败"
+            return NSLocalizedString("recognition.error.recognitionFailed", comment: "")
         }
     }
 }

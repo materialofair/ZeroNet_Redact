@@ -16,7 +16,7 @@ struct ImportButtonBar: View {
             // 导入图片按钮
             ActionButton(
                 icon: "photo.on.rectangle.angled",
-                title: "导入图片",
+                title: NSLocalizedString("import.selectPhotos", comment: ""),
                 gradient: DesignSystem.Gradients.primary,
                 action: onPhotosImport
             )
@@ -24,7 +24,7 @@ struct ImportButtonBar: View {
             // 导入PDF按钮
             ActionButton(
                 icon: "doc.text.fill",
-                title: "导入PDF",
+                title: NSLocalizedString("import.selectPDF", comment: ""),
                 gradient: DesignSystem.Gradients.pdfType,
                 action: onDocumentImport
             )

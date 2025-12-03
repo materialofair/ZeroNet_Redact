@@ -18,11 +18,11 @@ enum SensitiveType: String, Codable {
     /// 显示名称
     var displayName: String {
         switch self {
-        case .phoneNumber: return "手机号"
-        case .email: return "邮箱"
-        case .idCard: return "身份证"
-        case .bankCard: return "银行卡"
-        case .custom: return "自定义"
+        case .phoneNumber: return NSLocalizedString("sensitiveType.phoneNumber", comment: "")
+        case .email: return NSLocalizedString("sensitiveType.email", comment: "")
+        case .idCard: return NSLocalizedString("sensitiveType.idCard", comment: "")
+        case .bankCard: return NSLocalizedString("sensitiveType.bankCard", comment: "")
+        case .custom: return NSLocalizedString("sensitiveType.custom", comment: "")
         }
     }
 

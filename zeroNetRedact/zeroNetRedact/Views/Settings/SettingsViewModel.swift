@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 class SettingsViewModel: ObservableObject {
-    @Published var usedStorageText = "计算中..."
+    @Published var usedStorageText = NSLocalizedString("common.calculating", comment: "")
     @Published var fileCount = 0
     @Published var autoLock = false
     @Published var lockTimeout = 300

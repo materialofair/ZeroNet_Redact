@@ -67,12 +67,12 @@ struct ImportEmptyStateView: View {
     /// 标题和描述视图
     private var titleView: some View {
         VStack(spacing: 8) {
-            Text("零网隐私保护")
+            Text(NSLocalizedString("import.empty.title", comment: ""))
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(DesignSystem.Colors.textPrimary)
 
-            Text("文件加密存储,只有你能访问")
+            Text(NSLocalizedString("import.empty.description", comment: ""))
                 .font(.subheadline)
                 .foregroundColor(DesignSystem.Colors.textSecondary)
         }
@@ -84,7 +84,7 @@ struct ImportEmptyStateView: View {
             // 从相册导入图片
             ImportButton(
                 icon: "photo.on.rectangle.angled",
-                title: "选择图片",
+                title: NSLocalizedString("import.selectPhotos", comment: ""),
                 iconColor: DesignSystem.Colors.primaryBlue,
                 action: onPhotosImport
             )
@@ -92,7 +92,7 @@ struct ImportEmptyStateView: View {
             // 导入PDF文件
             ImportButton(
                 icon: "doc.text.fill",
-                title: "选择 PDF",
+                title: NSLocalizedString("import.selectPDF", comment: ""),
                 iconColor: DesignSystem.Colors.warningOrange,
                 action: onDocumentImport
             )

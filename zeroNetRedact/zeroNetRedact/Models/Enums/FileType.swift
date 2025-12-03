@@ -18,8 +18,8 @@ enum FileType: String, Codable {
     /// 显示名称
     var displayName: String {
         switch self {
-        case .image: return "图片"
-        case .pdf: return "PDF文档"
+        case .image: return NSLocalizedString("fileType.image", comment: "")
+        case .pdf: return NSLocalizedString("fileType.pdf", comment: "")
         }
     }
 

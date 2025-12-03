@@ -46,7 +46,7 @@ class BiometricAuthManager {
         let context = LAContext()
 
         // 设置取消按钮文本
-        context.localizedCancelTitle = "使用密码"
+        context.localizedCancelTitle = NSLocalizedString("biometric.usePassword", comment: "")
 
         // 检查是否可用
         var error: NSError?
@@ -90,8 +90,8 @@ class BiometricAuthManager {
         let context = LAContext()
 
         // 设置取消按钮文本
-        context.localizedCancelTitle = "取消"
-        context.localizedFallbackTitle = "使用密码"
+        context.localizedCancelTitle = NSLocalizedString("common.cancel", comment: "")
+        context.localizedFallbackTitle = NSLocalizedString("biometric.usePassword", comment: "")
 
         // 检查是否可用（包括密码作为降级选项）
         var error: NSError?

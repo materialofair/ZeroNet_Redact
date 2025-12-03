@@ -37,7 +37,7 @@ struct DrawingToolbar: View {
     /// 绘制模式选择
     private var drawingModeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("绘制模式")
+            Text(NSLocalizedString("drawing.mode", comment: ""))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -58,7 +58,7 @@ struct DrawingToolbar: View {
     /// 脱敏效果选择
     private var effectSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("脱敏效果")
+            Text(NSLocalizedString("drawing.effect", comment: ""))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -83,7 +83,7 @@ struct DrawingToolbar: View {
         HStack(spacing: 16) {
             ActionButton(
                 icon: "arrow.uturn.backward",
-                label: "撤销",
+                label: NSLocalizedString("action.undoStroke", comment: ""),
                 isEnabled: drawingTool.canUndo
             ) {
                 drawingTool.undoLast()
@@ -91,7 +91,7 @@ struct DrawingToolbar: View {
 
             ActionButton(
                 icon: "trash",
-                label: "清空",
+                label: NSLocalizedString("drawing.clearAll", comment: ""),
                 isEnabled: drawingTool.canUndo
             ) {
                 drawingTool.clearAll()
@@ -114,7 +114,7 @@ private struct ModeButton: View {
             VStack(spacing: 4) {
                 Image(systemName: mode.icon)
                     .font(.title2)
-                Text(mode.rawValue)
+                Text(mode.displayName)
                     .font(.caption)
             }
             .frame(maxWidth: .infinity)
@@ -159,26 +159,28 @@ struct EffectPickerSheet: View {
     var body: some View {
         NavigationView {
             List {
-                Section("常用效果") {
+                Section(NSLocalizedString("drawing.commonEffects", comment: "")) {
                     effectRow(.solidBlack, isSelected: drawingTool.currentEffect == .solidBlack)
                     effectRow(.mosaic(pixelSize: 20), isSelected: isMosaicSelected)
                     effectRow(.blur(radius: 10), isSelected: isBlurSelected)
                 }
 
-                Section("自定义遮盖") {
+                Section(NSLocalizedString("drawing.customCover", comment: "")) {
                     effectRow(
-                        .rectangle(color: .white, opacity: 1.0), label: "白色遮盖",
+                        .rectangle(color: .white, opacity: 1.0),
+                        label: NSLocalizedString("drawing.whiteCover", comment: ""),
                         isSelected: isWhiteRectSelected)
                     effectRow(
-                        .rectangle(color: .red, opacity: 0.8), label: "红色遮盖",
+                        .rectangle(color: .red, opacity: 0.8),
+                        label: NSLocalizedString("drawing.redCover", comment: ""),
                         isSelected: isRedRectSelected)
                 }
             }
-            .navigationTitle("选择脱敏效果")
+            .navigationTitle(NSLocalizedString("drawing.selectEffect", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(NSLocalizedString("common.done", comment: "")) {
                         isPresented = false
                     }
                 }

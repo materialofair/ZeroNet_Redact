@@ -16,9 +16,9 @@ struct PhotosPickerView: View {
                 Image(systemName: "photo.on.rectangle.angled")
                     .font(.system(size: 60))
                     .foregroundColor(.blue)
-                Text("选择照片")
+                Text(NSLocalizedString("import.selectPhotos", comment: ""))
                     .font(.headline)
-                Text("最多选择10张")
+                Text(NSLocalizedString("import.maxSelection", comment: ""))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

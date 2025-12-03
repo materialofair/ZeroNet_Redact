@@ -17,6 +17,12 @@ class AppState: ObservableObject {
     /// 锁定状态
     @Published var isLocked = true
 
+    /// 是否已购买高级版
+    @Published var isPremium = false
+
+    /// 审核模式是否激活
+    @Published var isReviewMode = false
+
     // MARK: - AppStorage Properties
 
     /// 是否启用密码保护
@@ -30,6 +36,17 @@ class AppState: ObservableObject {
 
     /// 最后活跃时间
     @AppStorage("lastActiveTimestamp") private var lastActiveTimestamp: Double = 0
+
+    /// 审核模式是否已激活（持久化）
+    @AppStorage("reviewModeActivated") private var reviewModeActivated: Bool = false
+
+    // MARK: - Constants
+
+    /// 审核模式有效期: 2026年1月1日 00:00:00 UTC
+    static let reviewModeExpiryDate = Date(timeIntervalSince1970: 1_767_225_600)
+
+    /// 审核密码
+    static let reviewCode = "REVIEW2026"
 
     // MARK: - Computed Properties
 
@@ -59,6 +76,9 @@ class AppState: ObservableObject {
             isLocked = false
             isAuthenticated = true
         }
+
+        // 检查审核模式状态
+        checkReviewModeStatus()
     }
 
     // MARK: - Public Methods
@@ -88,5 +108,47 @@ class AppState: ObservableObject {
     func reset() {
         isAuthenticated = false
         isLocked = true
+    }
+
+    // MARK: - Premium & Review Mode
+
+    /// 检查是否有无限使用权限（付费用户或审核模式）
+    var hasUnlimitedAccess: Bool {
+        return isPremium || isReviewModeActive
+    }
+
+    /// 审核模式是否有效（已激活且未过期）
+    var isReviewModeActive: Bool {
+        return reviewModeActivated && Date() < Self.reviewModeExpiryDate
+    }
+
+    /// 激活审核模式
+    /// - Parameter code: 审核密码
+    /// - Returns: 是否激活成功
+    @discardableResult
+    func activateReviewMode(with code: String) -> Bool {
+        if code == Self.reviewCode && Date() < Self.reviewModeExpiryDate {
+            reviewModeActivated = true
+            isReviewMode = true
+            print("✅ AppState: 审核模式已激活，有效期至 \(Self.reviewModeExpiryDate)")
+            return true
+        }
+        print("❌ AppState: 审核模式激活失败 - 密码错误或已过期")
+        return false
+    }
+
+    /// 检查并更新审核模式状态
+    private func checkReviewModeStatus() {
+        if reviewModeActivated {
+            if Date() < Self.reviewModeExpiryDate {
+                isReviewMode = true
+                print("✅ AppState: 审核模式有效")
+            } else {
+                // 已过期，清除状态
+                reviewModeActivated = false
+                isReviewMode = false
+                print("⚠️ AppState: 审核模式已过期")
+            }
+        }
     }
 }

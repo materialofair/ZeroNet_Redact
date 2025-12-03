@@ -151,3 +151,262 @@
 "settings.disablePassword.title" = "Disable Password Protection";
 "settings.disablePassword.confirm" = "Disable";
 "settings.disablePassword.message" = "After disabling password protection, the app will no longer require a password to unlock.";
+
+/* Settings - Premium */
+"settings.premium" = "Premium";
+"settings.premium.unlocked" = "Pro Unlocked";
+"settings.premium.unlocked.desc" = "Unlimited redaction enabled";
+"settings.premium.todayQuota" = "Today's Quota";
+"settings.premium.upgrade" = "Upgrade to Pro";
+"settings.premium.upgrade.desc" = "Unlock unlimited redaction";
+
+/* Settings - Review Mode */
+"settings.reviewMode.title" = "Review Mode";
+"settings.reviewMode.placeholder" = "Enter review code";
+"settings.reviewMode.message" = "Enter the review code to activate review mode.";
+"settings.reviewMode.success.title" = "Success";
+"settings.reviewMode.success.message" = "Review mode activated. You now have unlimited access.";
+"settings.reviewMode.error.title" = "Failed";
+"settings.reviewMode.error.message" = "Invalid review code or expired.";
+
+/* Premium View */
+"premium.title" = "Premium";
+"premium.header.title" = "Unlock Unlimited";
+"premium.header.subtitle" = "Remove daily limits and redact as many files as you want";
+"premium.feature.unlimitedImages" = "Unlimited Image Redaction";
+"premium.feature.unlimitedImages.desc" = "No daily limit on images";
+"premium.feature.unlimitedDocs" = "Unlimited Document Redaction";
+"premium.feature.unlimitedDocs.desc" = "No daily limit on PDFs";
+"premium.feature.lifetime" = "Lifetime Access";
+"premium.feature.lifetime.desc" = "One-time purchase, forever yours";
+"premium.feature.support" = "Support Development";
+"premium.feature.support.desc" = "Help us build better privacy tools";
+"premium.purchase.oneTime" = "One-time purchase";
+"premium.purchase.retry" = "Retry Loading";
+"premium.alreadyPurchased" = "Already Purchased";
+"premium.restore" = "Restore Purchase";
+"premium.restore.notFound" = "No previous purchase found";
+"premium.error.title" = "Purchase Failed";
+"premium.success.title" = "Purchase Successful";
+"premium.success.message" = "Thank you! You now have unlimited access.";
+
+/* Store */
+"store.product.premium.name" = "Unlimited Redaction";
+
+/* Usage */
+"usage.status.format" = "Images: %d/%d, Docs: %d/%d";
+"usage.limit.title" = "Daily Limit Reached";
+"usage.limit.message" = "Free users can export up to 3 images and 3 documents per day. Upgrade to Pro for unlimited access.";
+"usage.limit.upgrade" = "Upgrade Now";
+
+/* Common */
+"common.ok" = "OK";
+"common.empty" = "Empty";
+
+/* Editor - Additional */
+"editor.aiDetect" = "AI Detect";
+"editor.export" = "Export";
+"editor.detectedRegions" = "Detected %d sensitive areas";
+"editor.pdfPlaceholder" = "PDF Editor - Coming Soon";
+"editor.loadFileFailed" = "Failed to load file: %@";
+"editor.detectFailed" = "Detection failed: %@";
+"editor.exportFailed" = "Export failed: %@";
+
+/* Album */
+"album.title" = "Redacted Files";
+"album.secured" = "Securely Protected";
+"album.files" = "files";
+"album.empty" = "No redacted files yet";
+"album.redacted" = "Redacted";
+"album.previewUnavailable" = "Preview unavailable";
+"album.redactedCount" = "%d redacted files";
+"album.viewFullPDF" = "View Full PDF";
+"album.shareFile" = "Share File";
+"album.fileType" = "File Type";
+"album.fileType.image" = "Image";
+"album.fileType.pdf" = "PDF";
+"album.exportTime" = "Export Time";
+"album.fileSize" = "File Size";
+"album.step.import" = "Import";
+"album.step.redact" = "Redact";
+"album.step.done" = "Done";
+
+/* Authentication */
+"auth.welcome" = "Welcome Back";
+"auth.useBiometric" = "Use %@";
+"auth.remainingAttempts" = "Remaining attempts: %d";
+"auth.unlock" = "Unlock";
+
+/* Biometric */
+"biometric.usePassword" = "Use Password";
+
+/* Group - Additional */
+"group.empty" = "Empty group";
+"group.fileCount" = "%d files";
+"group.system" = "System Groups";
+"group.custom" = "Custom Groups";
+"group.deleteConfirm" = "Delete \"%@\"?";
+"group.deleteOriginalMessage" = "After deleting \"%@\", %d original files will be moved to Default Group";
+"group.deleteRedactedMessage" = "After deleting \"%@\", %d redacted files will be moved to Default Group";
+"group.info" = "Group Info";
+"group.icon" = "Icon";
+"group.preview" = "Preview";
+"group.new" = "New Group";
+"group.name" = "Group Name";
+"group.create" = "Create Group";
+"group.nameEmpty" = "Group name cannot be empty";
+"group.createFailed" = "Failed to create group, please try again";
+"group.manage" = "Manage Groups";
+"group.delete" = "Delete Group";
+"group.deleteResult" = "Delete Result";
+"group.deleteBothMessage" = "After deleting \"%@\":\n• %d original files\n• %d redacted files\nwill be moved to Default Group";
+"group.cannotDeleteDefault" = "Default Group cannot be deleted";
+"group.cannotGetDefault" = "Unable to get Default Group";
+"group.deletedEmpty" = "Empty group deleted";
+"group.deletedWithOriginals" = "Group deleted, %d original files moved to Default Group";
+"group.deletedWithRedacted" = "Group deleted, %d redacted files moved to Default Group";
+"group.deletedWithBoth" = "Group deleted, %d original files and %d redacted files moved to Default Group";
+"group.deleteFailed" = "Delete failed, please try again";
+
+/* Icons */
+"icon.folder" = "Folder";
+"icon.briefcase" = "Briefcase";
+"icon.house" = "House";
+"icon.star" = "Star";
+"icon.heart" = "Heart";
+"icon.camera" = "Camera";
+"icon.doc" = "Document";
+"icon.photo" = "Photo";
+"icon.film" = "Film";
+"icon.book" = "Book";
+
+/* Common - Additional */
+"common.create" = "Create";
+"common.error" = "Error";
+"common.delete" = "Delete";
+
+/* Import */
+"import.title" = "Import";
+"import.loading" = "Importing...";
+"import.failed" = "Import Failed";
+"import.empty.title" = "ZeroNet Privacy Protection";
+"import.empty.description" = "Files are encrypted, only you can access";
+"import.selectPhotos" = "Select Photos";
+"import.selectPDF" = "Select PDF";
+"import.maxSelection" = "Select up to 10";
+
+/* PDF */
+"pdf.preview" = "PDF Preview (%d pages)";
+"pdf.loadFailed" = "Failed to load PDF";
+
+/* Store - Additional */
+"store.loadFailed" = "Failed to load products: %@";
+"store.restoreFailed" = "Failed to restore purchase: %@";
+
+/* Drawing */
+"drawing.mode" = "Drawing Mode";
+"drawing.effect" = "Redaction Effect";
+"drawing.clearAll" = "Clear";
+"drawing.commonEffects" = "Common Effects";
+"drawing.customCover" = "Custom Cover";
+"drawing.whiteCover" = "White Cover";
+"drawing.redCover" = "Red Cover";
+"drawing.selectEffect" = "Select Effect";
+
+/* File */
+"file.original" = "Original";
+
+/* Tab Bar */
+"tab.import" = "Import";
+"tab.redacted" = "Redacted";
+"tab.settings" = "Settings";
+
+/* Editor - Additional */
+"editor.imageRedact" = "Image Redaction";
+"editor.applyRedact" = "Apply Redaction";
+"editor.hideToolbar" = "Hide Toolbar";
+"editor.showToolbar" = "Show Toolbar";
+
+/* Common - Loading */
+"common.loading" = "Loading...";
+
+/* Password */
+"password.strength" = "Password Strength";
+"password.strength.weak" = "Weak";
+"password.strength.fair" = "Fair";
+"password.strength.good" = "Good";
+"password.strength.strong" = "Very Strong";
+"password.requirement.minChars" = "At least 6 characters";
+"password.requirement.recommended" = "12+ characters recommended";
+"password.requirement.alphanumeric" = "Contains letters and numbers";
+
+/* Security Errors */
+"security.error.invalidPassword" = "Invalid password format";
+"security.error.passwordTooShort" = "Password must be at least 6 characters";
+"security.error.passwordMismatch" = "Passwords do not match";
+"security.error.keychainError" = "Failed to save password (error code: %d)";
+"security.error.biometricNotAvailable" = "Biometric authentication not available";
+"security.error.biometricFailed" = "Biometric authentication failed";
+"security.error.tooManyAttemptsWithTime" = "Too many attempts, please try again in %@";
+"security.error.tooManyAttempts" = "Too many attempts, please try again later";
+"security.error.noPasswordSet" = "No password set";
+"security.error.oldPasswordIncorrect" = "Current password is incorrect";
+
+/* Drawing Mode */
+"drawing.mode.freehand" = "Freehand";
+"drawing.mode.rectangle" = "Rectangle";
+
+/* File Types */
+"fileType.image" = "Image";
+"fileType.pdf" = "PDF";
+"fileType.unknown" = "Unknown";
+
+/* Sensitive Types */
+"sensitiveType.idCard" = "ID Card";
+"sensitiveType.bankCard" = "Bank Card";
+"sensitiveType.phone" = "Phone";
+"sensitiveType.name" = "Name";
+"sensitiveType.address" = "Address";
+"sensitiveType.email" = "Email";
+"sensitiveType.plate" = "License Plate";
+"sensitiveType.manual" = "Manual";
+"sensitiveType.unknown" = "Unknown";
+
+/* Redaction Effects */
+"redactionEffect.mosaic" = "Mosaic";
+"redactionEffect.blur" = "Blur";
+"redactionEffect.solidBlack" = "Solid Black";
+"redactionEffect.rectangle" = "Rectangle";
+
+/* Crypto Errors */
+"crypto.error.encryptionFailed" = "Data encryption failed";
+"crypto.error.decryptionFailed" = "Data decryption failed, file may be corrupted or password incorrect";
+"crypto.error.keyGenerationFailed" = "Failed to generate encryption key";
+"crypto.error.invalidData" = "Data format invalid";
+
+/* Recognition Errors */
+"recognition.error.imageConversionFailed" = "Failed to convert image format";
+"recognition.error.noTextFound" = "No text detected in image";
+"recognition.error.recognitionFailed" = "Text recognition failed: %@";
+"recognition.error.noSensitiveInfo" = "No sensitive information detected";
+
+/* Editor Errors */
+"editor.error.unsupportedType" = "Unsupported file type";
+"editor.error.noOriginalFile" = "No original file data";
+"editor.error.decryptionFailed" = "Decryption failed, please check your password";
+
+/* Import Errors */
+"import.error.loadPhotoFailed" = "Failed to load photo from album";
+"import.error.unsupportedFormat" = "Unsupported image format";
+"import.error.fileAccessFailed" = "Cannot access file, please check permissions";
+"import.error.pdfLoadFailed" = "Failed to load PDF file";
+"import.error.createThumbnailFailed" = "Failed to create preview";
+"import.error.saveFailed" = "Failed to save file";
+
+/* Authentication */
+"auth.enterPassword" = "Please enter your password";
+"auth.wrongPassword" = "Wrong password, %d attempts remaining";
+"auth.checkPassword" = "Please check your password";
+
+/* Common - Additional */
+"common.calculating" = "Calculating...";

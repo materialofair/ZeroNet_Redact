@@ -49,7 +49,7 @@ class AuthenticationViewModel: ObservableObject {
     /// 验证密码
     func verifyPassword() async -> Bool {
         guard !passwordInput.isEmpty else {
-            errorMessage = "请输入密码"
+            errorMessage = NSLocalizedString("auth.enterPassword", comment: "")
             return false
         }
 
@@ -84,7 +84,8 @@ class AuthenticationViewModel: ObservableObject {
 
             let attempts = remainingAttempts
             if attempts > 0 {
-                errorMessage = "密码错误，还剩 \(attempts) 次尝试"
+                errorMessage = String(
+                    format: NSLocalizedString("auth.wrongPassword", comment: ""), attempts)
             } else {
                 checkLockout()
             }
@@ -97,7 +98,7 @@ class AuthenticationViewModel: ObservableObject {
     /// 使用生物识别认证
     func authenticateWithBiometric() async -> Bool {
         guard isBiometricAvailable else {
-            errorMessage = "生物识别不可用"
+            errorMessage = NSLocalizedString("security.error.biometricNotAvailable", comment: "")
             return false
         }
 
@@ -198,7 +199,7 @@ class PasswordSetupViewModel: ObservableObject {
     /// 设置密码
     func setupPassword() async -> Bool {
         guard canSubmit else {
-            errorMessage = "请检查密码输入"
+            errorMessage = NSLocalizedString("auth.checkPassword", comment: "")
             return false
         }
 
@@ -237,7 +238,7 @@ class PasswordSetupViewModel: ObservableObject {
     /// 修改密码
     func changePassword(oldPassword: String) async -> Bool {
         guard canSubmit else {
-            errorMessage = "请检查密码输入"
+            errorMessage = NSLocalizedString("auth.checkPassword", comment: "")
             return false
         }
 

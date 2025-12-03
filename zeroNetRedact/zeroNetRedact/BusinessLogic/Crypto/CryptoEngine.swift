@@ -191,13 +191,14 @@ enum CryptoError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .encryptionFailed:
-            return "加密失败"
+            return NSLocalizedString("crypto.error.encryptionFailed", comment: "")
         case .decryptionFailed:
-            return "解密失败"
+            return NSLocalizedString("crypto.error.decryptionFailed", comment: "")
         case .keychainError(let status):
-            return "Keychain错误: \(status)"
+            return String(
+                format: NSLocalizedString("crypto.error.keychainError", comment: ""), status)
         case .invalidData:
-            return "无效的数据格式"
+            return NSLocalizedString("crypto.error.invalidData", comment: "")
         }
     }
 }

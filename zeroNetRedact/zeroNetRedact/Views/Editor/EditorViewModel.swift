@@ -30,6 +30,10 @@ class EditorViewModel: ObservableObject {
     @Published var currentGroup: FileGroup?
     @Published var showGroupPicker = false
 
+    // 配额限制相关
+    @Published var showUsageLimitAlert = false
+    @Published var showPremiumView = false
+
     private(set) var editor: AnyRedactionEditor?
 
     init(file: RedactableFile) {
@@ -75,7 +79,7 @@ class EditorViewModel: ObservableObject {
                 } else {
                     print("⚠️ EditorViewModel: 无法获取PDFRedactionEditor")
                     await MainActor.run {
-                        errorMessage = "无法加载PDF编辑器"
+                        errorMessage = NSLocalizedString("pdf.loadFailed", comment: "")
                     }
                 }
             } else {
@@ -88,7 +92,7 @@ class EditorViewModel: ObservableObject {
                 } else {
                     print("⚠️ EditorViewModel: editor?.getCurrentImage() 返回 nil")
                     await MainActor.run {
-                        errorMessage = "无法获取图片"
+                        errorMessage = NSLocalizedString("editor.loadFailed", comment: "")
                     }
                 }
             }
@@ -98,7 +102,9 @@ class EditorViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                errorMessage = "加载文件失败: \(error.localizedDescription)"
+                errorMessage = String(
+                    format: NSLocalizedString("editor.loadFileFailed", comment: ""),
+                    error.localizedDescription)
                 print("❌ EditorViewModel: 加载失败 - \(error)")
             }
         }
@@ -123,7 +129,9 @@ class EditorViewModel: ObservableObject {
             }
         } catch {
             print("❌ EditorViewModel: 检测失败 - \(error)")
-            errorMessage = "检测失败: \(error.localizedDescription)"
+            errorMessage = String(
+                format: NSLocalizedString("editor.detectFailed", comment: ""),
+                error.localizedDescription)
         }
     }
 
@@ -189,7 +197,45 @@ class EditorViewModel: ObservableObject {
         updateUndoRedoState()
     }
 
+    /// 检查是否可以导出（配额检查）
+    func canExport() -> Bool {
+        let appState = AppState.shared
+
+        // 付费用户或审核模式：无限制
+        if appState.hasUnlimitedAccess {
+            return true
+        }
+
+        // 免费用户：检查配额
+        let tracker = UsageTracker.shared
+        if file.fileType == .image {
+            return tracker.canExportImage()
+        } else {
+            return tracker.canExportDocument()
+        }
+    }
+
+    /// 记录导出使用量
+    private func recordExportUsage() {
+        // 只有免费用户需要记录
+        guard !AppState.shared.hasUnlimitedAccess else { return }
+
+        let tracker = UsageTracker.shared
+        if file.fileType == .image {
+            tracker.recordImageExport()
+        } else {
+            tracker.recordDocExport()
+        }
+    }
+
     func exportFile() async {
+        // 1. 检查配额
+        if !canExport() {
+            showUsageLimitAlert = true
+            print("⚠️ EditorViewModel: 达到每日导出限制")
+            return
+        }
+
         isExporting = true
         defer { isExporting = false }
 
@@ -343,6 +389,9 @@ class EditorViewModel: ObservableObject {
                         // 保存到CoreData
                         try context.save()
                         print("✅ 打码文件已保存到脱敏文件Tab，ID: \(redactedFile.id)")
+
+                        // 记录导出使用量（免费用户计数）
+                        self.recordExportUsage()
                     } catch {
                         print("❌ 保存打码文件到相册失败: \(error)")
                     }
@@ -352,7 +401,9 @@ class EditorViewModel: ObservableObject {
             }
         } catch {
             print("❌ 导出异常: \(error.localizedDescription)")
-            errorMessage = "导出失败: \(error.localizedDescription)"
+            errorMessage = String(
+                format: NSLocalizedString("editor.exportFailed", comment: ""),
+                error.localizedDescription)
         }
     }
 

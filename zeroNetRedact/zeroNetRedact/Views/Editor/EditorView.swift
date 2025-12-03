@@ -26,7 +26,7 @@ struct EditorView: View {
                         .ignoresSafeArea()
 
                     if viewModel.isLoading {
-                        ProgressView("加载中...")
+                        ProgressView(NSLocalizedString("editor.loading", comment: ""))
                     } else if let error = viewModel.errorMessage {
                         VStack(spacing: 12) {
                             Image(systemName: "exclamationmark.triangle")
@@ -53,11 +53,11 @@ struct EditorView: View {
                     .padding()
                     .background(Color(.systemBackground))
             }
-            .navigationTitle("编辑")
+            .navigationTitle(NSLocalizedString("editor.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(NSLocalizedString("editor.cancel", comment: "")) {
                         dismiss()
                     }
                 }
@@ -67,6 +67,21 @@ struct EditorView: View {
             }
             .sheet(isPresented: $viewModel.showGroupPicker) {
                 GroupPickerSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $viewModel.showPremiumView) {
+                PremiumView()
+            }
+            // 配额限制弹窗
+            .alert(
+                NSLocalizedString("usage.limit.title", comment: ""),
+                isPresented: $viewModel.showUsageLimitAlert
+            ) {
+                Button(NSLocalizedString("usage.limit.upgrade", comment: "")) {
+                    viewModel.showPremiumView = true
+                }
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("usage.limit.message", comment: ""))
             }
         }
     }
@@ -83,8 +98,10 @@ struct EditorToolbar: View {
                     await viewModel.detectSensitiveRegions()
                 }
             }) {
-                Label("AI检测", systemImage: "wand.and.stars")
-                    .font(.subheadline)
+                Label(
+                    NSLocalizedString("editor.aiDetect", comment: ""), systemImage: "wand.and.stars"
+                )
+                .font(.subheadline)
             }
             .buttonStyle(.bordered)
             .disabled(viewModel.isDetecting)
@@ -98,9 +115,12 @@ struct EditorToolbar: View {
                 HStack(spacing: 4) {
                     Image(systemName: viewModel.currentGroup?.iconName ?? "folder.fill")
                         .font(.caption)
-                    Text(viewModel.currentGroup?.name ?? "默认分组")
-                        .font(.caption)
-                        .lineLimit(1)
+                    Text(
+                        viewModel.currentGroup?.name
+                            ?? NSLocalizedString("group.default", comment: "")
+                    )
+                    .font(.caption)
+                    .lineLimit(1)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -125,7 +145,7 @@ struct EditorToolbar: View {
                     }
                 }
             } label: {
-                Label("效果", systemImage: "paintbrush")
+                Label(NSLocalizedString("effect.label", comment: ""), systemImage: "paintbrush")
                     .font(.subheadline)
             }
             .buttonStyle(.bordered)
@@ -161,8 +181,12 @@ struct EditorBottomBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
-                    Text("检测到 \(viewModel.detectedRegions.count) 处敏感信息")
-                        .font(.caption)
+                    Text(
+                        String(
+                            format: NSLocalizedString("editor.detectedRegions", comment: ""),
+                            viewModel.detectedRegions.count)
+                    )
+                    .font(.caption)
                 }
             }
 
@@ -177,7 +201,7 @@ struct EditorBottomBar: View {
             }) {
                 HStack {
                     Image(systemName: "square.and.arrow.up")
-                    Text("导出")
+                    Text(NSLocalizedString("editor.export", comment: ""))
                         .fontWeight(.medium)
                 }
                 .padding(.horizontal, 20)
@@ -294,7 +318,7 @@ struct ImageEditorCanvas: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(imageSizeReader)
             } else {
-                ProgressView("加载中...")
+                ProgressView(NSLocalizedString("editor.loading", comment: ""))
             }
         }
     }
@@ -389,7 +413,7 @@ struct PDFEditorCanvas: View {
     @ObservedObject var viewModel: EditorViewModel
 
     var body: some View {
-        Text("PDF编辑画布 - 待实现")
+        Text(NSLocalizedString("editor.pdfPlaceholder", comment: ""))
             .foregroundColor(.secondary)
     }
 }
