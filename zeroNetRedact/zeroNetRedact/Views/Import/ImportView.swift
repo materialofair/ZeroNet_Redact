@@ -89,6 +89,22 @@ struct ImportView: View {
                     Text(error)
                 }
             }
+            .alert(
+                NSLocalizedString("import.duplicate.title", comment: ""),
+                isPresented: $viewModel.showDuplicateAlert
+            ) {
+                Button(NSLocalizedString("import.duplicate.skip", comment: ""), role: .cancel) {
+                    viewModel.pendingImportSource = nil
+                    viewModel.duplicateFile = nil
+                }
+                Button(NSLocalizedString("import.duplicate.import_anyway", comment: "")) {
+                    Task {
+                        await viewModel.forceImportDuplicate()
+                    }
+                }
+            } message: {
+                Text(NSLocalizedString("import.duplicate.message", comment: ""))
+            }
             .overlay {
                 if viewModel.isImporting {
                     importingOverlay

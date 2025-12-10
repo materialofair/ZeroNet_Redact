@@ -6,9 +6,16 @@
 //
 
 import CoreData
+import CryptoKit
 import Foundation
 import PDFKit
 import UIKit
+
+/// 导入重复结果
+enum ImportDuplicateResult {
+    case success(RedactableFile)
+    case duplicate(existingFile: OriginalFile)
+}
 
 /// 导入管理器单例
 class ImportManager {
@@ -25,7 +32,7 @@ class ImportManager {
 
     // MARK: - 统一导入接口
 
-    /// 导入文件
+    /// 导入文件（检测重复）
     /// - Parameter sources: 导入源数组
     /// - Returns: 导入的文件数组
     func importFiles(from sources: [ImportSource]) async throws -> [RedactableFile] {
@@ -51,7 +58,109 @@ class ImportManager {
         return file
     }
 
+    /// 导入文件并检测重复
+    /// - Parameter source: 导入源
+    /// - Returns: 导入结果（成功或重复）
+    func importFileWithDuplicateCheck(from source: ImportSource) async throws
+        -> ImportDuplicateResult
+    {
+        let result = try await processImportWithDuplicateCheck(source)
+        if case .success = result {
+            try context.save()
+        }
+        return result
+    }
+
     // MARK: - 内部处理逻辑
+
+    /// 计算数据的SHA256哈希值
+    private func calculateHash(for data: Data) -> String {
+        let hash = SHA256.hash(data: data)
+        return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+
+    /// 检查文件是否已存在
+    private func checkDuplicate(hash: String) -> OriginalFile? {
+        let request: NSFetchRequest<OriginalFile> = OriginalFile.fetchRequest()
+        request.predicate = NSPredicate(format: "contentHash == %@", hash)
+        request.fetchLimit = 1
+
+        do {
+            let results = try context.fetch(request)
+            return results.first
+        } catch {
+            print("❌ 检查重复文件失败: \(error)")
+            return nil
+        }
+    }
+
+    /// 处理导入并检测重复
+    private func processImportWithDuplicateCheck(_ source: ImportSource) async throws
+        -> ImportDuplicateResult
+    {
+        // 1. 检测文件类型
+        let fileType = detectFileType(from: source)
+
+        // 2. 根据类型选择处理器
+        let processor: FileImportProcessor
+        switch fileType {
+        case .image:
+            processor = ImageImportProcessor()
+        case .pdf:
+            processor = PDFImportProcessor()
+        }
+
+        // 3. 加载原始数据
+        let data = try await processor.loadData(from: source)
+
+        // 4. 计算哈希值并检查重复
+        let contentHash = calculateHash(for: data)
+        if let existingFile = checkDuplicate(hash: contentHash) {
+            print("⚠️ ImportManager: 检测到重复文件，哈希值=\(contentHash)")
+            return .duplicate(existingFile: existingFile)
+        }
+
+        // 5. 提取元数据
+        let metadata = processor.extractMetadata(from: data)
+
+        // 6. 生成缩略图
+        let thumbnailData = try await processor.generateThumbnail(from: data)
+
+        // 7. 加密数据
+        let encryptedData = try crypto.encrypt(data: data)
+        let encryptedThumbnail = try crypto.encrypt(data: thumbnailData)
+
+        // 8. 保存到文件系统
+        let fileId = UUID()
+        print("💾 ImportManager: 保存文件 ID=\(fileId)")
+
+        let dataURL = try storage.saveEncryptedOriginal(
+            data: encryptedData,
+            id: fileId,
+            type: fileType
+        )
+        print("✅ 原文件已保存: \(dataURL.path)")
+
+        let thumbnailURL = try storage.saveEncryptedThumbnail(
+            data: encryptedThumbnail,
+            id: fileId,
+            type: fileType
+        )
+        print("✅ 缩略图已保存: \(thumbnailURL.path)")
+
+        // 9. 创建Core Data实体
+        let file = try createFileEntity(
+            id: fileId,
+            type: fileType,
+            dataPath: dataURL.path,
+            thumbnailPath: thumbnailURL.path,
+            fileSize: Int64(data.count),
+            metadata: metadata,
+            contentHash: contentHash
+        )
+
+        return .success(file)
+    }
 
     private func processImport(_ source: ImportSource) async throws -> RedactableFile {
         // 1. 检测文件类型
@@ -138,7 +247,8 @@ class ImportManager {
         dataPath: String,
         thumbnailPath: String,
         fileSize: Int64,
-        metadata: [String: Any]
+        metadata: [String: Any],
+        contentHash: String? = nil
     ) throws -> RedactableFile {
 
         switch type {
@@ -156,7 +266,8 @@ class ImportManager {
                 fileSize: fileSize,
                 width: width,
                 height: height,
-                orientation: orientation
+                orientation: orientation,
+                contentHash: contentHash
             )
 
         case .pdf:
@@ -176,7 +287,8 @@ class ImportManager {
                 title: title,
                 author: author,
                 creator: creator,
-                isEncrypted: isEncrypted
+                isEncrypted: isEncrypted,
+                contentHash: contentHash
             )
         }
     }

@@ -28,7 +28,8 @@ public class OriginalPDF: OriginalFile {
         title: String,
         author: String,
         creator: String,
-        isEncrypted: Bool
+        isEncrypted: Bool,
+        contentHash: String? = nil
     ) -> OriginalPDF {
         let pdf = OriginalPDF(context: context)
         pdf.id = id
@@ -42,6 +43,7 @@ public class OriginalPDF: OriginalFile {
         pdf.author = author
         pdf.creator = creator
         pdf.isEncrypted = isEncrypted
+        pdf.contentHash = contentHash
 
         return pdf
     }

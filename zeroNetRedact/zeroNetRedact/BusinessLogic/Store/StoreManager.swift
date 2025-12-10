@@ -85,10 +85,24 @@ class StoreManager: ObservableObject {
 
         do {
             let productIDs = StoreProduct.allCases.map { $0.rawValue }
+            print("🔍 StoreManager: 开始加载产品 - \(productIDs)")
+
             products = try await Product.products(for: productIDs)
+
             print("✅ StoreManager: 加载了 \(products.count) 个产品")
+            for product in products {
+                print("  📦 产品: \(product.id)")
+                print("     显示名称: \(product.displayName)")
+                print("     价格: \(product.displayPrice)")
+                print("     描述: \(product.description)")
+            }
+
+            if products.isEmpty {
+                print("⚠️ StoreManager: 警告 - 未加载到任何产品，请检查 Products.storekit 配置")
+            }
         } catch {
             print("❌ StoreManager: 加载产品失败 - \(error)")
+            print("   错误详情: \(error.localizedDescription)")
             errorMessage = String(
                 format: NSLocalizedString("store.loadFailed", comment: ""),
                 error.localizedDescription)

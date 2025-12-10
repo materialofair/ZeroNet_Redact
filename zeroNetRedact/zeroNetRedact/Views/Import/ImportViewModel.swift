@@ -10,6 +10,9 @@ class ImportViewModel: ObservableObject {
     @Published var isImporting = false
     @Published var showError = false
     @Published var errorMessage: String?
+    @Published var showDuplicateAlert = false
+    @Published var duplicateFile: OriginalFile?
+    @Published var pendingImportSource: ImportSource?
 
     // 原始文件列表
     @Published var originalFiles: [OriginalFile] = []
@@ -91,30 +94,45 @@ class ImportViewModel: ObservableObject {
         defer { isImporting = false }
 
         do {
-            var sources: [ImportSource] = []
+            var successCount = 0
+            var duplicateCount = 0
 
             for item in results {
                 if let data = try await item.loadTransferable(type: Data.self) {
-                    sources.append(.imageData(data))
-                }
-            }
+                    let source = ImportSource.imageData(data)
+                    let result = try await importManager.importFileWithDuplicateCheck(from: source)
 
-            let files = try await importManager.batchImport(from: sources)
-            print("✅ 成功导入 \(files.count) 个文件")
+                    switch result {
+                    case .success(let file):
+                        // 将导入的文件关联到当前选中的分组
+                        let targetGroup = selectedGroup ?? defaultGroup
+                        if let group = targetGroup,
+                            let originalFile = file as? OriginalFile
+                        {
+                            _ = groupManager.moveFile(originalFile, to: group)
+                        }
+                        successCount += 1
 
-            // 将导入的文件关联到当前选中的分组
-            let targetGroup = selectedGroup ?? defaultGroup
-            if let group = targetGroup {
-                for file in files {
-                    if let originalFile = file as? OriginalFile {
-                        _ = groupManager.moveFile(originalFile, to: group)
+                    case .duplicate:
+                        duplicateCount += 1
                     }
                 }
-                print("📁 文件已关联到分组: \(group.name ?? "未命名")")
             }
 
             // 重新加载列表
             loadOriginalFiles()
+
+            // 显示导入结果
+            if duplicateCount > 0 {
+                let message = String(
+                    format: NSLocalizedString("import.duplicate.batch_result", comment: ""),
+                    successCount, duplicateCount
+                )
+                errorMessage = message
+                showError = true
+            }
+
+            print("✅ 成功导入 \(successCount) 个文件，跳过 \(duplicateCount) 个重复文件")
 
         } catch {
             errorMessage = error.localizedDescription
@@ -127,8 +145,52 @@ class ImportViewModel: ObservableObject {
         defer { isImporting = false }
 
         do {
-            let file = try await importManager.importFile(from: .fileURL(url))
-            print("✅ 成功导入文件: \(file.id)")
+            let result = try await importManager.importFileWithDuplicateCheck(from: .fileURL(url))
+
+            switch result {
+            case .success(let file):
+                print("✅ 成功导入文件: \(file.id)")
+
+                // 将导入的文件关联到当前选中的分组
+                let targetGroup = selectedGroup ?? defaultGroup
+                if let group = targetGroup,
+                    let originalFile = file as? OriginalFile
+                {
+                    _ = groupManager.moveFile(originalFile, to: group)
+                    print("📁 文件已关联到分组: \(group.name ?? "未命名")")
+                }
+
+                // 重新加载列表
+                loadOriginalFiles()
+
+            case .duplicate(let existingFile):
+                // 显示重复提示
+                duplicateFile = existingFile
+                pendingImportSource = .fileURL(url)
+                showDuplicateAlert = true
+                print("⚠️ 文件已存在，显示重复提��")
+            }
+
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    /// 强制导入重复文件
+    func forceImportDuplicate() async {
+        guard let source = pendingImportSource else { return }
+
+        isImporting = true
+        defer {
+            isImporting = false
+            pendingImportSource = nil
+            duplicateFile = nil
+        }
+
+        do {
+            let file = try await importManager.importFile(from: source)
+            print("✅ 强制导入重复文件: \(file.id)")
 
             // 将导入的文件关联到当前选中的分组
             let targetGroup = selectedGroup ?? defaultGroup
@@ -136,7 +198,6 @@ class ImportViewModel: ObservableObject {
                 let originalFile = file as? OriginalFile
             {
                 _ = groupManager.moveFile(originalFile, to: group)
-                print("📁 文件已关联到分组: \(group.name ?? "未命名")")
             }
 
             // 重新加载列表
@@ -163,6 +224,34 @@ class ImportViewModel: ObservableObject {
             loadOriginalFiles()
             loadGroups()
             print("✅ \(files.count)个文件已移动到分组: \(group.name ?? "未命名")")
+        }
+    }
+
+    // MARK: - 删除功能
+
+    /// 删除单个原始文件
+    func deleteFile(_ file: OriginalFile) {
+        do {
+            // 1. 删除文件系统中的文件（加密原文件和缩略图）
+            try StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
+
+            // 2. 清除缩略图缓存
+            let cacheKey = "original_thumbnail_\(file.id.uuidString)"
+            ImageCache.shared.removeImage(forKey: cacheKey)
+
+            // 3. 删除 Core Data 记录
+            context.delete(file)
+            try context.save()
+
+            // 4. 重新加载列表
+            loadOriginalFiles()
+            loadGroups()
+
+            print("✅ 已删除原始文件: \(file.id)")
+        } catch {
+            print("❌ 删除原始文件失败: \(error)")
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
 }

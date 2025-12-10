@@ -106,12 +106,9 @@ struct PasswordSetupSheet: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: DesignSystem.Spacing.xl) {
+                VStack(spacing: DesignSystem.Spacing.lg) {
                     // 品牌头部
                     brandHeaderSection
-
-                    // 核心特性网格
-                    FeaturesGridView()
 
                     // 分隔提示
                     setupPromptSection
@@ -145,27 +142,27 @@ struct PasswordSetupSheet: View {
     // MARK: - Brand Header Section
 
     private var brandHeaderSection: some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
+        VStack(spacing: DesignSystem.Spacing.sm) {
             // App 图标
             Image("AppIconImage")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .shadow(color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 12, x: 0, y: 6)
+                .frame(width: 60, height: 60)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .shadow(color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 10, x: 0, y: 5)
 
             // App 名称
             Text("ZeroNet Redact")
-                .font(.title)
+                .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(DesignSystem.Colors.textPrimary)
 
             // Slogan
             Text(NSLocalizedString("passwordSetup.brand.slogan", comment: ""))
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundColor(DesignSystem.Colors.textSecondary)
         }
-        .padding(.top, DesignSystem.Spacing.xl)
+        .padding(.top, DesignSystem.Spacing.md)
     }
 
     // MARK: - Setup Prompt Section
@@ -277,6 +274,7 @@ struct PasswordSetupSheet: View {
             PasswordRequirementsView(password: viewModel.password)
         }
         .cardStyle()
+        .padding(.horizontal, DesignSystem.Spacing.xxl)
     }
 
     // MARK: - Biometric Section
@@ -307,6 +305,7 @@ struct PasswordSetupSheet: View {
         }
         .padding(DesignSystem.Spacing.md)
         .cardStyle()
+        .padding(.horizontal, DesignSystem.Spacing.xxl)
     }
 
     // MARK: - Error Section
@@ -324,7 +323,15 @@ struct PasswordSetupSheet: View {
     // MARK: - Action Buttons
 
     private var actionButtons: some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
+        HStack(spacing: DesignSystem.Spacing.md) {
+            Button {
+                viewModel.skipSetup()
+                dismiss()
+            } label: {
+                Text(NSLocalizedString("password.setupLater", comment: ""))
+            }
+            .buttonStyle(OutlineButtonStyle())
+
             Button {
                 Task {
                     if await viewModel.setupPassword() {
@@ -341,15 +348,8 @@ struct PasswordSetupSheet: View {
             }
             .buttonStyle(GradientButtonStyle())
             .disabled(!viewModel.canSubmit || viewModel.isLoading)
-
-            Button {
-                viewModel.skipSetup()
-                dismiss()
-            } label: {
-                Text(NSLocalizedString("password.setupLater", comment: ""))
-            }
-            .buttonStyle(OutlineButtonStyle())
         }
+        .padding(.horizontal, DesignSystem.Spacing.xxl)
     }
 }
 

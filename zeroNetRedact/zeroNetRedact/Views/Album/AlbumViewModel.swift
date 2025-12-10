@@ -89,4 +89,30 @@ class AlbumViewModel: ObservableObject {
             print("❌ 移动脱敏文件到分组失败: \(error)")
         }
     }
+
+    // MARK: - 删除功能
+
+    /// 删除单个脱敏文件
+    func deleteFile(_ file: RedactedFile) {
+        do {
+            // 1. 删除文件系统中的脱敏文件
+            try StorageManager.shared.deleteRedacted(id: file.id, type: file.fileType)
+
+            // 2. 清除缩略图缓存
+            let cacheKey = "redacted_thumbnail_\(file.id.uuidString)"
+            ImageCache.shared.removeImage(forKey: cacheKey)
+
+            // 3. 删除 Core Data 记录
+            context.delete(file)
+            try context.save()
+
+            // 4. 重新加载列表
+            loadFiles()
+            loadGroups()
+
+            print("✅ 已删除脱敏文件: \(file.id)")
+        } catch {
+            print("❌ 删除脱敏文件失败: \(error)")
+        }
+    }
 }

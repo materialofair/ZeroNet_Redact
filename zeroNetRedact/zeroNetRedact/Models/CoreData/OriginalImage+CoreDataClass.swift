@@ -41,7 +41,8 @@ public class OriginalImage: OriginalFile {
         fileSize: Int64,
         width: Int,
         height: Int,
-        orientation: UIImage.Orientation
+        orientation: UIImage.Orientation,
+        contentHash: String? = nil
     ) -> OriginalImage {
         let image = OriginalImage(context: context)
         image.id = id
@@ -53,6 +54,7 @@ public class OriginalImage: OriginalFile {
         image.width = Int64(width)
         image.height = Int64(height)
         image.orientationRaw = Int64(orientation.rawValue)
+        image.contentHash = contentHash
 
         return image
     }

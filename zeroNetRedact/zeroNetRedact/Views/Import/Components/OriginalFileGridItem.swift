@@ -12,6 +12,7 @@ struct OriginalFileGridItem: View {
     @ObservedObject var viewModel: ImportViewModel
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
+    @State private var showDeleteAlert = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -73,6 +74,24 @@ struct OriginalFileGridItem: View {
 
             // 文件信息
             fileInfoView
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                showDeleteAlert = true
+            } label: {
+                Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
+            }
+        }
+        .alert(
+            NSLocalizedString("import.delete.title", comment: ""),
+            isPresented: $showDeleteAlert
+        ) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                viewModel.deleteFile(file)
+            }
+        } message: {
+            Text(NSLocalizedString("import.delete.message", comment: ""))
         }
         .task {
             await loadThumbnail()

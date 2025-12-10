@@ -1,0 +1,59 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : "https://zeronetspace.com/privacy"
+      }
+    ]
+  },
+  "identifier" : "E7A7C0C9",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "3.99",
+      "familyShareable" : false,
+      "internalID" : "6738429518",
+      "localizations" : [
+        {
+          "description" : "Unlock unlimited redaction processing for all your photos and documents. One-time purchase for lifetime access with no limits.",
+          "displayName" : "Unlimited Redactions",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "解锁无限制脱敏处理次数，支持所有照片和文档。一次性购买，永久使用，无任何限制。",
+          "displayName" : "无限制脱敏",
+          "locale" : "zh_Hans"
+        }
+      ],
+      "productID" : "com.zeronet.redact.premium",
+      "referenceName" : "Premium Version",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

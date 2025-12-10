@@ -11,6 +11,7 @@
         <relationship name="redactedFiles" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RedactedFile" inverseName="group" inverseEntity="RedactedFile"/>
     </entity>
     <entity name="OriginalFile" representedClassName="OriginalFile" isAbstract="YES" syncable="YES">
+        <attribute name="contentHash" optional="YES" attributeType="String"/>
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="encryptedDataPath" attributeType="String"/>
         <attribute name="encryptedThumbnailPath" attributeType="String"/>

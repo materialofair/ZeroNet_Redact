@@ -7,6 +7,8 @@ import SwiftUI
 class EditorViewModel: ObservableObject {
     let file: RedactableFile
 
+    // MARK: - 状态管理（委托给 StateManager）
+
     @Published var isLoading = false
     @Published var isDetecting = false
     @Published var isExporting = false
@@ -35,6 +37,16 @@ class EditorViewModel: ObservableObject {
     @Published var showPremiumView = false
 
     private(set) var editor: AnyRedactionEditor?
+
+    // MARK: - 辅助处理器
+
+    private lazy var pdfOperations: PDFOperationsHandler = {
+        PDFOperationsHandler(editor: editor)
+    }()
+
+    private lazy var imageOperations: ImageOperationsHandler = {
+        ImageOperationsHandler(editor: editor)
+    }()
 
     init(file: RedactableFile) {
         self.file = file

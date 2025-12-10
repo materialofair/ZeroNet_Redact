@@ -191,7 +191,7 @@
 "premium.success.message" = "Thank you! You now have unlimited access.";
 
 /* Store */
-"store.product.premium.name" = "Unlimited Redaction";
+"store.product.premium.name" = "Unlimited Redactions";
 
 /* Usage */
 "usage.status.format" = "Images: %d/%d, Docs: %d/%d";
@@ -202,6 +202,13 @@
 /* Common */
 "common.ok" = "OK";
 "common.empty" = "Empty";
+
+/* Import Duplicate Detection */
+"import.duplicate.title" = "Duplicate File Detected";
+"import.duplicate.message" = "This file has already been imported. Do you want to import it again?";
+"import.duplicate.skip" = "Skip";
+"import.duplicate.import_anyway" = "Import Anyway";
+"import.duplicate.batch_result" = "Imported %d files, skipped %d duplicates";
 
 /* Editor - Additional */
 "editor.aiDetect" = "AI Detect";
@@ -230,6 +237,8 @@
 "album.step.import" = "Import";
 "album.step.redact" = "Redact";
 "album.step.done" = "Done";
+"album.delete.title" = "Delete Redacted File";
+"album.delete.message" = "Are you sure you want to delete this redacted file? This action cannot be undone.";
 
 /* Authentication */
 "auth.welcome" = "Welcome Back";
@@ -294,6 +303,8 @@
 "import.selectPhotos" = "Select Photos";
 "import.selectPDF" = "Select PDF";
 "import.maxSelection" = "Select up to 10";
+"import.delete.title" = "Delete File";
+"import.delete.message" = "Are you sure you want to delete this file? This action cannot be undone.";
 
 /* PDF */
 "pdf.preview" = "PDF Preview (%d pages)";

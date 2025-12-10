@@ -7,9 +7,11 @@ struct SettingsView: View {
 
     @State private var showAboutView = false
     @State private var showPremiumView = false
+    @State private var showStoreKitDebug = false
 
     // 审核模式相关
     @State private var iconTapCount = 0
+    @State private var debugTapCount = 0
     @State private var showReviewCodeInput = false
     @State private var reviewCodeInput = ""
     @State private var showReviewModeSuccess = false
@@ -34,10 +36,6 @@ struct SettingsView: View {
                     aboutSection
                         .padding(.top, DesignSystem.Spacing.md)
 
-                    // MARK: - 危险区域
-                    dangerSection
-                        .padding(.top, DesignSystem.Spacing.md)
-
                     Spacer(minLength: 40)
                 }
                 .padding(.horizontal, DesignSystem.Spacing.lg)
@@ -46,19 +44,6 @@ struct SettingsView: View {
             .navigationTitle(NSLocalizedString("settings.title", comment: ""))
             .sheet(isPresented: $showAboutView) {
                 AboutView()
-            }
-            .alert(
-                NSLocalizedString("settings.clearAll.title", comment: ""),
-                isPresented: $viewModel.showClearAllAlert
-            ) {
-                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-                Button(
-                    NSLocalizedString("settings.clearAll.confirm", comment: ""), role: .destructive
-                ) {
-                    viewModel.clearAllFiles()
-                }
-            } message: {
-                Text(NSLocalizedString("settings.clearAll.message", comment: ""))
             }
             .alert(
                 NSLocalizedString("settings.disablePassword.title", comment: ""),
@@ -88,6 +73,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showPremiumView) {
                 PremiumView()
+            }
+            .sheet(isPresented: $showStoreKitDebug) {
+                StoreKitDebugView()
             }
             // 审核模式输入框
             .alert(
@@ -197,6 +185,19 @@ struct SettingsView: View {
                     Text("v1.0.0")
                         .font(.subheadline)
                         .foregroundColor(DesignSystem.Colors.textSecondary)
+                        .onTapGesture {
+                            debugTapCount += 1
+                            if debugTapCount >= 5 {
+                                debugTapCount = 0
+                                showStoreKitDebug = true
+                            }
+                            // 2秒后重置计数
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                if debugTapCount < 5 {
+                                    debugTapCount = 0
+                                }
+                            }
+                        }
                 }
 
                 Spacer()
@@ -531,40 +532,6 @@ struct SettingsView: View {
         .shadow(color: .black.opacity(0.04), radius: 1, x: 0, y: 1)
     }
 
-    // MARK: - 危险区域
-
-    private var dangerSection: some View {
-        Button {
-            viewModel.showClearAllAlert = true
-        } label: {
-            HStack(spacing: DesignSystem.Spacing.md) {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(DesignSystem.Colors.dangerRed)
-                    )
-
-                Text(NSLocalizedString("settings.clearAllFiles", comment: ""))
-                    .font(.body)
-                    .foregroundColor(DesignSystem.Colors.dangerRed)
-
-                Spacer()
-            }
-            .padding(.vertical, DesignSystem.Spacing.md)
-            .padding(.horizontal, DesignSystem.Spacing.lg)
-        }
-        .buttonStyle(.plain)
-        .background(DesignSystem.Colors.backgroundCard)
-        .cornerRadius(DesignSystem.CornerRadius.large)
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                .stroke(DesignSystem.Colors.dangerRed.opacity(0.3), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-    }
 }
 
 #Preview {

@@ -21,6 +21,7 @@ extension OriginalFile {
     @NSManaged public var createdAt: Date
     @NSManaged public var fileSize: Int64
     @NSManaged public var metadataJSON: String?
+    @NSManaged public var contentHash: String?
     @NSManaged public var group: FileGroup?
     @NSManaged public var redactedVersions: NSSet?
 }

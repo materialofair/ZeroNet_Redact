@@ -191,7 +191,7 @@
 "premium.success.message" = "感谢支持！您现在可以无限使用所有功能";
 
 /* Store */
-"store.product.premium.name" = "无限脱敏";
+"store.product.premium.name" = "无限制脱敏";
 
 /* Usage */
 "usage.status.format" = "图片: %d/%d, 文档: %d/%d";
@@ -202,6 +202,13 @@
 /* Common */
 "common.ok" = "好的";
 "common.empty" = "空";
+
+/* Import Duplicate Detection */
+"import.duplicate.title" = "检测到重复文件";
+"import.duplicate.message" = "该文件已经导入过了，是否仍要导入？";
+"import.duplicate.skip" = "跳过";
+"import.duplicate.import_anyway" = "仍然导入";
+"import.duplicate.batch_result" = "导入了 %d 个文件，跳过了 %d 个重复文件";
 
 /* Editor - Additional */
 "editor.aiDetect" = "AI检测";
@@ -230,6 +237,8 @@
 "album.step.import" = "导入";
 "album.step.redact" = "涂抹";
 "album.step.done" = "完成";
+"album.delete.title" = "删除脱敏文件";
+"album.delete.message" = "确定要删除这个脱敏文件吗？此操作无法撤销。";
 
 /* Authentication */
 "auth.welcome" = "欢迎回来";
@@ -294,6 +303,8 @@
 "import.selectPhotos" = "选择图片";
 "import.selectPDF" = "选择 PDF";
 "import.maxSelection" = "最多选择10张";
+"import.delete.title" = "删除文件";
+"import.delete.message" = "确定要删除这个文件吗？此操作无法撤销。";
 
 /* PDF */
 "pdf.preview" = "PDF预览 (%d页)";

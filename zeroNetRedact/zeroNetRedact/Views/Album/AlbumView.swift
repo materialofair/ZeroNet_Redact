@@ -77,120 +77,13 @@ struct AlbumView: View {
     // MARK: - 统计卡片
 
     private var statisticsCard: some View {
-        HStack(spacing: DesignSystem.Spacing.lg) {
-            // 盾牌图标
-            ZStack {
-                Circle()
-                    .fill(DesignSystem.Gradients.success)
-                    .frame(width: 44, height: 44)
-
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-            .shadow(color: DesignSystem.Colors.successGreen.opacity(0.3), radius: 6, x: 0, y: 3)
-
-            // 统计信息
-            VStack(alignment: .leading, spacing: 4) {
-                Text(NSLocalizedString("album.secured", comment: ""))
-                    .font(.subheadline)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-
-                HStack(spacing: 4) {
-                    Text("\(viewModel.redactedFiles.count)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(DesignSystem.Colors.textPrimary)
-                    Text(NSLocalizedString("album.files", comment: ""))
-                        .font(.subheadline)
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
-                }
-            }
-
-            Spacer()
-
-            // 类型分布
-            VStack(alignment: .trailing, spacing: 4) {
-                let imageCount = viewModel.redactedFiles.filter { $0.fileType == .image }.count
-                let pdfCount = viewModel.redactedFiles.filter { $0.fileType == .pdf }.count
-
-                if imageCount > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "photo.fill")
-                            .font(.caption)
-                            .foregroundColor(DesignSystem.Colors.primaryBlue)
-                        Text("\(imageCount)")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(DesignSystem.Colors.textSecondary)
-                    }
-                }
-
-                if pdfCount > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "doc.fill")
-                            .font(.caption)
-                            .foregroundColor(DesignSystem.Colors.warningOrange)
-                        Text("\(pdfCount)")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(DesignSystem.Colors.textSecondary)
-                    }
-                }
-            }
-        }
-        .padding(DesignSystem.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                .fill(DesignSystem.Colors.backgroundCard)
-                .shadow(
-                    color: DesignSystem.Shadow.cardShadow(for: colorScheme), radius: 12, x: 0, y: 4
-                )
-                .shadow(
-                    color: DesignSystem.Shadow.cardShadowSecondary(for: colorScheme), radius: 1,
-                    x: 0, y: 1
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                        .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
-                )
-        )
+        StatisticsCardView(files: viewModel.redactedFiles)
     }
 
     // MARK: - 空状态视图
 
     private var emptyStateView: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            VStack(spacing: 28) {
-                // 图标
-                ZStack {
-                    Circle()
-                        .fill(DesignSystem.Gradients.lightBackground)
-                        .frame(width: 100, height: 100)
-
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.system(size: 44, weight: .medium))
-                        .foregroundStyle(DesignSystem.Gradients.success)
-                }
-
-                // 标题
-                Text(NSLocalizedString("album.empty", comment: ""))
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
-
-                // 步骤指示器
-                StepIndicator()
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
-            }
-            .padding(.horizontal, DesignSystem.Spacing.xxxl)
-
-            Spacer()
-            Spacer()
-        }
+        EmptyStateView()
     }
 
     // MARK: - 脱敏文件网格视图
@@ -206,7 +99,7 @@ struct AlbumView: View {
                 spacing: 16
             ) {
                 ForEach(viewModel.redactedFiles, id: \.id) { file in
-                    RedactedFileGridItem(file: file)
+                    RedactedFileGridItem(file: file, viewModel: viewModel)
                         .onTapGesture {
                             Task {
                                 await loadAndShowPreview(file: file)
@@ -253,72 +146,14 @@ struct AlbumView: View {
     }
 }
 
-// MARK: - 步骤指示器
-
-struct StepIndicator: View {
-    var body: some View {
-        HStack(spacing: 0) {
-            // 步骤 1
-            stepItem(
-                number: "1", icon: "square.and.arrow.down",
-                title: NSLocalizedString("album.step.import", comment: ""))
-
-            // 连接线
-            Rectangle()
-                .fill(DesignSystem.Colors.primaryBlue.opacity(0.3))
-                .frame(height: 2)
-                .frame(maxWidth: .infinity)
-
-            // 步骤 2
-            stepItem(
-                number: "2", icon: "hand.draw",
-                title: NSLocalizedString("album.step.redact", comment: ""))
-
-            // 连接线
-            Rectangle()
-                .fill(DesignSystem.Colors.primaryBlue.opacity(0.3))
-                .frame(height: 2)
-                .frame(maxWidth: .infinity)
-
-            // 步骤 3
-            stepItem(
-                number: "3", icon: "checkmark.circle",
-                title: NSLocalizedString("album.step.done", comment: ""))
-        }
-        .padding(.vertical, DesignSystem.Spacing.lg)
-        .padding(.horizontal, DesignSystem.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                .fill(Color.gray.opacity(0.06))
-        )
-    }
-
-    private func stepItem(number: String, icon: String, title: String) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(DesignSystem.Gradients.primary)
-                    .frame(width: 36, height: 36)
-
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-
-            Text(title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(DesignSystem.Colors.textSecondary)
-        }
-    }
-}
-
 // MARK: - 脱敏文件网格项
 
 struct RedactedFileGridItem: View {
     let file: RedactedFile
+    @ObservedObject var viewModel: AlbumViewModel
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
+    @State private var showDeleteAlert = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -398,6 +233,24 @@ struct RedactedFileGridItem: View {
                     .font(.caption2)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
             }
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                showDeleteAlert = true
+            } label: {
+                Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
+            }
+        }
+        .alert(
+            NSLocalizedString("album.delete.title", comment: ""),
+            isPresented: $showDeleteAlert
+        ) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                viewModel.deleteFile(file)
+            }
+        } message: {
+            Text(NSLocalizedString("album.delete.message", comment: ""))
         }
         .task {
             await loadThumbnail()
