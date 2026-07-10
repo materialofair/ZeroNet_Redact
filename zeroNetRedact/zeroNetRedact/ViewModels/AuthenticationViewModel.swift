@@ -19,6 +19,13 @@ class AuthenticationViewModel: ObservableObject {
     private let passwordManager = PasswordManager.shared
     private let biometricManager = BiometricAuthManager.shared
 
+    private static let durationFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.minute, .second]
+        formatter.unitsStyle = .full
+        return formatter
+    }()
+
     // MARK: - Computed Properties
 
     var isBiometricAvailable: Bool {
@@ -82,12 +89,21 @@ class AuthenticationViewModel: ObservableObject {
             passwordManager.recordFailedAttempt()
             updateRemainingAttempts()
 
-            let attempts = remainingAttempts
-            if attempts > 0 {
+            // 先查锁定状态：已锁定则直接展示锁定文案，不再展示剩余次数
+            let (locked, endTime) = passwordManager.isLocked()
+            if locked, let endTime = endTime {
+                lockoutEndTime = endTime
+                errorMessage = SecurityError.tooManyAttempts(retryAfter: endTime).localizedDescription
+            } else if let threshold = passwordManager.nextLockoutThreshold() {
+                // 未锁定：前瞻式提示，说明再错几次会被锁定多久
+                let durationText =
+                    Self.durationFormatter.string(from: threshold.duration)
+                    ?? "\(Int(threshold.duration))s"
                 errorMessage = String(
-                    format: NSLocalizedString("auth.wrongPassword", comment: ""), attempts)
+                    format: NSLocalizedString("auth.wrongPasswordWithLockoutWarning", comment: ""),
+                    threshold.attemptsUntilLockout, durationText)
             } else {
-                checkLockout()
+                errorMessage = NSLocalizedString("auth.wrongPassword.generic", comment: "")
             }
 
             passwordInput = ""  // 清除错误的密码
@@ -107,7 +123,7 @@ class AuthenticationViewModel: ObservableObject {
 
         do {
             let success = try await biometricManager.authenticate(
-                reason: "解锁 ZeroNet Redact"
+                reason: NSLocalizedString("biometric.unlockReason", comment: "")
             )
 
             isVerifying = false
@@ -124,6 +140,13 @@ class AuthenticationViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    /// 锁定倒计时归零后调用，恢复密码输入
+    func clearExpiredLockout() {
+        guard let endTime = lockoutEndTime, endTime <= Date() else { return }
+        lockoutEndTime = nil
+        errorMessage = nil
     }
 
     // MARK: - Private Methods

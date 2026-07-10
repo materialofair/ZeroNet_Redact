@@ -1,9 +1,34 @@
+import Combine
 import SwiftUI
 
 /// 密码验证界面 - 用于解锁应用
 struct AuthenticationView: View {
     @StateObject private var viewModel = AuthenticationViewModel()
     @State private var showShakeAnimation = false
+    @FocusState private var isPasswordFieldFocused: Bool
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var wasBackgrounded = false
+    @State private var lockoutTick = Date()
+    @State private var showForgotPasswordStep1 = false
+    @State private var showForgotPasswordStep2 = false
+    @State private var resetFailedMessage: String?
+
+    @State private var lockoutTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var isLockedOut: Bool {
+        viewModel.lockoutEndTime != nil
+    }
+
+    private var lockoutSecondsRemaining: Int {
+        guard let endTime = viewModel.lockoutEndTime else { return 0 }
+        return max(0, Int(endTime.timeIntervalSince(lockoutTick).rounded(.up)))
+    }
+
+    private var formattedLockoutCountdown: String {
+        let minutes = lockoutSecondsRemaining / 60
+        let seconds = lockoutSecondsRemaining % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
 
     var body: some View {
         ZStack {
@@ -24,11 +49,101 @@ struct AuthenticationView: View {
             }
         }
         .onAppear {
-            // 自动触发生物识别
-            if viewModel.isBiometricAvailable {
-                Task {
-                    await viewModel.authenticateWithBiometric()
+            // HIGH-8: 本视图仅在锁定时才会挂载，因此挂载时 scenePhase 既可能已经是 .active
+            // （冷启动直接锁定），也可能仍处于 .background/.inactive 过渡中（前台切后台触发锁定，
+            // 此时视图恰好才被创建，无法观察到此前的 .active -> .background 迁移）。
+            // 只在确认已处于前台时才立即触发 Face ID；否则标记为"待前台"，交由下方
+            // onChange 在真正回到 .active 时触发，避免在应用尚未真正前台时弹出生物识别。
+            if scenePhase == .active {
+                triggerBiometricIfNeeded()
+            } else {
+                wasBackgrounded = true
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                wasBackgrounded = true
+            case .active:
+                // 与上方 onAppear 的触发条件互斥：只有此前记录过"离开前台"时才在这里触发，
+                // 避免同一次回到前台被触发两次；同时天然过滤掉控制中心/通知中心等
+                // 仅经过 .inactive、从未真正进入 .background 的短暂晃动
+                if wasBackgrounded {
+                    wasBackgrounded = false
+                    triggerBiometricIfNeeded()
                 }
+            default:
+                break
+            }
+        }
+        .onReceive(lockoutTimer) { _ in
+            lockoutTick = Date()
+            viewModel.clearExpiredLockout()
+        }
+        .onChange(of: viewModel.errorMessage) { _, newValue in
+            if let message = newValue {
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
+        }
+        .alert(
+            NSLocalizedString("auth.forgotPassword.step1.title", comment: ""),
+            isPresented: $showForgotPasswordStep1
+        ) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("auth.forgotPassword.continue", comment: ""), role: .destructive)
+            {
+                showForgotPasswordStep2 = true
+            }
+        } message: {
+            Text(NSLocalizedString("auth.forgotPassword.step1.message", comment: ""))
+        }
+        .alert(
+            NSLocalizedString("auth.forgotPassword.step2.title", comment: ""),
+            isPresented: $showForgotPasswordStep2
+        ) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("auth.forgotPassword.confirmDelete", comment: ""), role: .destructive)
+            {
+                // CRITICAL-6: resetAllData 可能失败（Core Data 或磁盘清理失败），
+                // 失败时应用保持锁定状态不变，仅弹出错误提示
+                do {
+                    try AppState.shared.resetAllData()
+                } catch {
+                    resetFailedMessage = error.localizedDescription
+                }
+            }
+        } message: {
+            Text(NSLocalizedString("auth.forgotPassword.step2.message", comment: ""))
+        }
+        .alert(
+            NSLocalizedString("auth.forgotPassword.resetFailed.title", comment: ""),
+            isPresented: Binding(
+                get: { resetFailedMessage != nil },
+                set: { isPresented in
+                    if !isPresented { resetFailedMessage = nil }
+                }
+            )
+        ) {
+            Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+        } message: {
+            Text(resetFailedMessage ?? "")
+        }
+    }
+
+    // MARK: - Biometric Trigger
+
+    /// 自动触发生物识别；仅在未锁定且未在验证中时触发，避免重复弹出
+    private func triggerBiometricIfNeeded() {
+        guard viewModel.isBiometricAvailable, !isLockedOut, !viewModel.isVerifying else {
+            if !viewModel.isBiometricAvailable {
+                isPasswordFieldFocused = true
+            }
+            return
+        }
+        Task {
+            let success = await viewModel.authenticateWithBiometric()
+            if !success {
+                isPasswordFieldFocused = true
             }
         }
     }
@@ -84,18 +199,23 @@ struct AuthenticationView: View {
                 biometricButton
             }
 
-            // 错误提示
-            if let error = viewModel.errorMessage {
+            // 锁定倒计时 / 错误提示
+            if isLockedOut {
+                lockoutCountdownView
+            } else if let error = viewModel.errorMessage {
                 errorMessage(error)
             }
 
-            // 剩余尝试次数
-            if viewModel.remainingAttempts < 5 {
+            // 剩余尝试次数（锁定期间不展示，避免与锁定文案矛盾）
+            if viewModel.remainingAttempts < 5 && !isLockedOut {
                 remainingAttemptsText
             }
 
             // 解锁按钮
             unlockButton
+
+            // 忘记密码入口
+            forgotPasswordButton
         }
         .cardStyle()
         .padding(.horizontal, DesignSystem.Spacing.xl)
@@ -115,6 +235,8 @@ struct AuthenticationView: View {
                 .textContentType(.password)
                 .autocapitalization(.none)
                 .submitLabel(.done)
+                .focused($isPasswordFieldFocused)
+                .disabled(isLockedOut)
                 .onSubmit {
                     Task { await attemptLogin() }
                 }
@@ -124,6 +246,8 @@ struct AuthenticationView: View {
                 )
                 .textContentType(.password)
                 .submitLabel(.done)
+                .focused($isPasswordFieldFocused)
+                .disabled(isLockedOut)
                 .onSubmit {
                     Task { await attemptLogin() }
                 }
@@ -135,6 +259,10 @@ struct AuthenticationView: View {
                 Image(systemName: viewModel.showPassword ? "eye.fill" : "eye.slash.fill")
                     .foregroundColor(DesignSystem.Colors.textSecondary)
             }
+            .accessibilityLabel(
+                viewModel.showPassword
+                    ? NSLocalizedString("accessibility.hidePassword", comment: "")
+                    : NSLocalizedString("accessibility.showPassword", comment: ""))
         }
         .padding(DesignSystem.Spacing.md)
         .background(DesignSystem.Colors.backgroundCard)
@@ -174,20 +302,55 @@ struct AuthenticationView: View {
         .multilineTextAlignment(.center)
     }
 
+    // MARK: - Lockout Countdown
+
+    private var lockoutCountdownView: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock.fill")
+            Text(
+                String(
+                    format: NSLocalizedString("auth.lockedOutCountdown", comment: ""),
+                    formattedLockoutCountdown)
+            )
+            .font(.caption)
+            .fontWeight(.semibold)
+            .monospacedDigit()
+        }
+        .foregroundColor(DesignSystem.Colors.dangerRed)
+        .multilineTextAlignment(.center)
+    }
+
     // MARK: - Remaining Attempts
 
     private var remainingAttemptsText: some View {
-        Text(
-            String(
-                format: NSLocalizedString("auth.remainingAttempts", comment: ""),
-                viewModel.remainingAttempts)
-        )
+        HStack(spacing: 4) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption2)
+            Text(
+                String(
+                    format: NSLocalizedString("auth.remainingAttempts", comment: ""),
+                    viewModel.remainingAttempts)
+            )
+        }
         .font(.caption)
+        .fontWeight(.medium)
         .foregroundColor(
             viewModel.remainingAttempts <= 2
                 ? DesignSystem.Colors.dangerRed
-                : DesignSystem.Colors.warningOrange
+                : Color(red: 0.72, green: 0.42, blue: 0.0)
         )
+    }
+
+    // MARK: - Forgot Password
+
+    private var forgotPasswordButton: some View {
+        Button {
+            showForgotPasswordStep1 = true
+        } label: {
+            Text(NSLocalizedString("auth.forgotPassword", comment: ""))
+                .font(.caption)
+                .foregroundColor(DesignSystem.Colors.textSecondary)
+        }
     }
 
     // MARK: - Unlock Button
@@ -204,7 +367,7 @@ struct AuthenticationView: View {
             }
         }
         .buttonStyle(GradientButtonStyle())
-        .disabled(viewModel.passwordInput.isEmpty || viewModel.isVerifying)
+        .disabled(viewModel.passwordInput.isEmpty || viewModel.isVerifying || isLockedOut)
     }
 
     // MARK: - Helper Methods

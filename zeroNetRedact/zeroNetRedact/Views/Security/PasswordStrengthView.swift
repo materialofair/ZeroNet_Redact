@@ -41,6 +41,9 @@ struct PasswordStrengthView: View {
             }
             .frame(height: 4)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(NSLocalizedString("password.strength", comment: ""))
+        .accessibilityValue(strength.description)
     }
 
     private var strengthColor: Color {

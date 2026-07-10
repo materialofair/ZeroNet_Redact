@@ -13,6 +13,7 @@ struct zeroNetRedactApp: App {
     @StateObject private var appState = AppState.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var isShowingLaunchScreen = true
+    @State private var isObscured = false
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -60,10 +61,17 @@ struct zeroNetRedactApp: App {
                         ContentView()
                     }
                 }
+
+                // 隐私遮罩：App 切换器/多任务预览时防止内容截图泄漏
+                if isObscured {
+                    LaunchScreenView()
+                        .transition(.opacity)
+                        .zIndex(3)
+                }
             }
             .onAppear {
-                // 延迟2秒后隐藏启动页
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                // 延迟隐藏启动页
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                     withAnimation(.easeOut(duration: 0.5)) {
                         isShowingLaunchScreen = false
                     }
@@ -86,19 +94,37 @@ struct zeroNetRedactApp: App {
             if appState.passwordEnabled {
                 appState.lockApp()
             }
+            setObscured(true)
 
         case .inactive:
-            // 暂时失活（如通知中心下拉、控制中心等）
-            // 不做处理，避免频繁锁定
-            break
+            // 暂时失活（如通知中心下拉、控制中心、App 切换器快照等）
+            // 显示隐私遮罩，避免系统截图捕获到敏感内容
+            setObscured(true)
 
         case .active:
-            // 恢复到前台
+            // 恢复到前台，移除隐私遮罩
             // 如果需要认证，AuthenticationView 会自动显示
-            break
+            setObscured(false)
 
         @unknown default:
             break
+        }
+    }
+
+    /// 显示/隐藏隐私遮罩
+    /// - HIGH-9: 显示遮罩（进入后台/失活）必须立即生效、不带动画，否则 0.12s 的淡入窗口期内
+    ///   系统截图仍可能捕获到未遮挡的敏感内容；隐藏遮罩（回到前台）保留淡出动画以避免闪烁感
+    private func setObscured(_ value: Bool) {
+        if value {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                isObscured = true
+            }
+        } else {
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isObscured = false
+            }
         }
     }
 }

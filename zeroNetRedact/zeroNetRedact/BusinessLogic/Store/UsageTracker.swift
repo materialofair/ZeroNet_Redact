@@ -113,6 +113,14 @@ class UsageTracker: ObservableObject {
         updateRemainingCounts()
     }
 
+    /// 清除全部使用记录（用于销毁式重置）
+    func resetAllUsage() {
+        dailyImageExports = 0
+        dailyDocExports = 0
+        lastExportDate = ""
+        updateRemainingCounts()
+    }
+
     // MARK: - Private Methods
 
     /// 检查日期变化并重置计数

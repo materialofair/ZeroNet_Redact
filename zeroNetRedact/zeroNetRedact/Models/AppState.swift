@@ -1,6 +1,24 @@
 import Combine
+import CoreData
 import Foundation
 import SwiftUI
+
+/// 销毁式重置（`AppState.resetAllData()`）过程中可能发生的错误
+enum ResetAllDataError: LocalizedError {
+    /// Core Data 清空/保存失败，此时磁盘文件与密码均未被清除
+    case coreDataSaveFailed(Error)
+    /// Core Data 已清空，但磁盘上部分文件夹未能成功删除
+    case filesNotFullyDeleted(remaining: [String])
+
+    var errorDescription: String? {
+        switch self {
+        case .coreDataSaveFailed:
+            return NSLocalizedString("resetAllData.error.coreData", comment: "")
+        case .filesNotFullyDeleted:
+            return NSLocalizedString("resetAllData.error.filesRemaining", comment: "")
+        }
+    }
+}
 
 /// 全局应用状态管理
 @MainActor
@@ -92,15 +110,19 @@ class AppState: ObservableObject {
     func lockApp() {
         guard passwordEnabled else { return }
 
-        isAuthenticated = false
-        isLocked = true
+        withAnimation(.easeOut(duration: 0.25)) {
+            isAuthenticated = false
+            isLocked = true
+        }
         lastActiveTime = Date()
     }
 
     /// 解锁应用
     func unlockApp() {
-        isAuthenticated = true
-        isLocked = false
+        withAnimation(.easeOut(duration: 0.25)) {
+            isAuthenticated = true
+            isLocked = false
+        }
         lastActiveTime = Date()
     }
 
@@ -108,6 +130,65 @@ class AppState: ObservableObject {
     func reset() {
         isAuthenticated = false
         isLocked = true
+    }
+
+    /// 销毁式重置：清除密码及全部本地数据，恢复到首次启动状态
+    /// - Warning: 这是破坏性操作且不可恢复，调用前必须已完成 UI 层的二次确认
+    /// - Throws: `ResetAllDataError`，当 Core Data 清空或磁盘文件删除失败时抛出；
+    ///   失败时不会解锁应用、也不会重置密码/使用记录，调用方应保持锁定状态并提示用户
+    func resetAllData() throws {
+        print("🗑️ AppState.resetAllData: 开始销毁式重置")
+
+        // 1) 清空 Core Data 中的所有文件记录与分组（级联删除脱敏文件记录）；失败则整体中止
+        let context = PersistenceController.shared.container.viewContext
+        if let files = try? context.fetch(OriginalFile.fetchRequest()) {
+            files.forEach { context.delete($0) }
+        }
+        if let groups = try? context.fetch(FileGroup.fetchRequest()) {
+            groups.forEach { context.delete($0) }
+        }
+        do {
+            try context.save()
+            print("✅ AppState.resetAllData: Core Data 已清空")
+        } catch {
+            print("❌ AppState.resetAllData: Core Data 清空失败 - \(error)")
+            throw ResetAllDataError.coreDataSaveFailed(error)
+        }
+
+        // 2) 删除磁盘上的原文件、缩略图与脱敏文件，并复核确实已删除
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        var remainingFolders: [String] = []
+        for folder in ["Originals", "Thumbnails", "Redacted"] {
+            let folderURL = documentsURL.appendingPathComponent(folder)
+            try? FileManager.default.removeItem(at: folderURL)
+            if FileManager.default.fileExists(atPath: folderURL.path) {
+                remainingFolders.append(folder)
+            }
+        }
+        if !remainingFolders.isEmpty {
+            // Core Data 此时已清空，仅磁盘文件残留；错误信息中说明这一情况
+            print("❌ AppState.resetAllData: 磁盘文件未能完全删除 - \(remainingFolders)")
+            throw ResetAllDataError.filesNotFullyDeleted(remaining: remainingFolders)
+        }
+        print("✅ AppState.resetAllData: 磁盘文件已清空")
+
+        // 3) 前两步都成功后，才清除密码、使用记录并重建默认分组、解锁应用
+        try? passwordManager.removePassword()
+
+        // 清除当日免费导出配额记录
+        UsageTracker.shared.resetAllUsage()
+
+        // 重建默认分组，恢复到首次启动状态
+        GroupManager.shared.ensureDefaultGroup()
+
+        passwordEnabled = false
+        biometricEnabled = true
+        isFirstLaunch = true
+        withAnimation(.easeOut(duration: 0.25)) {
+            isAuthenticated = true
+            isLocked = false
+        }
+        print("✅ AppState.resetAllData: 重置完成")
     }
 
     // MARK: - Premium & Review Mode

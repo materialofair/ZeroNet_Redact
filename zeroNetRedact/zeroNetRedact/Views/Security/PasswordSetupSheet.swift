@@ -98,13 +98,20 @@ private struct FeaturesGridView: View {
 
 // MARK: - Password Setup Sheet
 
+/// 密码设置字段焦点
+private enum SetupField: Hashable {
+    case password
+    case confirmPassword
+}
+
 /// 密码设置界面 - 用于首次设置密码
 struct PasswordSetupSheet: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = PasswordSetupViewModel()
+    @FocusState private var focusedField: SetupField?
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: DesignSystem.Spacing.lg) {
                     // 品牌头部
@@ -112,6 +119,9 @@ struct PasswordSetupSheet: View {
 
                     // 分隔提示
                     setupPromptSection
+
+                    // 密码无法找回警示
+                    passwordRecoveryWarning
 
                     // 密码输入卡片
                     passwordInputSection
@@ -137,6 +147,27 @@ struct PasswordSetupSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled()
         }
+        .onChange(of: viewModel.errorMessage) { _, newValue in
+            if let message = newValue {
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
+        }
+    }
+
+    // MARK: - Password Recovery Warning
+
+    private var passwordRecoveryWarning: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(DesignSystem.Colors.warningOrange)
+            Text(NSLocalizedString("passwordSetup.warning", comment: ""))
+                .font(.caption)
+                .foregroundColor(DesignSystem.Colors.textSecondary)
+        }
+        .padding(DesignSystem.Spacing.md)
+        .background(DesignSystem.Colors.warningOrange.opacity(0.1))
+        .cornerRadius(DesignSystem.CornerRadius.medium)
+        .padding(.horizontal, DesignSystem.Spacing.xxl)
     }
 
     // MARK: - Brand Header Section
@@ -200,12 +231,18 @@ struct PasswordSetupSheet: View {
                         )
                         .textContentType(.newPassword)
                         .autocapitalization(.none)
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .password)
+                        .onSubmit { focusedField = .confirmPassword }
                     } else {
                         SecureField(
                             NSLocalizedString("password.enter", comment: ""),
                             text: $viewModel.password
                         )
                         .textContentType(.newPassword)
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .password)
+                        .onSubmit { focusedField = .confirmPassword }
                     }
 
                     Button {
@@ -214,6 +251,10 @@ struct PasswordSetupSheet: View {
                         Image(systemName: viewModel.showPassword ? "eye.fill" : "eye.slash.fill")
                             .foregroundColor(DesignSystem.Colors.textSecondary)
                     }
+                    .accessibilityLabel(
+                        viewModel.showPassword
+                            ? NSLocalizedString("accessibility.hidePassword", comment: "")
+                            : NSLocalizedString("accessibility.showPassword", comment: ""))
                 }
                 .padding(DesignSystem.Spacing.md)
                 .background(DesignSystem.Colors.backgroundCard)
@@ -235,12 +276,18 @@ struct PasswordSetupSheet: View {
                         )
                         .textContentType(.newPassword)
                         .autocapitalization(.none)
+                        .submitLabel(.done)
+                        .focused($focusedField, equals: .confirmPassword)
+                        .onSubmit { submitIfPossible() }
                     } else {
                         SecureField(
                             NSLocalizedString("password.confirm", comment: ""),
                             text: $viewModel.confirmPassword
                         )
                         .textContentType(.newPassword)
+                        .submitLabel(.done)
+                        .focused($focusedField, equals: .confirmPassword)
+                        .onSubmit { submitIfPossible() }
                     }
                 }
                 .padding(DesignSystem.Spacing.md)
@@ -302,6 +349,10 @@ struct PasswordSetupSheet: View {
 
             Toggle("", isOn: $viewModel.enableBiometric)
                 .tint(DesignSystem.Colors.primaryBlue)
+                .accessibilityLabel(
+                    String(
+                        format: NSLocalizedString("biometric.enable", comment: ""),
+                        viewModel.biometricTypeText))
         }
         .padding(DesignSystem.Spacing.md)
         .cardStyle()
@@ -318,6 +369,17 @@ struct PasswordSetupSheet: View {
         }
         .foregroundColor(DesignSystem.Colors.dangerRed)
         .multilineTextAlignment(.center)
+    }
+
+    // MARK: - Helper Methods
+
+    private func submitIfPossible() {
+        guard viewModel.canSubmit else { return }
+        Task {
+            if await viewModel.setupPassword() {
+                dismiss()
+            }
+        }
     }
 
     // MARK: - Action Buttons
@@ -353,6 +415,13 @@ struct PasswordSetupSheet: View {
     }
 }
 
+/// 修改密码字段焦点
+private enum ChangeField: Hashable {
+    case old
+    case new
+    case confirm
+}
+
 // MARK: - Change Password Sheet
 
 /// 修改密码界面
@@ -361,9 +430,10 @@ struct ChangePasswordSheet: View {
     @StateObject private var viewModel = PasswordSetupViewModel()
     @State private var oldPassword = ""
     @State private var showOldPassword = false
+    @FocusState private var focusedField: ChangeField?
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: DesignSystem.Spacing.xl) {
                     // 顶部说明
@@ -399,6 +469,20 @@ struct ChangePasswordSheet: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(NSLocalizedString("common.close", comment: "")) { dismiss() }
                 }
+            }
+        }
+        .onChange(of: viewModel.errorMessage) { _, newValue in
+            if let message = newValue {
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
+        }
+    }
+
+    private func submitChangeIfPossible() {
+        guard viewModel.canSubmit, !oldPassword.isEmpty else { return }
+        Task {
+            if await viewModel.changePassword(oldPassword: oldPassword) {
+                dismiss()
             }
         }
     }
@@ -464,11 +548,17 @@ struct ChangePasswordSheet: View {
                     )
                     .textContentType(.password)
                     .autocapitalization(.none)
+                    .submitLabel(.next)
+                    .focused($focusedField, equals: .old)
+                    .onSubmit { focusedField = .new }
                 } else {
                     SecureField(
                         NSLocalizedString("password.current.enter", comment: ""), text: $oldPassword
                     )
                     .textContentType(.password)
+                    .submitLabel(.next)
+                    .focused($focusedField, equals: .old)
+                    .onSubmit { focusedField = .new }
                 }
 
                 Button {
@@ -477,6 +567,10 @@ struct ChangePasswordSheet: View {
                     Image(systemName: showOldPassword ? "eye.fill" : "eye.slash.fill")
                         .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
+                .accessibilityLabel(
+                    showOldPassword
+                        ? NSLocalizedString("accessibility.hidePassword", comment: "")
+                        : NSLocalizedString("accessibility.showPassword", comment: ""))
             }
             .padding(DesignSystem.Spacing.md)
             .background(DesignSystem.Colors.backgroundCard)
@@ -504,12 +598,18 @@ struct ChangePasswordSheet: View {
                         )
                         .textContentType(.newPassword)
                         .autocapitalization(.none)
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .new)
+                        .onSubmit { focusedField = .confirm }
                     } else {
                         SecureField(
                             NSLocalizedString("password.new.enter", comment: ""),
                             text: $viewModel.password
                         )
                         .textContentType(.newPassword)
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .new)
+                        .onSubmit { focusedField = .confirm }
                     }
 
                     Button {
@@ -521,6 +621,10 @@ struct ChangePasswordSheet: View {
                         )
                         .foregroundColor(DesignSystem.Colors.textSecondary)
                     }
+                    .accessibilityLabel(
+                        viewModel.showPassword
+                            ? NSLocalizedString("accessibility.hidePassword", comment: "")
+                            : NSLocalizedString("accessibility.showPassword", comment: ""))
                 }
                 .padding(DesignSystem.Spacing.md)
                 .background(DesignSystem.Colors.backgroundCard)
@@ -542,12 +646,18 @@ struct ChangePasswordSheet: View {
                         )
                         .textContentType(.newPassword)
                         .autocapitalization(.none)
+                        .submitLabel(.done)
+                        .focused($focusedField, equals: .confirm)
+                        .onSubmit { submitChangeIfPossible() }
                     } else {
                         SecureField(
                             NSLocalizedString("password.new.confirm", comment: ""),
                             text: $viewModel.confirmPassword
                         )
                         .textContentType(.newPassword)
+                        .submitLabel(.done)
+                        .focused($focusedField, equals: .confirm)
+                        .onSubmit { submitChangeIfPossible() }
                     }
                 }
                 .padding(DesignSystem.Spacing.md)
