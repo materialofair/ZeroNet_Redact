@@ -34,7 +34,7 @@ struct ToolbarButton: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .frame(minHeight: 44)
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(isProminent ? tintColor : tintColor.opacity(0.12))
@@ -57,7 +57,7 @@ struct ToolbarIconButton: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .medium))
-                .frame(width: 36, height: 36)
+                .frame(width: 44, height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color(.systemGray5))
@@ -104,10 +104,15 @@ struct ToastView: View {
 /// 效果选择栏
 struct EffectSelectorView: View {
     @Binding var selectedEffect: BrushEffect
+    @Binding var selectedBrushSize: BrushSize
     @Binding var isScaleBarVisible: Bool
     let onRotate: () -> Void
     let isRotateDisabled: Bool
+    let isBrushSizeDisabled: Bool
     let hasRedactionRegions: Bool
+    let onDetect: () -> Void
+    let isDetecting: Bool
+    let isDetectDisabled: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -131,9 +136,17 @@ struct EffectSelectorView: View {
                     Divider()
                         .frame(height: 40)
 
+                    // 画笔粗细选择
+                    BrushSizeMenuButton(selectedSize: $selectedBrushSize)
+                        .disabled(isBrushSizeDisabled)
+
                     // 旋转按钮
                     RotateButton(action: onRotate)
                         .disabled(isRotateDisabled)
+
+                    // AI自动识别按钮
+                    DetectButton(isDetecting: isDetecting, action: onDetect)
+                        .disabled(isDetectDisabled)
 
                     // 缩放控制条切换按钮（有脱敏区域时显示）
                     if hasRedactionRegions {
@@ -144,6 +157,81 @@ struct EffectSelectorView: View {
             }
         }
         .padding(.top, 6)
+    }
+}
+
+/// 画笔粗细选择菜单按钮
+struct BrushSizeMenuButton: View {
+    @Binding var selectedSize: BrushSize
+
+    var body: some View {
+        Menu {
+            ForEach(BrushSize.allCases, id: \.self) { size in
+                Button {
+                    selectedSize = size
+                } label: {
+                    if selectedSize == size {
+                        Label(size.localizedName, systemImage: "checkmark")
+                    } else {
+                        Text(size.localizedName)
+                    }
+                }
+            }
+        } label: {
+            VStack(spacing: 3) {
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 34, height: 34)
+
+                    Image(systemName: "pencil.tip")
+                        .font(.system(size: 14))
+                        .foregroundColor(.primary)
+                }
+
+                Text(selectedSize.localizedName)
+                    .font(.system(size: 10))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(width: 46)
+        }
+        .accessibilityLabel(NSLocalizedString("brush.size.label", comment: ""))
+    }
+}
+
+/// AI自动识别按钮
+struct DetectButton: View {
+    let isDetecting: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 34, height: 34)
+
+                    if isDetecting {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                    } else {
+                        Image(systemName: "wand.and.stars")
+                            .font(.system(size: 14))
+                            .foregroundColor(.purple)
+                    }
+                }
+
+                Text(NSLocalizedString("editor.aiDetect", comment: ""))
+                    .font(.system(size: 10))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(width: 46)
+        }
     }
 }
 
@@ -248,6 +336,8 @@ struct ScaleControlBar: View {
     let onScaleUp: () -> Void
     let onScaleDown: () -> Void
     let onDelete: () -> Void
+    /// 点击提示文字时直接切换到拖拽模式，降低进入编辑的门槛
+    var onEnableDrag: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 8) {
@@ -258,10 +348,16 @@ struct ScaleControlBar: View {
 
             // 提示：需要先开启拖拽模式并选中区域
             if !isDragMode {
-                Text(NSLocalizedString("scale.enableDragHint", comment: "开启拖拽"))
-                    .font(.system(size: 8))
-                    .foregroundColor(.orange)
-                    .multilineTextAlignment(.center)
+                Button {
+                    onEnableDrag?()
+                } label: {
+                    Text(NSLocalizedString("scale.enableDragHint", comment: "开启拖拽"))
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundColor(.orange)
+                        .multilineTextAlignment(.center)
+                        .underline()
+                }
+                .buttonStyle(.plain)
             } else if !hasSelection {
                 Text(NSLocalizedString("scale.selectHint", comment: "点击选中"))
                     .font(.system(size: 8))
@@ -276,9 +372,11 @@ struct ScaleControlBar: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
                     .foregroundColor(hasSelection ? .blue : .gray)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .disabled(!hasSelection)
+            .accessibilityLabel(NSLocalizedString("action.scaleUp", comment: ""))
 
             // 缩放指示器
             VStack(spacing: 3) {
@@ -295,9 +393,11 @@ struct ScaleControlBar: View {
                 Image(systemName: "minus.circle.fill")
                     .font(.title2)
                     .foregroundColor(hasSelection ? .blue : .gray)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .disabled(!hasSelection)
+            .accessibilityLabel(NSLocalizedString("action.scaleDown", comment: ""))
 
             Spacer()
 
@@ -306,13 +406,15 @@ struct ScaleControlBar: View {
                 Image(systemName: "trash.circle.fill")
                     .font(.title2)
                     .foregroundColor(hasSelection ? .red : .gray)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .disabled(!hasSelection)
+            .accessibilityLabel(NSLocalizedString("action.deleteRegion", comment: ""))
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 6)
-        .frame(width: 50)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
+        .frame(width: 60)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.systemBackground).opacity(0.95))
@@ -320,6 +422,115 @@ struct ScaleControlBar: View {
         )
         .padding(.leading, 8)
         .padding(.vertical, 20)
+    }
+}
+
+// MARK: - Detection Result Bar
+
+/// AI检测结果条：展示检测到的敏感区域，支持逐条应用/忽略或全部应用
+struct DetectionResultBar: View {
+    let regions: [SensitiveRegion]
+    /// 其他页面尚未处理的检测区域数量（图片文件恒为0）
+    var otherPagesCount: Int = 0
+    let onApply: (SensitiveRegion) -> Void
+    let onIgnore: (SensitiveRegion) -> Void
+    let onApplyAll: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(
+                        String(
+                            format: NSLocalizedString("editor.detectedRegions", comment: ""),
+                            regions.count)
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                    if otherPagesCount > 0 {
+                        Text(
+                            String(
+                                format: NSLocalizedString(
+                                    "editor.detectedRegions.otherPages", comment: ""),
+                                otherPagesCount)
+                        )
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                    }
+                }
+
+                Spacer()
+
+                Button(NSLocalizedString("editor.detect.applyAll", comment: "")) {
+                    onApplyAll()
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .frame(minHeight: 44)
+                .disabled(regions.isEmpty)
+
+                Button {
+                    onDismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+                .frame(width: 44, height: 44)
+            }
+            .padding(.horizontal, 8)
+
+            if !regions.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(regions) { region in
+                            DetectionChip(
+                                region: region,
+                                onApply: { onApply(region) },
+                                onIgnore: { onIgnore(region) }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .background(Color.orange.opacity(0.08))
+    }
+}
+
+/// 单个检测结果卡片
+struct DetectionChip: View {
+    let region: SensitiveRegion
+    let onApply: () -> Void
+    let onIgnore: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(region.type.displayName)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+
+            Button(action: onApply) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onIgnore) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.red)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.leading, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(.systemGray6))
+        )
     }
 }
 

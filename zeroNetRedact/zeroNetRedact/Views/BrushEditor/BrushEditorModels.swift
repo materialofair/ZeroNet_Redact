@@ -61,6 +61,56 @@ enum BrushEffect: String, CaseIterable {
     }
 }
 
+// MARK: - Canvas Mode Enum
+
+/// 画布交互模式
+enum CanvasMode: String, CaseIterable {
+    case brush
+    case drag
+    case zoom
+
+    var icon: String {
+        switch self {
+        case .brush: return "paintbrush.pointed.fill"
+        case .drag: return "hand.point.up.left.fill"
+        case .zoom: return "arrow.up.left.and.arrow.down.right.circle.fill"
+        }
+    }
+
+    var localizedName: String {
+        switch self {
+        case .brush: return NSLocalizedString("mode.brush", comment: "")
+        case .drag: return NSLocalizedString("mode.drag", comment: "")
+        case .zoom: return NSLocalizedString("mode.zoom", comment: "")
+        }
+    }
+}
+
+// MARK: - Brush Size Enum
+
+/// 画笔粗细
+enum BrushSize: String, CaseIterable {
+    case thin
+    case medium
+    case thick
+
+    var width: CGFloat {
+        switch self {
+        case .thin: return 20
+        case .medium: return 40
+        case .thick: return 70
+        }
+    }
+
+    var localizedName: String {
+        switch self {
+        case .thin: return NSLocalizedString("brush.size.thin", comment: "")
+        case .medium: return NSLocalizedString("brush.size.medium", comment: "")
+        case .thick: return NSLocalizedString("brush.size.thick", comment: "")
+        }
+    }
+}
+
 // MARK: - UIImage Rotation Extension
 
 extension UIImage {

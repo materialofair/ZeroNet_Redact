@@ -353,4 +353,64 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
 
         print("🔍 scaleAnnotation: 缩放注释\(index)，比例\(scale)，新尺寸: \(newBounds.size)")
     }
+
+    // MARK: - Annotation Moving
+
+    /// 移动指定索引的注释（脱敏区域）
+    /// - Parameters:
+    ///   - index: 注释索引
+    ///   - offset: PDF坐标系偏移量
+    func moveAnnotation(at index: Int, offset: CGSize) {
+        guard let document = pdfDocument,
+            let page = document.page(at: currentPageIndex)
+        else {
+            print("⚠️ moveAnnotation: 无法获取PDF页面")
+            return
+        }
+
+        guard index >= 0 && index < page.annotations.count else {
+            print("⚠️ moveAnnotation: 索引越界 \(index)/\(page.annotations.count)")
+            return
+        }
+
+        let annotation = page.annotations[index]
+
+        // 计算新位置
+        var newBounds = annotation.bounds
+        newBounds.origin.x += offset.width
+        newBounds.origin.y += offset.height
+
+        // 保存原有属性
+        let oldColor = annotation.color
+        let oldInteriorColor = annotation.interiorColor
+        let oldBorder = annotation.border
+        let oldShouldDisplay = annotation.shouldDisplay
+        let oldShouldPrint = annotation.shouldPrint
+
+        // 移除旧注释
+        page.removeAnnotation(annotation)
+
+        // 创建新注释
+        let newAnnotation = PDFAnnotation(bounds: newBounds, forType: .square, withProperties: nil)
+        newAnnotation.color = oldColor
+        newAnnotation.interiorColor = oldInteriorColor
+        newAnnotation.border = oldBorder
+        newAnnotation.shouldDisplay = oldShouldDisplay
+        newAnnotation.shouldPrint = oldShouldPrint
+
+        // 添加新注释
+        page.addAnnotation(newAnnotation)
+
+        // 更新跟踪列表（同步撤销状态）
+        if var pageAnnotations = redactionAnnotations[currentPageIndex] {
+            if index < pageAnnotations.count {
+                pageAnnotations[index] = newAnnotation
+                redactionAnnotations[currentPageIndex] = pageAnnotations
+            }
+        }
+
+        print(
+            "📍 moveAnnotation: 移动注释\(index)，偏移(\(offset.width), \(offset.height))，新位置: \(newBounds)"
+        )
+    }
 }

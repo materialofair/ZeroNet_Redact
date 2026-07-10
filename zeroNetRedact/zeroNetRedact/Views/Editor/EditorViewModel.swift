@@ -158,21 +158,6 @@ class EditorViewModel: ObservableObject {
         updateUndoRedoState()
     }
 
-    /// 应用手动绘制的区域
-    func applyDrawnRegions(_ drawnRegions: [DrawnRegion]) {
-        for region in drawnRegions {
-            let rect = region.boundingRect
-            editor?.applyRedaction(at: rect, effect: region.effect)
-        }
-
-        // 更新显示的图片
-        if let image = editor?.getCurrentImage() {
-            currentImage = image
-        }
-
-        updateUndoRedoState()
-    }
-
     func undo() {
         editor?.undo()
 
@@ -240,22 +225,36 @@ class EditorViewModel: ObservableObject {
         }
     }
 
-    func exportFile() async {
+    /// 导出脱敏后的文件
+    /// - Returns: 是否导出成功（配额超限或异常均返回 false，具体原因见 showUsageLimitAlert / errorMessage）
+    @discardableResult
+    func exportFile() async -> Bool {
         // 1. 检查配额
         if !canExport() {
             showUsageLimitAlert = true
             print("⚠️ EditorViewModel: 达到每日导出限制")
-            return
+            return false
         }
 
         isExporting = true
         defer { isExporting = false }
+
+        if Task.isCancelled {
+            print("⚠️ EditorViewModel: 导出已取消，跳过处理")
+            return false
+        }
 
         do {
             print("📦 开始导出文件，类型: \(file.fileType)")
 
             if let data = try await editor?.exportRedactedFile() {
                 print("📦 获取到打码数据，大小: \(data.count) bytes")
+
+                // 取消检查：确保取消后不写入磁盘
+                if Task.isCancelled {
+                    print("⚠️ EditorViewModel: 导出已取消，跳过写入文件")
+                    return false
+                }
 
                 // 生成新的文件ID
                 let newFileId = UUID()
@@ -266,51 +265,18 @@ class EditorViewModel: ObservableObject {
                     id: newFileId,
                     type: file.fileType
                 )
-                print("✅ 打码文件已保存: \(url)")
-                print("✅ 文件路径: \(url.path)")
+                print("✅ 打码文件已保存: \(url.path)")
 
-                // 验证文件是否真的存在
-                print("🔍 验证文件存在性...")
-                print("🔍 检查路径: \(url.path)")
-                if FileManager.default.fileExists(atPath: url.path) {
-                    print("✅ 文件已确认存在于磁盘")
-                    let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
-                    if let size = attrs?[.size] as? Int64 {
-                        print("✅ 文件大小: \(size) bytes")
-                    }
-
-                    // 列出目录内容
-                    let directory = (url.path as NSString).deletingLastPathComponent
-                    if let contents = try? FileManager.default.contentsOfDirectory(
-                        atPath: directory)
-                    {
-                        print("📁 目录内容 (\(directory)):")
-                        for item in contents {
-                            print("  - \(item)")
-                        }
-                    }
-                } else {
-                    print("❌ 警告: 文件不存在于磁盘！")
-
-                    // 检查目录是否存在
-                    let directory = (url.path as NSString).deletingLastPathComponent
-                    print("🔍 检查目录是否存在: \(directory)")
-                    if FileManager.default.fileExists(atPath: directory) {
-                        print("✅ 目录存在")
-                        if let contents = try? FileManager.default.contentsOfDirectory(
-                            atPath: directory)
-                        {
-                            print("📁 目录内容:")
-                            for item in contents {
-                                print("  - \(item)")
-                            }
-                        }
-                    } else {
-                        print("❌ 目录不存在！")
-                    }
+                // 取消检查：确保取消后不创建相册记录、不扣配额；
+                // 此时磁盘文件已写入，需一并清理，避免留下无记录引用的孤儿文件
+                if Task.isCancelled {
+                    print("⚠️ EditorViewModel: 导出已取消，清理已写入的文件并跳过创建记录")
+                    try? StorageManager.shared.deleteRedacted(id: newFileId, type: file.fileType)
+                    return false
                 }
 
                 // 创建新的OriginalFile记录（作为独立的打码文件显示在相册）
+                var didSaveRecord = false
                 await MainActor.run {
                     let context = PersistenceController.shared.container.viewContext
 
@@ -404,18 +370,26 @@ class EditorViewModel: ObservableObject {
 
                         // 记录导出使用量（免费用户计数）
                         self.recordExportUsage()
+                        didSaveRecord = true
                     } catch {
                         print("❌ 保存打码文件到相册失败: \(error)")
+                        self.errorMessage = String(
+                            format: NSLocalizedString("editor.exportFailed", comment: ""),
+                            error.localizedDescription)
                     }
                 }
+                return didSaveRecord
             } else {
                 print("❌ 导出失败: editor?.exportRedactedFile() 返回 nil")
+                errorMessage = NSLocalizedString("export.failed", comment: "")
+                return false
             }
         } catch {
             print("❌ 导出异常: \(error.localizedDescription)")
             errorMessage = String(
                 format: NSLocalizedString("editor.exportFailed", comment: ""),
                 error.localizedDescription)
+            return false
         }
     }
 
@@ -429,6 +403,18 @@ class EditorViewModel: ObservableObject {
     /// 检查是否是PDF文件
     var isPDFFile: Bool {
         file.fileType == .pdf
+    }
+
+    /// 当前页面可消费的检测区域（图片文件返回全部；PDF文件按当前页过滤）
+    var regionsForCurrentPage: [SensitiveRegion] {
+        guard isPDFFile else { return detectedRegions }
+        return detectedRegions.filter { $0.pageIndex == currentPDFPageIndex }
+    }
+
+    /// 其他页面尚未处理的检测区域数量（仅PDF有意义）
+    var otherPagesRegionCount: Int {
+        guard isPDFFile else { return 0 }
+        return detectedRegions.filter { $0.pageIndex != currentPDFPageIndex }.count
     }
 
     /// 渲染PDF当前页为UIImage（包含annotations）
@@ -538,47 +524,12 @@ class EditorViewModel: ObservableObject {
     /// 移动指定索引的注释 (PDF坐标系偏移量)
     func moveAnnotation(at index: Int, offset: CGSize) {
         guard isPDFFile,
-            let pdfEditor = editor?.baseEditor as? PDFRedactionEditor,
-            let page = pdfEditor.currentPage
+            let pdfEditor = editor?.baseEditor as? PDFRedactionEditor
         else {
             return
         }
 
-        guard index >= 0 && index < page.annotations.count else {
-            return
-        }
-
-        let annotation = page.annotations[index]
-
-        // 保存原有属性
-        let oldColor = annotation.color
-        let oldInteriorColor = annotation.interiorColor
-        let oldBorder = annotation.border
-        let oldShouldDisplay = annotation.shouldDisplay
-        let oldShouldPrint = annotation.shouldPrint
-
-        // 计算新位置
-        var newBounds = annotation.bounds
-        newBounds.origin.x += offset.width
-        newBounds.origin.y += offset.height
-
-        // 移除旧注释
-        page.removeAnnotation(annotation)
-
-        // 创建新注释
-        let newAnnotation = PDFAnnotation(bounds: newBounds, forType: .square, withProperties: nil)
-        newAnnotation.color = oldColor
-        newAnnotation.interiorColor = oldInteriorColor
-        newAnnotation.border = oldBorder
-        newAnnotation.shouldDisplay = oldShouldDisplay
-        newAnnotation.shouldPrint = oldShouldPrint
-
-        // 添加新注释
-        page.addAnnotation(newAnnotation)
-
-        print(
-            "📍 moveAnnotation: 移动注释\(index)，偏移(\(offset.width), \(offset.height))，新位置: \(newBounds)"
-        )
+        pdfEditor.moveAnnotation(at: index, offset: offset)
 
         // 刷新当前页面渲染
         if let renderedImage = renderCurrentPDFPage() {

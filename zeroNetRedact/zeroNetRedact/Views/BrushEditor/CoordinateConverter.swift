@@ -135,10 +135,47 @@ struct CoordinateConverter {
         )
     }
 
+    // MARK: - Sensitive Region Conversion
+
+    /// 将检测到的敏感区域转换为编辑器可直接使用的坐标系矩形
+    /// (图片文件: 图片像素坐标；PDF文件: PDF页面坐标，均与 applyRedaction(at:) 期望的坐标系一致)
+    func regionRect(for region: SensitiveRegion) -> CGRect? {
+        if viewModel.isPDFFile {
+            // PDFTextRecognizer 返回的 boundingBox 已经是PDF页面坐标(左下角原点)
+            return region.boundingBox
+        } else if viewModel.isImageFile {
+            guard let image = viewModel.currentImage else { return nil }
+            let bb = region.boundingBox
+            let width = image.size.width
+            let height = image.size.height
+            // Vision归一化坐标(左下角原点) -> 图片像素坐标(左上角原点)
+            return CGRect(
+                x: bb.minX * width,
+                y: (1 - bb.maxY) * height,
+                width: bb.width * width,
+                height: bb.height * height
+            )
+        }
+        return nil
+    }
+
+    /// 将检测到的敏感区域转换为屏幕坐标，用于画布上高亮显示
+    func regionScreenRect(for region: SensitiveRegion) -> CGRect? {
+        guard let rect = regionRect(for: region) else { return nil }
+        if viewModel.isPDFFile {
+            return pdfRectToScreen(rect)
+        } else if viewModel.isImageFile {
+            return imageRectToScreen(rect)
+        }
+        return nil
+    }
+
     // MARK: - Display Size Calculation
 
     /// 计算图片显示尺寸
     static func calculateDisplaySize(for imageSize: CGSize, in containerSize: CGSize) -> CGSize {
+        guard imageSize.width > 0, imageSize.height > 0 else { return .zero }
+
         let imageAspect = imageSize.width / imageSize.height
         let containerAspect = containerSize.width / containerSize.height
 
