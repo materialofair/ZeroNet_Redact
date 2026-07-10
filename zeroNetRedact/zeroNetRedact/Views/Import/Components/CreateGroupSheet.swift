@@ -25,7 +25,7 @@ struct CreateGroupSheet: View {
     ]
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text(NSLocalizedString("group.info", comment: ""))) {
                     // 名称输入
@@ -50,6 +50,8 @@ struct CreateGroupSheet: View {
                                     .cornerRadius(8)
                                     .foregroundColor(selectedIcon == icon ? .accentColor : .primary)
                             }
+                            .accessibilityLabel(iconName(icon))
+                            .accessibilityAddTraits(selectedIcon == icon ? [.isSelected] : [])
                         }
                     }
                     .padding(.vertical, 8)
@@ -90,6 +92,22 @@ struct CreateGroupSheet: View {
             } message: {
                 Text(errorMessage)
             }
+        }
+    }
+
+    private func iconName(_ systemName: String) -> String {
+        switch systemName {
+        case "folder.fill": return NSLocalizedString("icon.folder", comment: "")
+        case "briefcase.fill": return NSLocalizedString("icon.briefcase", comment: "")
+        case "house.fill": return NSLocalizedString("icon.house", comment: "")
+        case "star.fill": return NSLocalizedString("icon.star", comment: "")
+        case "heart.fill": return NSLocalizedString("icon.heart", comment: "")
+        case "camera.fill": return NSLocalizedString("icon.camera", comment: "")
+        case "doc.fill": return NSLocalizedString("icon.doc", comment: "")
+        case "photo.fill": return NSLocalizedString("icon.photo", comment: "")
+        case "film.fill": return NSLocalizedString("icon.film", comment: "")
+        case "book.fill": return NSLocalizedString("icon.book", comment: "")
+        default: return systemName
         }
     }
 

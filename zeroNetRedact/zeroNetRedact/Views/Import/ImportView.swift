@@ -8,7 +8,7 @@ struct ImportView: View {
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack(alignment: .bottom) {
                 // 背景色
                 DesignSystem.Colors.backgroundPrimary
@@ -34,17 +34,47 @@ struct ImportView: View {
                     }
                 }
 
-                // 底部固定导入按钮栏
+                // 底部固定操作栏
                 if !viewModel.originalFiles.isEmpty {
-                    ImportButtonBar(
-                        onPhotosImport: { viewModel.showPhotosPicker = true },
-                        onDocumentImport: { viewModel.showDocumentPicker = true }
-                    )
+                    if viewModel.isSelectionMode {
+                        selectionActionBar
+                    } else {
+                        ImportButtonBar(
+                            onPhotosImport: { viewModel.showPhotosPicker = true },
+                            onDocumentImport: { viewModel.showDocumentPicker = true }
+                        )
+                    }
+                }
+
+                // 成功 Toast
+                if viewModel.showSuccessToast {
+                    VStack {
+                        ToastView(message: viewModel.successToastMessage, isSuccess: true)
+                            .padding(.top, 8)
+                        Spacer()
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.showSuccessToast)
                 }
             }
             .navigationTitle(NSLocalizedString("import.title", comment: ""))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        withAnimation {
+                            viewModel.toggleSelectionMode()
+                        }
+                    }) {
+                        Text(
+                            viewModel.isSelectionMode
+                                ? NSLocalizedString("common.done", comment: "")
+                                : NSLocalizedString("import.select", comment: "")
+                        )
+                    }
+                    .disabled(viewModel.originalFiles.isEmpty && !viewModel.isSelectionMode)
+                }
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         viewModel.showManageGroups = true
@@ -52,12 +82,14 @@ struct ImportView: View {
                         Image(systemName: "folder.badge.gearshape")
                             .foregroundColor(DesignSystem.Colors.primaryBlue)
                     }
+                    .accessibilityLabel(
+                        NSLocalizedString("import.accessibility.manageGroups", comment: ""))
                 }
             }
             .photosPicker(
                 isPresented: $viewModel.showPhotosPicker,
                 selection: $selectedPhotoItems,
-                maxSelectionCount: 10,
+                maxSelectionCount: Layout.maxPhotoSelection,
                 matching: .images
             )
             .onChange(of: selectedPhotoItems) { newItems in
@@ -90,20 +122,28 @@ struct ImportView: View {
                 }
             }
             .alert(
-                NSLocalizedString("import.duplicate.title", comment: ""),
-                isPresented: $viewModel.showDuplicateAlert
+                NSLocalizedString("import.result.title", comment: ""),
+                isPresented: $viewModel.showImportResultAlert
             ) {
-                Button(NSLocalizedString("import.duplicate.skip", comment: ""), role: .cancel) {
-                    viewModel.pendingImportSource = nil
-                    viewModel.duplicateFile = nil
-                }
-                Button(NSLocalizedString("import.duplicate.import_anyway", comment: "")) {
-                    Task {
-                        await viewModel.forceImportDuplicate()
+                if viewModel.pendingDuplicateSources.isEmpty {
+                    Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+                } else {
+                    Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {
+                        viewModel.dismissPendingDuplicates()
+                    }
+                    Button(
+                        String(
+                            format: NSLocalizedString(
+                                "import.duplicate.import_anyway_count", comment: ""),
+                            viewModel.pendingDuplicateSources.count)
+                    ) {
+                        Task {
+                            await viewModel.forceImportPendingDuplicates()
+                        }
                     }
                 }
             } message: {
-                Text(NSLocalizedString("import.duplicate.message", comment: ""))
+                Text(viewModel.importResultMessage)
             }
             .overlay {
                 if viewModel.isImporting {
@@ -129,16 +169,75 @@ struct ImportView: View {
                 ],
                 spacing: Layout.gridSpacing
             ) {
-                ForEach(viewModel.originalFiles, id: \.id) { file in
-                    OriginalFileGridItem(file: file, viewModel: viewModel)
-                        .onTapGesture {
+                // 用 objectID 做标识：对象删除后 \.id 键路径取非可选 UUID 会崩溃，objectID 永远有效
+                ForEach(viewModel.originalFiles, id: \.objectID) { file in
+                    OriginalFileGridItem(
+                        file: file,
+                        viewModel: viewModel,
+                        isSelectionMode: viewModel.isSelectionMode,
+                        isSelected: viewModel.selectedFileIDs.contains(file.id)
+                    )
+                    .onTapGesture {
+                        if viewModel.isSelectionMode {
+                            viewModel.toggleSelection(file)
+                        } else {
                             selectedOriginalFile = file
                         }
+                    }
                 }
             }
             .padding(.horizontal, DesignSystem.Spacing.lg)
             .padding(.top, DesignSystem.Spacing.md)
             .padding(.bottom, Layout.bottomPadding)  // 为底部按钮栏留出空间
+        }
+    }
+
+    // MARK: - 多选删除操作栏
+
+    private var selectionActionBar: some View {
+        HStack {
+            Button(role: .destructive) {
+                viewModel.showBatchDeleteConfirm = true
+            } label: {
+                Text(
+                    String(
+                        format: NSLocalizedString("import.deleteSelectedCount", comment: ""),
+                        viewModel.selectedFileIDs.count)
+                )
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(DesignSystem.Colors.dangerRed)
+                .foregroundColor(.white)
+                .cornerRadius(DesignSystem.CornerRadius.medium)
+            }
+            .disabled(viewModel.selectedFileIDs.isEmpty)
+            .opacity(viewModel.selectedFileIDs.isEmpty ? 0.5 : 1)
+        }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.top, 12)
+        .padding(.bottom, 20)
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: -4)
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .alert(
+            NSLocalizedString("import.delete.selected.title", comment: ""),
+            isPresented: $viewModel.showBatchDeleteConfirm
+        ) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                viewModel.deleteSelectedFiles()
+            }
+        } message: {
+            Text(
+                String(
+                    format: NSLocalizedString("import.delete.selected.message", comment: ""),
+                    viewModel.selectedFileIDs.count)
+            )
         }
     }
 
@@ -150,12 +249,41 @@ struct ImportView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
-                ProgressView()
-                    .scaleEffect(1.2)
+                if viewModel.importTotalCount > 0 {
+                    ProgressView(
+                        value: Double(viewModel.importCompletedCount),
+                        total: Double(viewModel.importTotalCount)
+                    )
+                    .progressViewStyle(.linear)
                     .tint(.white)
-                Text(NSLocalizedString("import.loading", comment: ""))
+                    .frame(width: 160)
+
+                    Text(
+                        String(
+                            format: NSLocalizedString("import.progress", comment: ""),
+                            viewModel.importCompletedCount, viewModel.importTotalCount)
+                    )
                     .font(.headline)
                     .foregroundColor(.white)
+                } else {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .tint(.white)
+                    Text(NSLocalizedString("import.loading", comment: ""))
+                        .font(.headline)
+                        .foregroundColor(.white)
+                }
+
+                Button(NSLocalizedString("common.cancel", comment: "")) {
+                    viewModel.cancelImport()
+                }
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule().stroke(Color.white.opacity(0.6), lineWidth: 1)
+                )
             }
             .padding(32)
             .background(.ultraThinMaterial)

@@ -18,7 +18,7 @@ struct GroupManagementSheet: View {
     @State private var showDeleteResult: Bool = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // 默认分组（不可删除，仅可重命名）
                 Section(header: Text(NSLocalizedString("group.system", comment: ""))) {
@@ -169,6 +169,7 @@ struct GroupEditRow: View {
                         .foregroundColor(.accentColor)
                         .font(.title3)
                 }
+                .accessibilityLabel(NSLocalizedString("import.accessibility.changeGroupIcon", comment: ""))
 
                 // 名称编辑
                 if isEditing {
@@ -203,6 +204,11 @@ struct GroupEditRow: View {
                     Image(systemName: isEditing ? "checkmark.circle.fill" : "pencil.circle")
                         .foregroundColor(isEditing ? .green : .blue)
                 }
+                .accessibilityLabel(
+                    NSLocalizedString(
+                        isEditing
+                            ? "import.accessibility.saveGroupName" : "import.accessibility.editGroupName",
+                        comment: ""))
             }
         }
         .padding(.vertical, 4)

@@ -51,6 +51,7 @@ struct GroupSelectorBar: View {
                         .frame(width: 44, height: 44)
                 }
                 .padding(.leading, 4)
+                .accessibilityLabel(NSLocalizedString("import.accessibility.newGroup", comment: ""))
             }
             .padding(.horizontal, 16)
         }

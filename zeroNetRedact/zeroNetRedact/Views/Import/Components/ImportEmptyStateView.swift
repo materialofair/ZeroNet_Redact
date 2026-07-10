@@ -80,14 +80,20 @@ struct ImportEmptyStateView: View {
 
     /// 导入按钮组视图
     private var importButtonsView: some View {
-        HStack(spacing: 12) {
-            // 从相册导入图片
-            ImportButton(
-                icon: "photo.on.rectangle.angled",
-                title: NSLocalizedString("import.selectPhotos", comment: ""),
-                iconColor: DesignSystem.Colors.primaryBlue,
-                action: onPhotosImport
-            )
+        HStack(alignment: .top, spacing: 12) {
+            // 从相册导入图片 —— 单次选择上限提示只跟图片按钮关联（该上限不适用于 PDF）
+            VStack(spacing: 8) {
+                ImportButton(
+                    icon: "photo.on.rectangle.angled",
+                    title: NSLocalizedString("import.selectPhotos", comment: ""),
+                    iconColor: DesignSystem.Colors.primaryBlue,
+                    action: onPhotosImport
+                )
+
+                Text(NSLocalizedString("import.maxSelection", comment: ""))
+                    .font(.caption)
+                    .foregroundColor(DesignSystem.Colors.textTertiary)
+            }
 
             // 导入PDF文件
             ImportButton(
