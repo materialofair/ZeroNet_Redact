@@ -298,8 +298,8 @@
 "import.title" = "Import";
 "import.loading" = "Importing...";
 "import.failed" = "Import Failed";
-"import.empty.title" = "ZeroNet Privacy Protection";
-"import.empty.description" = "Files are encrypted, only you can access";
+"import.empty.title" = "Import Photos or PDFs to Start Redacting";
+"import.empty.description" = "Files are encrypted locally end-to-end, only you can access them";
 "import.selectPhotos" = "Select Photos";
 "import.selectPDF" = "Select PDF";
 "import.maxSelection" = "Select up to 10";
@@ -421,3 +421,112 @@
 
 /* Common - Additional */
 "common.calculating" = "Calculating...";
+
+/* Album - Interaction fixes */
+"album.select" = "Select";
+"album.fileInfo" = "File Info";
+"album.moreActions" = "More Actions";
+"album.preview.failed.title" = "Preview Failed";
+"album.preview.failed.message" = "The file is missing or corrupted and cannot be previewed.";
+"album.preview.deleteRecord" = "Delete This Record";
+"album.batchDelete.title" = "Delete Selected Files";
+"album.batchDelete.message" = "%d redacted files will be permanently deleted. This action cannot be undone.";
+"album.batchDelete.selectedCount" = "%d selected";
+"album.empty.cta" = "Go to Import";
+
+/* Premium - Legal */
+"premium.terms" = "Terms of Use";
+
+/* Settings - Developer Options */
+"settings.devOptions.title" = "Developer Options";
+"settings.devOptions.placeholder" = "Enter access code";
+"settings.devOptions.message" = "Enter the access code to continue.";
+"settings.devOptions.success.title" = "Activated";
+"settings.devOptions.success.message" = "Access code verified.";
+"settings.devOptions.error.title" = "Verification Failed";
+"settings.devOptions.error.message" = "Invalid or expired access code.";
+"settings.badge.active" = "Active";
+
+/* Import - Interaction fixes */
+"import.result.title" = "Import Complete";
+"import.select" = "Select";
+"import.progress" = "Importing %d of %d";
+"import.success.toast" = "Imported %d files";
+"import.duplicate.import_anyway_count" = "Import Anyway (%d Files)";
+"import.cancelled.remaining" = "%d files not processed (cancelled)";
+"import.cancelled.result" = "Imported %d files, cancelled %d files";
+"import.deleteSelectedCount" = "Delete (%d)";
+"import.delete.selected.title" = "Delete Selected Files";
+"import.delete.selected.message" = "Are you sure you want to delete these %d files? This action cannot be undone.";
+"import.thumbnail.loadFailed" = "Unable to load";
+"import.accessibility.manageGroups" = "Manage Groups";
+"import.accessibility.newGroup" = "New Group";
+"import.accessibility.editHint" = "Tap to edit";
+"import.accessibility.selectHint" = "Tap to select or deselect";
+"import.accessibility.fileLabel" = "%@, %@";
+"import.accessibility.changeGroupIcon" = "Change Group Icon";
+"import.accessibility.editGroupName" = "Edit Group Name";
+"import.accessibility.saveGroupName" = "Save Group Name";
+
+/* Authentication - Interaction fixes */
+"auth.forgotPassword" = "Forgot Password?";
+"auth.forgotPassword.step1.title" = "Forgot Password?";
+"auth.forgotPassword.step1.message" = "This will delete all imported and redacted files, and this cannot be undone. Continue?";
+"auth.forgotPassword.continue" = "Continue";
+"auth.forgotPassword.step2.title" = "Confirm Delete All Data";
+"auth.forgotPassword.step2.message" = "This action cannot be undone. Your password and all local data will be erased immediately, and the app will return to its initial state.";
+"auth.forgotPassword.confirmDelete" = "Delete All Data";
+"auth.wrongPasswordWithLockoutWarning" = "Wrong password. %d more attempt(s) will lock you out for %@.";
+"auth.wrongPassword.generic" = "Wrong password";
+"auth.lockedOutCountdown" = "Locked. Try again in %@.";
+"biometric.unlockReason" = "Unlock ZeroNet Redact";
+"passwordSetup.warning" = "Your password cannot be recovered — please remember it. If forgotten, you can only reset by erasing all data and starting over.";
+"accessibility.showPassword" = "Show password";
+"accessibility.hidePassword" = "Hide password";
+
+/* Editor - Interaction fixes */
+"mode.zoom" = "Zoom & Pan";
+"brush.size.label" = "Brush Size";
+"brush.size.thin" = "Thin";
+"brush.size.medium" = "Medium";
+"brush.size.thick" = "Thick";
+"editor.discardConfirm.title" = "Discard current redaction?";
+"editor.discardConfirm.discard" = "Discard";
+"editor.discardConfirm.keepEditing" = "Keep Editing";
+"editor.autoApplied" = "Unapplied strokes were applied automatically";
+"editor.detect.applyAll" = "Apply All";
+"export.success.detail" = "Saved to Redacted Files";
+
+/* Pre-existing missing keys (backfill) */
+"crypto.error.keychainError" = "Keychain access failed";
+"editor.error.applyRedactionFailed" = "Failed to apply redaction";
+"editor.error.noFileLoaded" = "No file loaded";
+"editor.error.noImageLoaded" = "No image loaded";
+"editor.error.noPDFLoaded" = "No PDF loaded";
+"effect.rectangle" = "Rectangle";
+"effect.solidBlack" = "Solid Black";
+"import.error.invalidImageData" = "Invalid image data";
+"import.error.invalidPDFData" = "Invalid PDF data";
+"import.error.photoLoadFailed" = "Failed to load photo";
+"import.error.thumbnailFailed" = "Failed to generate thumbnail";
+"import.error.unsupportedSource" = "Unsupported import source";
+"recognition.error.invalidImageData" = "Invalid image data, cannot recognize";
+"recognition.error.invalidPDFData" = "Invalid PDF data, cannot recognize";
+"sensitiveType.custom" = "Custom";
+"sensitiveType.phoneNumber" = "Phone Number";
+
+/* Import - Review fixes */
+"import.photo.loadFailedCount" = "%d photos failed to load";
+"import.delete.diskCleanupIncomplete" = "%d files could not be fully cleaned up from disk";
+
+/* Editor - Review fixes */
+"editor.detectedRegions.otherPages" = "%d more on other pages";
+"action.scaleUp" = "Zoom In";
+"action.scaleDown" = "Zoom Out";
+"action.deleteRegion" = "Delete Region";
+"action.resetZoom" = "Reset Zoom";
+
+/* Reset - Review fixes */
+"resetAllData.error.coreData" = "Failed to clear data. Please try again.";
+"resetAllData.error.filesRemaining" = "Some files could not be deleted; data was not fully cleared.";
+"auth.forgotPassword.resetFailed.title" = "Reset Failed";

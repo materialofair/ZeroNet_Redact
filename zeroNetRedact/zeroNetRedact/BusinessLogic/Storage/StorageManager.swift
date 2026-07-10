@@ -209,10 +209,14 @@ class StorageManager {
         try? FileManager.default.removeItem(at: thumbnailURL)
     }
 
-    /// 删除脱敏文件
+    /// 删除脱敏文件（文件不存在视为删除成功，与 deleteOriginal 语义一致）
     func deleteRedacted(id: UUID, type: FileType) throws {
         let url = getRedactedURL(for: id, type: type)
-        try FileManager.default.removeItem(at: url)
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch CocoaError.fileNoSuchFile {
+            // 文件已不存在，无需处理
+        }
     }
 
     // MARK: - 文件信息

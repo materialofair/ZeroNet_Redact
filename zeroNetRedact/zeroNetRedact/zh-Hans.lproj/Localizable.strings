@@ -298,8 +298,8 @@
 "import.title" = "导入";
 "import.loading" = "正在导入...";
 "import.failed" = "导入失败";
-"import.empty.title" = "零网隐私保护";
-"import.empty.description" = "文件加密存储，只有你能访问";
+"import.empty.title" = "导入图片或 PDF，开始打码脱敏";
+"import.empty.description" = "文件全程本地加密存储，只有你能访问";
 "import.selectPhotos" = "选择图片";
 "import.selectPDF" = "选择 PDF";
 "import.maxSelection" = "最多选择10张";
@@ -421,3 +421,112 @@
 
 /* Common - Additional */
 "common.calculating" = "正在计算...";
+
+/* Album - Interaction fixes */
+"album.select" = "选择";
+"album.fileInfo" = "文件信息";
+"album.moreActions" = "更多操作";
+"album.preview.failed.title" = "无法预览";
+"album.preview.failed.message" = "文件已丢失或损坏，无法预览";
+"album.preview.deleteRecord" = "删除此记录";
+"album.batchDelete.title" = "删除所选文件";
+"album.batchDelete.message" = "%d个脱敏文件将被永久删除，此操作无法撤销";
+"album.batchDelete.selectedCount" = "已选择 %d 项";
+"album.empty.cta" = "去导入";
+
+/* Premium - Legal */
+"premium.terms" = "使用条款";
+
+/* Settings - Developer Options */
+"settings.devOptions.title" = "开发者选项";
+"settings.devOptions.placeholder" = "输入访问码";
+"settings.devOptions.message" = "请输入访问码以继续";
+"settings.devOptions.success.title" = "已激活";
+"settings.devOptions.success.message" = "访问码已验证";
+"settings.devOptions.error.title" = "验证失败";
+"settings.devOptions.error.message" = "访问码无效或已过期";
+"settings.badge.active" = "已激活";
+
+/* Import - Interaction fixes */
+"import.result.title" = "导入完成";
+"import.select" = "选择";
+"import.progress" = "正在导入 %d / %d";
+"import.success.toast" = "已导入 %d 个文件";
+"import.duplicate.import_anyway_count" = "仍然导入这 %d 个文件";
+"import.cancelled.remaining" = "还有 %d 个文件未处理（已取消）";
+"import.cancelled.result" = "已导入 %d 个文件，取消了 %d 个文件";
+"import.deleteSelectedCount" = "删除 (%d)";
+"import.delete.selected.title" = "删除所选文件";
+"import.delete.selected.message" = "确定要删除这 %d 个文件吗？此操作无法撤销。";
+"import.thumbnail.loadFailed" = "无法加载";
+"import.accessibility.manageGroups" = "管理分组";
+"import.accessibility.newGroup" = "新建分组";
+"import.accessibility.editHint" = "轻点编辑";
+"import.accessibility.selectHint" = "轻点选择或取消选择";
+"import.accessibility.fileLabel" = "%@，%@";
+"import.accessibility.changeGroupIcon" = "更改分组图标";
+"import.accessibility.editGroupName" = "编辑分组名称";
+"import.accessibility.saveGroupName" = "保存分组名称";
+
+/* Authentication - Interaction fixes */
+"auth.forgotPassword" = "忘记密码？";
+"auth.forgotPassword.step1.title" = "忘记密码？";
+"auth.forgotPassword.step1.message" = "将删除所有已导入和已脱敏的文件，且无法恢复。是否继续？";
+"auth.forgotPassword.continue" = "继续";
+"auth.forgotPassword.step2.title" = "确认删除全部数据";
+"auth.forgotPassword.step2.message" = "此操作不可撤销，将立即清除密码及全部本地数据，应用将恢复到初始状态。";
+"auth.forgotPassword.confirmDelete" = "删除所有数据";
+"auth.wrongPasswordWithLockoutWarning" = "密码错误，再错 %d 次将锁定 %@";
+"auth.wrongPassword.generic" = "密码错误";
+"auth.lockedOutCountdown" = "已锁定，请在 %@ 后重试";
+"biometric.unlockReason" = "解锁 ZeroNet Redact";
+"passwordSetup.warning" = "密码无法找回，请牢记。忘记密码后只能清除全部数据重新开始。";
+"accessibility.showPassword" = "显示密码";
+"accessibility.hidePassword" = "隐藏密码";
+
+/* Editor - Interaction fixes */
+"mode.zoom" = "缩放平移";
+"brush.size.label" = "画笔粗细";
+"brush.size.thin" = "细";
+"brush.size.medium" = "中";
+"brush.size.thick" = "粗";
+"editor.discardConfirm.title" = "放弃当前脱敏？";
+"editor.discardConfirm.discard" = "放弃";
+"editor.discardConfirm.keepEditing" = "继续编辑";
+"editor.autoApplied" = "已自动应用未完成的涂抹";
+"editor.detect.applyAll" = "全部应用";
+"export.success.detail" = "已保存到「脱敏文件」";
+
+/* Pre-existing missing keys (backfill) */
+"crypto.error.keychainError" = "钥匙串访问失败";
+"editor.error.applyRedactionFailed" = "应用脱敏失败";
+"editor.error.noFileLoaded" = "未加载文件";
+"editor.error.noImageLoaded" = "未加载图片";
+"editor.error.noPDFLoaded" = "未加载PDF";
+"effect.rectangle" = "矩形";
+"effect.solidBlack" = "纯黑";
+"import.error.invalidImageData" = "图片数据无效";
+"import.error.invalidPDFData" = "PDF数据无效";
+"import.error.photoLoadFailed" = "照片加载失败";
+"import.error.thumbnailFailed" = "缩略图生成失败";
+"import.error.unsupportedSource" = "不支持的导入来源";
+"recognition.error.invalidImageData" = "图片数据无效，无法识别";
+"recognition.error.invalidPDFData" = "PDF数据无效，无法识别";
+"sensitiveType.custom" = "自定义";
+"sensitiveType.phoneNumber" = "手机号";
+
+/* Import - Review fixes */
+"import.photo.loadFailedCount" = "%d 张照片读取失败";
+"import.delete.diskCleanupIncomplete" = "有 %d 个文件的磁盘清理未完成";
+
+/* Editor - Review fixes */
+"editor.detectedRegions.otherPages" = "其他页还有 %d 处";
+"action.scaleUp" = "放大";
+"action.scaleDown" = "缩小";
+"action.deleteRegion" = "删除区域";
+"action.resetZoom" = "重置缩放";
+
+/* Reset - Review fixes */
+"resetAllData.error.coreData" = "数据清除失败，请重试";
+"resetAllData.error.filesRemaining" = "部分文件未能删除，数据未被完全清除";
+"auth.forgotPassword.resetFailed.title" = "重置失败";
