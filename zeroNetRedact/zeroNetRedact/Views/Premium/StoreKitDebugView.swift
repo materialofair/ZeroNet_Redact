@@ -1,3 +1,5 @@
+#if DEBUG
+
 import StoreKit
 import SwiftUI
 
@@ -7,7 +9,7 @@ struct StoreKitDebugView: View {
     @State private var debugLog: [String] = []
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section("产品信息") {
                     if storeManager.isLoading {
@@ -164,3 +166,5 @@ struct StoreKitDebugView: View {
 #Preview {
     StoreKitDebugView()
 }
+
+#endif

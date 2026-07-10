@@ -7,18 +7,16 @@ struct SettingsView: View {
 
     @State private var showAboutView = false
     @State private var showPremiumView = false
-    @State private var showStoreKitDebug = false
 
     // 审核模式相关
     @State private var iconTapCount = 0
-    @State private var debugTapCount = 0
     @State private var showReviewCodeInput = false
     @State private var reviewCodeInput = ""
     @State private var showReviewModeSuccess = false
     @State private var showReviewModeError = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
                     // MARK: - 品牌卡片
@@ -74,16 +72,13 @@ struct SettingsView: View {
             .sheet(isPresented: $showPremiumView) {
                 PremiumView()
             }
-            .sheet(isPresented: $showStoreKitDebug) {
-                StoreKitDebugView()
-            }
-            // 审核模式输入框
+            // 开发者选项输入框
             .alert(
-                NSLocalizedString("settings.reviewMode.title", comment: ""),
+                NSLocalizedString("settings.devOptions.title", comment: ""),
                 isPresented: $showReviewCodeInput
             ) {
                 TextField(
-                    NSLocalizedString("settings.reviewMode.placeholder", comment: ""),
+                    NSLocalizedString("settings.devOptions.placeholder", comment: ""),
                     text: $reviewCodeInput)
                 Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {
                     reviewCodeInput = ""
@@ -97,25 +92,25 @@ struct SettingsView: View {
                     reviewCodeInput = ""
                 }
             } message: {
-                Text(NSLocalizedString("settings.reviewMode.message", comment: ""))
+                Text(NSLocalizedString("settings.devOptions.message", comment: ""))
             }
-            // 审核模式激活成功
+            // 开发者选项激活成功
             .alert(
-                NSLocalizedString("settings.reviewMode.success.title", comment: ""),
+                NSLocalizedString("settings.devOptions.success.title", comment: ""),
                 isPresented: $showReviewModeSuccess
             ) {
                 Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
             } message: {
-                Text(NSLocalizedString("settings.reviewMode.success.message", comment: ""))
+                Text(NSLocalizedString("settings.devOptions.success.message", comment: ""))
             }
-            // 审核模式激活失败
+            // 开发者选项激活失败
             .alert(
-                NSLocalizedString("settings.reviewMode.error.title", comment: ""),
+                NSLocalizedString("settings.devOptions.error.title", comment: ""),
                 isPresented: $showReviewModeError
             ) {
                 Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
             } message: {
-                Text(NSLocalizedString("settings.reviewMode.error.message", comment: ""))
+                Text(NSLocalizedString("settings.devOptions.error.message", comment: ""))
             }
             .onAppear {
                 viewModel.loadStorageInfo()
@@ -171,7 +166,7 @@ struct SettingsView: View {
                                 .background(DesignSystem.Gradients.primary)
                                 .cornerRadius(4)
                         } else if appState.isReviewModeActive {
-                            Text("Review")
+                            Text(NSLocalizedString("settings.badge.active", comment: ""))
                                 .font(.caption2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
@@ -185,19 +180,6 @@ struct SettingsView: View {
                     Text("v1.0.0")
                         .font(.subheadline)
                         .foregroundColor(DesignSystem.Colors.textSecondary)
-                        .onTapGesture {
-                            debugTapCount += 1
-                            if debugTapCount >= 5 {
-                                debugTapCount = 0
-                                showStoreKitDebug = true
-                            }
-                            // 2秒后重置计数
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                if debugTapCount < 5 {
-                                    debugTapCount = 0
-                                }
-                            }
-                        }
                 }
 
                 Spacer()
@@ -234,25 +216,6 @@ struct SettingsView: View {
                             .foregroundColor(DesignSystem.Colors.textPrimary)
                     }
                 }
-
-                // 存储进度条
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        // 背景
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.15))
-                            .frame(height: 8)
-
-                        // 进度
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DesignSystem.Gradients.primary)
-                            .frame(
-                                width: min(
-                                    CGFloat(viewModel.fileCount) / 100.0 * geometry.size.width,
-                                    geometry.size.width), height: 8)
-                    }
-                }
-                .frame(height: 8)
             }
         }
         .cardStyle()
@@ -391,6 +354,7 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, DesignSystem.Spacing.sm)
                         .padding(.horizontal, DesignSystem.Spacing.lg)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -440,6 +404,7 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundColor(DesignSystem.Colors.textTertiary)
                     }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -524,6 +489,7 @@ struct SettingsView: View {
                         .foregroundColor(DesignSystem.Colors.textTertiary)
                 }
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .background(DesignSystem.Colors.backgroundCard)

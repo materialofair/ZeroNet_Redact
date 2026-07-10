@@ -13,7 +13,7 @@ struct ContentView: View {
                 }
                 .tag(0)
 
-            AlbumView()
+            AlbumView(selectedTab: $selectedTab)
                 .tabItem {
                     Label(
                         NSLocalizedString("tab.redacted", comment: ""),

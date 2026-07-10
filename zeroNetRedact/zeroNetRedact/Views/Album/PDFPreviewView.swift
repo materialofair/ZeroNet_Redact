@@ -10,11 +10,15 @@ import SwiftUI
 
 struct PDFPreviewView: View {
     let pdfDocument: PDFDocument
+    var file: RedactedFile?
+    var viewModel: AlbumViewModel?
     @Environment(\.dismiss) private var dismiss
     @State private var showShareSheet = false
 
-    init(pdfDocument: PDFDocument) {
+    init(pdfDocument: PDFDocument, file: RedactedFile? = nil, viewModel: AlbumViewModel? = nil) {
         self.pdfDocument = pdfDocument
+        self.file = file
+        self.viewModel = viewModel
         print("📄 [PDFPreviewView] 初始化，文档页数: \(pdfDocument.pageCount)")
     }
 
@@ -31,6 +35,7 @@ struct PDFPreviewView: View {
                         .font(.title2)
                         .foregroundColor(.primary)
                 }
+                .accessibilityLabel(NSLocalizedString("common.close", comment: ""))
 
                 Spacer()
 
@@ -43,6 +48,14 @@ struct PDFPreviewView: View {
 
                 Spacer()
 
+                if let file, let viewModel {
+                    FilePreviewActionsMenu(file: file, viewModel: viewModel) {
+                        dismiss()
+                    }
+                    .foregroundColor(.primary)
+                    .padding(.trailing, 12)
+                }
+
                 Button {
                     showShareSheet = true
                 } label: {
@@ -50,6 +63,7 @@ struct PDFPreviewView: View {
                         .font(.title2)
                         .foregroundColor(.primary)
                 }
+                .accessibilityLabel(NSLocalizedString("album.shareFile", comment: ""))
             }
             .padding()
             .background(Color(.systemBackground))

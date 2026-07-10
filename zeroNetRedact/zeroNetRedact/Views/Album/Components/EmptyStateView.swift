@@ -3,6 +3,8 @@ import SwiftUI
 /// 相册空状态视图
 /// 当没有脱敏文件时显示的引导视图
 struct EmptyStateView: View {
+    @Binding var selectedTab: Int
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -21,6 +23,16 @@ struct EmptyStateView: View {
                 StepIndicatorView()
                     .padding(.horizontal, 24)
                     .padding(.top, 8)
+
+                // 去导入按钮
+                Button {
+                    selectedTab = 0
+                } label: {
+                    Text(NSLocalizedString("album.empty.cta", comment: ""))
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+                .buttonStyle(GradientButtonStyle())
             }
             .padding(.horizontal, DesignSystem.Spacing.xxxl)
 
@@ -116,5 +128,5 @@ struct StepIndicatorView: View {
 // MARK: - Preview
 
 #Preview {
-    EmptyStateView()
+    EmptyStateView(selectedTab: .constant(1))
 }

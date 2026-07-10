@@ -20,13 +20,24 @@ extension UIImage: @retroactive Identifiable {
 
 struct AlbumView: View {
     @StateObject private var viewModel = AlbumViewModel()
-    @State private var selectedRedactedFile: RedactedFile?
+    @Binding var selectedTab: Int
+
+    @State private var previewFile: RedactedFile?
     @State private var previewImage: UIImage?
     @State private var previewPDFDocument: PDFDocument?
+    @State private var isLoadingPreview = false
+    @State private var previewFailedFile: RedactedFile?
+    @State private var showPreviewFailedAlert = false
+    @State private var previewTask: Task<Void, Never>?
+
+    @State private var isSelectionMode = false
+    @State private var selectedFileIDs: Set<UUID> = []
+    @State private var showBatchDeleteAlert = false
+
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // 背景色
                 DesignSystem.Colors.backgroundPrimary
@@ -54,15 +65,95 @@ struct AlbumView: View {
                             redactedFilesGridView
                         }
                     }
+
+                    // 多选删除操作栏
+                    if isSelectionMode && !viewModel.redactedFiles.isEmpty {
+                        selectionActionBar
+                    }
+                }
+
+                // 预览加载态
+                if isLoadingPreview {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.5)
                 }
             }
             .navigationTitle(NSLocalizedString("album.title", comment: ""))
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                if !viewModel.redactedFiles.isEmpty {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            withAnimation {
+                                isSelectionMode.toggle()
+                                if !isSelectionMode {
+                                    selectedFileIDs.removeAll()
+                                }
+                            }
+                        } label: {
+                            Text(
+                                isSelectionMode
+                                    ? NSLocalizedString("common.done", comment: "")
+                                    : NSLocalizedString("album.select", comment: ""))
+                        }
+                    }
+                }
+            }
             .fullScreenCover(item: $previewImage) { image in
-                ImagePreviewView(image: image)
+                if let file = previewFile {
+                    ImagePreviewView(image: image, file: file, viewModel: viewModel)
+                        .onDisappear { previewFile = nil }
+                }
             }
             .fullScreenCover(item: $previewPDFDocument) { document in
-                PDFPreviewView(pdfDocument: document)
+                if let file = previewFile {
+                    PDFPreviewView(pdfDocument: document, file: file, viewModel: viewModel)
+                        .onDisappear { previewFile = nil }
+                }
+            }
+            .alert(
+                NSLocalizedString("album.preview.failed.title", comment: ""),
+                isPresented: $showPreviewFailedAlert,
+                presenting: previewFailedFile
+            ) { file in
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+                Button(
+                    NSLocalizedString("album.preview.deleteRecord", comment: ""), role: .destructive
+                ) {
+                    viewModel.deleteFile(file)
+                }
+            } message: { _ in
+                Text(NSLocalizedString("album.preview.failed.message", comment: ""))
+            }
+            .alert(
+                NSLocalizedString("album.batchDelete.title", comment: ""),
+                isPresented: $showBatchDeleteAlert
+            ) {
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+                Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                    let filesToDelete = viewModel.redactedFiles.filter {
+                        selectedFileIDs.contains($0.id)
+                    }
+                    viewModel.deleteFiles(filesToDelete)
+                    selectedFileIDs.removeAll()
+                    isSelectionMode = false
+                }
+            } message: {
+                Text(
+                    String(
+                        format: NSLocalizedString("album.batchDelete.message", comment: ""),
+                        selectedFileIDs.count))
+            }
+            .alert(
+                NSLocalizedString("common.error", comment: ""),
+                isPresented: $viewModel.showError
+            ) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
             }
             .onAppear {
                 viewModel.loadFiles()
@@ -70,6 +161,17 @@ struct AlbumView: View {
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) {
                 _ in
                 viewModel.loadFiles()
+            }
+            .onDisappear {
+                previewTask?.cancel()
+                isLoadingPreview = false
+            }
+            .onChange(of: selectedTab) { _, newValue in
+                // 切到相册（tag 1）以外的 Tab 时取消进行中的预览加载，避免完成后在其他 Tab 上弹出全屏预览
+                if newValue != 1 {
+                    previewTask?.cancel()
+                    isLoadingPreview = false
+                }
             }
         }
     }
@@ -83,7 +185,7 @@ struct AlbumView: View {
     // MARK: - 空状态视图
 
     private var emptyStateView: some View {
-        EmptyStateView()
+        EmptyStateView(selectedTab: $selectedTab)
     }
 
     // MARK: - 脱敏文件网格视图
@@ -98,13 +200,25 @@ struct AlbumView: View {
                 ],
                 spacing: 16
             ) {
-                ForEach(viewModel.redactedFiles, id: \.id) { file in
-                    RedactedFileGridItem(file: file, viewModel: viewModel)
-                        .onTapGesture {
-                            Task {
+                // 用 objectID 做标识：对象删除后 \.id 键路径取非可选 UUID 会崩溃，objectID 永远有效
+                ForEach(viewModel.redactedFiles, id: \.objectID) { file in
+                    RedactedFileGridItem(
+                        file: file,
+                        viewModel: viewModel,
+                        isSelectionMode: isSelectionMode,
+                        isSelected: selectedFileIDs.contains(file.id)
+                    )
+                    .onTapGesture {
+                        if isSelectionMode {
+                            toggleSelection(for: file)
+                        } else {
+                            previewTask?.cancel()
+                            isLoadingPreview = true
+                            previewTask = Task {
                                 await loadAndShowPreview(file: file)
                             }
                         }
+                    }
                 }
             }
             .padding(.horizontal, DesignSystem.Spacing.lg)
@@ -113,35 +227,115 @@ struct AlbumView: View {
         }
     }
 
+    // MARK: - 多选删除操作栏
+
+    private var selectionActionBar: some View {
+        HStack {
+            Text(
+                String(
+                    format: NSLocalizedString("album.batchDelete.selectedCount", comment: ""),
+                    selectedFileIDs.count)
+            )
+            .font(.subheadline)
+            .foregroundColor(DesignSystem.Colors.textSecondary)
+
+            Spacer()
+
+            Button(role: .destructive) {
+                showBatchDeleteAlert = true
+            } label: {
+                Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
+            }
+            .disabled(selectedFileIDs.isEmpty)
+        }
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.vertical, DesignSystem.Spacing.md)
+        .background(DesignSystem.Colors.backgroundCard)
+    }
+
+    private func toggleSelection(for file: RedactedFile) {
+        if selectedFileIDs.contains(file.id) {
+            selectedFileIDs.remove(file.id)
+        } else {
+            selectedFileIDs.insert(file.id)
+        }
+    }
+
     // MARK: - 加载并显示预览
 
     private func loadAndShowPreview(file: RedactedFile) async {
-        do {
-            guard FileManager.default.fileExists(atPath: file.fullFilePath) else {
-                print("❌ 文件不存在: \(file.fullFilePath)")
-                return
+        guard FileManager.default.fileExists(atPath: file.fullFilePath) else {
+            print("❌ 文件不存在: \(file.fullFilePath)")
+            if Task.isCancelled { return }
+            await MainActor.run {
+                previewFailedFile = file
+                showPreviewFailedAlert = true
+                isLoadingPreview = false
             }
+            return
+        }
 
+        do {
             let data = try StorageManager.shared.loadRedactedFile(
                 id: file.id,
                 type: file.fileType
             )
 
+            if Task.isCancelled { return }
+
             if file.fileType == .pdf {
-                if let document = PDFDocument(data: data) {
-                    await MainActor.run {
-                        self.previewPDFDocument = document
-                    }
-                }
+                await loadPDFPreview(file: file, data: data)
             } else {
-                if let image = UIImage(data: data) {
-                    await MainActor.run {
-                        self.previewImage = image
-                    }
-                }
+                await loadImagePreview(file: file, data: data)
             }
         } catch {
             print("❌ 加载预览失败: \(error)")
+            if Task.isCancelled { return }
+            await MainActor.run {
+                previewFailedFile = file
+                showPreviewFailedAlert = true
+                isLoadingPreview = false
+            }
+        }
+    }
+
+    // MARK: - 加载图片预览
+
+    private func loadImagePreview(file: RedactedFile, data: Data) async {
+        if let image = UIImage(data: data) {
+            if Task.isCancelled { return }
+            await MainActor.run {
+                self.previewFile = file
+                self.previewImage = image
+                isLoadingPreview = false
+            }
+        } else {
+            if Task.isCancelled { return }
+            await MainActor.run {
+                previewFailedFile = file
+                showPreviewFailedAlert = true
+                isLoadingPreview = false
+            }
+        }
+    }
+
+    // MARK: - 加载 PDF 预览
+
+    private func loadPDFPreview(file: RedactedFile, data: Data) async {
+        if let document = PDFDocument(data: data) {
+            if Task.isCancelled { return }
+            await MainActor.run {
+                self.previewFile = file
+                self.previewPDFDocument = document
+                isLoadingPreview = false
+            }
+        } else {
+            if Task.isCancelled { return }
+            await MainActor.run {
+                previewFailedFile = file
+                showPreviewFailedAlert = true
+                isLoadingPreview = false
+            }
         }
     }
 }
@@ -151,12 +345,24 @@ struct AlbumView: View {
 struct RedactedFileGridItem: View {
     let file: RedactedFile
     @ObservedObject var viewModel: AlbumViewModel
+    var isSelectionMode: Bool = false
+    var isSelected: Bool = false
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
     @State private var showDeleteAlert = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
+        // 对象删除保存后属性变为 nil，而 SwiftUI 可能在列表刷新过渡期间再次对残留视图求值，
+        // 此时访问非可选属性会崩溃，直接跳过渲染
+        if file.isDeleted || file.managedObjectContext == nil {
+            Color.clear
+        } else {
+            mainContent
+        }
+    }
+
+    private var mainContent: some View {
         VStack(spacing: 8) {
             // 缩略图卡片
             ZStack {
@@ -221,6 +427,19 @@ struct RedactedFileGridItem: View {
                 .aspectRatio(1, contentMode: .fit)
                 .padding(6)
             }
+            .overlay(alignment: .topLeading) {
+                if isSelectionMode {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : .white)
+                        .background(
+                            Circle()
+                                .fill(isSelected ? Color.white : Color.black.opacity(0.35))
+                                .padding(-3)
+                        )
+                        .padding(8)
+                }
+            }
 
             // 文件信息
             VStack(spacing: 2) {
@@ -255,6 +474,19 @@ struct RedactedFileGridItem: View {
         .task {
             await loadThumbnail()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabelText)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+
+    // MARK: - 无障碍
+
+    private var accessibilityLabelText: String {
+        String(
+            format: NSLocalizedString("import.accessibility.fileLabel", comment: ""),
+            file.fileType.displayName,
+            file.exportedAt.formatted(date: .abbreviated, time: .shortened)
+        )
     }
 
     private func loadThumbnail() async {
@@ -331,252 +563,6 @@ struct RedactedFileGridItem: View {
     }
 }
 
-// MARK: - 脱敏文件详情视图
-
-struct RedactedFileDetailView: View {
-    let redactedFile: RedactedFile
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.managedObjectContext) private var viewContext
-    @State private var previewImage: UIImage?
-    @State private var pdfDocument: PDFDocument?
-    @State private var isLoading = false
-    @State private var showShareSheet = false
-    @State private var showPDFViewer = false
-    @State private var showGroupPicker = false
-    @State private var allGroups: [FileGroup] = []
-    @State private var currentGroup: FileGroup?
-
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                if isLoading {
-                    ProgressView(NSLocalizedString("editor.loading", comment: ""))
-                        .frame(maxWidth: .infinity, maxHeight: 300)
-                } else if redactedFile.fileType == .pdf && pdfDocument != nil {
-                    VStack(spacing: 12) {
-                        if let image = previewImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 300)
-                                .cornerRadius(12)
-                        }
-
-                        Button {
-                            showPDFViewer = true
-                        } label: {
-                            Label(
-                                NSLocalizedString("album.viewFullPDF", comment: ""),
-                                systemImage: "doc.text.magnifyingglass"
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                        }
-                        .buttonStyle(GradientButtonStyle())
-                    }
-                } else if let image = previewImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 300)
-                        .cornerRadius(12)
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(maxWidth: .infinity, maxHeight: 300)
-                        .overlay {
-                            VStack {
-                                Image(
-                                    systemName: redactedFile.fileType == .image
-                                        ? "photo" : "doc.text"
-                                )
-                                .font(.largeTitle)
-                                .foregroundColor(.gray)
-                                Text(NSLocalizedString("album.previewUnavailable", comment: ""))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    InfoRow(
-                        label: NSLocalizedString("album.exportTime", comment: ""),
-                        value: redactedFile.formattedExportedAt)
-                    InfoRow(
-                        label: NSLocalizedString("album.fileSize", comment: ""),
-                        value: redactedFile.formattedFileSize)
-                    InfoRow(
-                        label: NSLocalizedString("album.fileType", comment: ""),
-                        value: redactedFile.fileType == .image
-                            ? NSLocalizedString("album.fileType.image", comment: "")
-                            : NSLocalizedString("album.fileType.pdf", comment: ""))
-                }
-                .cardStyle()
-
-                Spacer()
-
-                Button(action: {
-                    showShareSheet = true
-                }) {
-                    Label(
-                        NSLocalizedString("album.shareFile", comment: ""),
-                        systemImage: "square.and.arrow.up"
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                }
-                .buttonStyle(GradientButtonStyle())
-                .padding(.horizontal)
-            }
-            .padding()
-            .navigationTitle(NSLocalizedString("album.redacted", comment: ""))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(NSLocalizedString("common.close", comment: "")) {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showGroupPicker = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: currentGroup?.iconName ?? "folder.fill")
-                                .font(.callout)
-                            Text(
-                                currentGroup?.name
-                                    ?? NSLocalizedString("group.default", comment: "")
-                            )
-                            .font(.callout)
-                            .fontWeight(.medium)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.accentColor.opacity(0.15))
-                        )
-                    }
-                }
-            }
-            .sheet(isPresented: $showShareSheet) {
-                if redactedFile.fileType == .pdf {
-                    if let pdfData = pdfDocument?.dataRepresentation() {
-                        ShareSheet(items: [pdfData])
-                    }
-                } else if let image = previewImage {
-                    ShareSheet(items: [image])
-                }
-            }
-            .fullScreenCover(isPresented: $showPDFViewer) {
-                if let document = pdfDocument {
-                    PDFPreviewView(pdfDocument: document)
-                }
-            }
-            .sheet(isPresented: $showGroupPicker) {
-                RedactedFileGroupPicker(
-                    redactedFile: redactedFile,
-                    allGroups: allGroups,
-                    currentGroup: currentGroup,
-                    onGroupSelected: { newGroup in
-                        moveToGroup(newGroup)
-                    }
-                )
-            }
-            .task {
-                await loadPreview()
-                loadGroups()
-            }
-        }
-    }
-
-    private func loadPreview() async {
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            if !FileManager.default.fileExists(atPath: redactedFile.fullFilePath) {
-                return
-            }
-
-            let data = try StorageManager.shared.loadRedactedFile(
-                id: redactedFile.id,
-                type: redactedFile.fileType
-            )
-
-            let image: UIImage?
-            if redactedFile.fileType == .pdf {
-                if let document = PDFDocument(data: data) {
-                    await MainActor.run {
-                        pdfDocument = document
-                    }
-
-                    if let firstPage = document.page(at: 0) {
-                        let pageRect = firstPage.bounds(for: .mediaBox)
-                        let maxWidth: CGFloat = 600
-                        let scale = min(maxWidth / pageRect.width, 1.0)
-                        let scaledSize = CGSize(
-                            width: pageRect.width * scale,
-                            height: pageRect.height * scale)
-
-                        let renderer = UIGraphicsImageRenderer(size: scaledSize)
-                        image = renderer.image { context in
-                            UIColor.white.setFill()
-                            context.fill(CGRect(origin: .zero, size: scaledSize))
-                            context.cgContext.translateBy(x: 0, y: scaledSize.height)
-                            context.cgContext.scaleBy(x: scale, y: -scale)
-                            firstPage.draw(with: .mediaBox, to: context.cgContext)
-                        }
-                    } else {
-                        image = nil
-                    }
-                } else {
-                    image = nil
-                }
-            } else {
-                image = UIImage(data: data)
-            }
-
-            if let finalImage = image {
-                await MainActor.run {
-                    previewImage = finalImage
-                }
-            }
-        } catch {
-            print("❌ 加载脱敏文件预览失败: \(error)")
-        }
-    }
-
-    private func loadGroups() {
-        let fetchRequest: NSFetchRequest<FileGroup> = FileGroup.fetchRequest()
-        fetchRequest.sortDescriptors = [
-            NSSortDescriptor(keyPath: \FileGroup.createdAt, ascending: true)
-        ]
-
-        do {
-            allGroups = try viewContext.fetch(fetchRequest)
-            currentGroup = redactedFile.group
-        } catch {
-            print("❌ 加载分组失败: \(error)")
-        }
-    }
-
-    private func moveToGroup(_ newGroup: FileGroup) {
-        redactedFile.group = newGroup
-
-        do {
-            try viewContext.save()
-            currentGroup = newGroup
-            showGroupPicker = false
-        } catch {
-            print("❌ 移动分组失败: \(error)")
-        }
-    }
-}
-
 // MARK: - 信息行组件
 
 struct InfoRow: View {
@@ -617,11 +603,13 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct ImagePreviewView: View {
     let image: UIImage
+    let file: RedactedFile
+    @ObservedObject var viewModel: AlbumViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showShareSheet = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
 
@@ -639,15 +627,24 @@ struct ImagePreviewView: View {
                             .foregroundColor(.white)
                             .font(.title2)
                     }
+                    .accessibilityLabel(NSLocalizedString("common.close", comment: ""))
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showShareSheet = true
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.white)
-                            .font(.title2)
+                    HStack(spacing: 20) {
+                        FilePreviewActionsMenu(file: file, viewModel: viewModel) {
+                            dismiss()
+                        }
+                        .foregroundColor(.white)
+
+                        Button {
+                            showShareSheet = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundColor(.white)
+                                .font(.title2)
+                        }
+                        .accessibilityLabel(NSLocalizedString("album.shareFile", comment: ""))
                     }
                 }
             }
@@ -655,6 +652,117 @@ struct ImagePreviewView: View {
                 ShareSheet(items: [image])
             }
         }
+    }
+}
+
+// MARK: - 预览操作菜单（信息 / 移动分组 / 删除）
+
+struct FilePreviewActionsMenu: View {
+    let file: RedactedFile
+    @ObservedObject var viewModel: AlbumViewModel
+    let onDelete: () -> Void
+
+    @State private var showInfoSheet = false
+    @State private var showGroupPicker = false
+    @State private var showDeleteAlert = false
+
+    var body: some View {
+        Menu {
+            Button {
+                showInfoSheet = true
+            } label: {
+                Label(NSLocalizedString("album.fileInfo", comment: ""), systemImage: "info.circle")
+            }
+
+            Button {
+                viewModel.loadGroups()
+                showGroupPicker = true
+            } label: {
+                Label(NSLocalizedString("group.moveTo", comment: ""), systemImage: "folder")
+            }
+
+            Button(role: .destructive) {
+                showDeleteAlert = true
+            } label: {
+                Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.title2)
+        }
+        .accessibilityLabel(NSLocalizedString("album.moreActions", comment: ""))
+        .sheet(isPresented: $showInfoSheet) {
+            FileInfoSheet(file: file)
+        }
+        .sheet(isPresented: $showGroupPicker) {
+            RedactedFileGroupPicker(
+                redactedFile: file,
+                allGroups: viewModel.allGroups,
+                currentGroup: file.group,
+                onGroupSelected: { newGroup in
+                    viewModel.moveFileToGroup(file, group: newGroup)
+                    showGroupPicker = false
+                }
+            )
+        }
+        .alert(
+            NSLocalizedString("album.delete.title", comment: ""),
+            isPresented: $showDeleteAlert
+        ) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                viewModel.deleteFile(file)
+                onDelete()
+            }
+        } message: {
+            Text(NSLocalizedString("album.delete.message", comment: ""))
+        }
+    }
+}
+
+// MARK: - 文件信息卡片
+
+struct FileInfoSheet: View {
+    let file: RedactedFile
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        // 对象删除后属性变为 nil，访问非可选属性会崩溃，直接跳过渲染
+        if file.isDeleted || file.managedObjectContext == nil {
+            Color.clear
+        } else {
+            infoContent
+        }
+    }
+
+    private var infoContent: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 8) {
+                InfoRow(
+                    label: NSLocalizedString("album.exportTime", comment: ""),
+                    value: file.formattedExportedAt)
+                InfoRow(
+                    label: NSLocalizedString("album.fileSize", comment: ""),
+                    value: file.formattedFileSize)
+                InfoRow(
+                    label: NSLocalizedString("album.fileType", comment: ""),
+                    value: file.fileType == .image
+                        ? NSLocalizedString("album.fileType.image", comment: "")
+                        : NSLocalizedString("album.fileType.pdf", comment: ""))
+            }
+            .cardStyle()
+            .padding()
+            .navigationTitle(NSLocalizedString("album.fileInfo", comment: ""))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(NSLocalizedString("common.done", comment: "")) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 
@@ -668,7 +776,7 @@ struct RedactedFileGroupPicker: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 ForEach(allGroups, id: \.id) { group in
                     Button(action: {
@@ -733,5 +841,5 @@ struct RedactedFileGroupPicker: View {
 }
 
 #Preview {
-    AlbumView()
+    AlbumView(selectedTab: .constant(1))
 }

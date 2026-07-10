@@ -11,7 +11,7 @@ struct PremiumView: View {
     @State private var showSuccessAlert = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: DesignSystem.Spacing.xxl) {
                     // MARK: - 顶部图标
@@ -25,6 +25,9 @@ struct PremiumView: View {
 
                     // MARK: - 恢复购买
                     restoreSection
+
+                    // MARK: - 条款链接
+                    legalLinksSection
 
                     Spacer(minLength: 40)
                 }
@@ -43,6 +46,7 @@ struct PremiumView: View {
                             .font(.title2)
                             .foregroundStyle(DesignSystem.Colors.textTertiary)
                     }
+                    .accessibilityLabel(NSLocalizedString("common.close", comment: ""))
                 }
             }
             .alert(NSLocalizedString("premium.error.title", comment: ""), isPresented: $showError) {
@@ -210,6 +214,30 @@ struct PremiumView: View {
                 .underline()
         }
         .disabled(isPurchasing)
+    }
+
+    // MARK: - Legal Links Section
+
+    private var legalLinksSection: some View {
+        HStack(spacing: DesignSystem.Spacing.sm) {
+            NavigationLink {
+                PrivacyPolicyView()
+            } label: {
+                Text(NSLocalizedString("about.privacy", comment: ""))
+            }
+
+            Text("·")
+                .foregroundColor(DesignSystem.Colors.textTertiary)
+
+            Link(
+                NSLocalizedString("premium.terms", comment: ""),
+                destination: URL(
+                    string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+            )
+        }
+        .font(.caption)
+        .foregroundColor(DesignSystem.Colors.textSecondary)
+        .padding(.top, DesignSystem.Spacing.xs)
     }
 
     // MARK: - Actions
