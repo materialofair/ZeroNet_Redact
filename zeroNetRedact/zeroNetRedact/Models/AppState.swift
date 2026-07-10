@@ -60,8 +60,8 @@ class AppState: ObservableObject {
 
     // MARK: - Constants
 
-    /// 审核模式有效期: 2026年1月1日 00:00:00 UTC
-    static let reviewModeExpiryDate = Date(timeIntervalSince1970: 1_767_225_600)
+    /// 审核模式有效期: 2026年8月1日 00:00:00 UTC
+    static let reviewModeExpiryDate = Date(timeIntervalSince1970: 1_785_542_400)
 
     /// 审核密码
     static let reviewCode = "REVIEW2026"
