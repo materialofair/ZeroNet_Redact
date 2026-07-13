@@ -530,3 +530,23 @@
 "resetAllData.error.coreData" = "Failed to clear data. Please try again.";
 "resetAllData.error.filesRemaining" = "Some files could not be deleted; data was not fully cleared.";
 "auth.forgotPassword.resetFailed.title" = "Reset Failed";
+
+/* Stitch - Long screenshot stitching */
+"stitch.button" = "Stitch";
+"stitch.title" = "Stitch Long Image";
+"stitch.detecting" = "Auto-stitching…";
+"stitch.generate" = "Generate";
+"stitch.generating" = "Generating…";
+"stitch.selectImages" = "Select Images";
+"stitch.reorder" = "Reorder";
+"stitch.seam.adjust" = "Adjust Seam";
+"stitch.seam.upperCrop" = "Crop bottom of upper image";
+"stitch.seam.lowerCrop" = "Crop top of lower image";
+"stitch.seam.lowConfidence" = "Auto-stitch failed. Tap the seam to adjust manually.";
+"stitch.done.title" = "Long Image Created";
+"stitch.done.message" = "Encrypted and saved to your import list. Redact it now?";
+"stitch.done.redact" = "Redact Now";
+"stitch.done.later" = "Later";
+"stitch.error.renderFailed" = "Failed to generate. Try fewer images.";
+"stitch.limit.hint" = "Free version stitches up to %d images. Upgrade for %d.";
+"stitch.empty.hint" = "Pick 2+ screenshots to auto-stitch into one long image";

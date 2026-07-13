@@ -530,3 +530,23 @@
 "resetAllData.error.coreData" = "数据清除失败，请重试";
 "resetAllData.error.filesRemaining" = "部分文件未能删除，数据未被完全清除";
 "auth.forgotPassword.resetFailed.title" = "重置失败";
+
+/* Stitch - 多图拼接长图 */
+"stitch.button" = "拼长图";
+"stitch.title" = "拼接长图";
+"stitch.detecting" = "智能拼接中…";
+"stitch.generate" = "生成长图";
+"stitch.generating" = "正在生成…";
+"stitch.selectImages" = "选择图片";
+"stitch.reorder" = "排序";
+"stitch.seam.adjust" = "调整拼缝";
+"stitch.seam.upperCrop" = "上图底部裁剪";
+"stitch.seam.lowerCrop" = "下图顶部裁剪";
+"stitch.seam.lowConfidence" = "自动拼接失败，请点击拼缝手动调整";
+"stitch.done.title" = "长图已生成";
+"stitch.done.message" = "已加密保存到导入列表，现在去脱敏？";
+"stitch.done.redact" = "去脱敏";
+"stitch.done.later" = "稍后";
+"stitch.error.renderFailed" = "长图生成失败，请减少图片数量后重试";
+"stitch.limit.hint" = "免费版单次最多 %d 张，升级后可拼 %d 张";
+"stitch.empty.hint" = "选择 2 张以上截图，自动拼接为一张长图";
