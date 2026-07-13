@@ -72,4 +72,45 @@ enum OverlapDetector {
         let mean = diffs.reduce(0, +) / Float(diffs.count)
         return 1 - mean
     }
+
+    /// 固定页眉/页脚检测结果(单位:指纹行)
+    struct FixedRegions: Equatable {
+        var headerRows: Int
+        var footerRows: Int
+    }
+
+    /// 检测全组截图共有的固定页眉/页脚行数。
+    /// 以第一张为参照,某行在所有图中截尾相似度均 ≥ 阈值则计入固定区;
+    /// 固定区上限为最矮图高的 25%。
+    static func detectFixedRegions(_ fingerprints: [[[Float]]]) -> FixedRegions {
+        guard fingerprints.count >= 2,
+            let minRows = fingerprints.map({ $0.count }).min(), minRows > 0
+        else { return FixedRegions(headerRows: 0, footerRows: 0) }
+
+        let maxRegion = Int(Double(minRows) * maxFixedRegionRatio)
+        let reference = fingerprints[0]
+
+        var header = 0
+        while header < maxRegion {
+            let row = reference[header]
+            let allMatch = fingerprints.dropFirst().allSatisfy {
+                rowSimilarity(row, $0[header], trimRatio: fixedRowTrimRatio)
+                    >= fixedRowThreshold
+            }
+            if !allMatch { break }
+            header += 1
+        }
+
+        var footer = 0
+        while footer < maxRegion {
+            let row = reference[reference.count - 1 - footer]
+            let allMatch = fingerprints.dropFirst().allSatisfy {
+                rowSimilarity(row, $0[$0.count - 1 - footer], trimRatio: fixedRowTrimRatio)
+                    >= fixedRowThreshold
+            }
+            if !allMatch { break }
+            footer += 1
+        }
+        return FixedRegions(headerRows: header, footerRows: footer)
+    }
 }
