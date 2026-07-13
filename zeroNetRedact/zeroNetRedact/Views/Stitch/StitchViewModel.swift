@@ -117,6 +117,13 @@ final class StitchViewModel: ObservableObject {
                 try StitchEngine.render(plan: plan, sources: sources)
             }.value
             let file = try await ImportManager.shared.importFile(from: .imageData(data))
+            // 挂到默认分组:导入页按 group == selectedGroup 过滤,无分组的文件不可见
+            if let original = file as? OriginalFile {
+                GroupManager.shared.ensureDefaultGroup()
+                if let group = GroupManager.shared.getDefaultGroup() {
+                    _ = GroupManager.shared.moveFile(original, to: group)
+                }
+            }
             if !appState.hasUnlimitedAccess {
                 usageTracker.recordImageExport()
             }

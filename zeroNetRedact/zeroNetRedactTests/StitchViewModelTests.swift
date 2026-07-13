@@ -78,6 +78,8 @@ final class StitchViewModelTests: XCTestCase {
         XCTAssertGreaterThan(Int(file.height), 1000, "长图高度应大于单张")
         XCTAssertEqual(
             UsageTracker.shared.getTodayImageExports(), 1, "免费用户生成应计 1 次配额")
+        // 导入页按分组过滤查询(group == selectedGroup),无分组的文件在列表中不可见
+        XCTAssertNotNil(file.group, "拼接产物必须挂到默认分组,否则导入页查不到")
 
         // 清理:先删磁盘上的加密原图与缩略图,再删 Core Data 记录
         try? StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
