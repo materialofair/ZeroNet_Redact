@@ -5,6 +5,7 @@ import SwiftUI
 struct ImportView: View {
     @StateObject private var viewModel = ImportViewModel()
     @State private var selectedOriginalFile: OriginalFile?
+    @State private var pendingRedactFile: OriginalFile?
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
 
     var body: some View {
@@ -108,10 +109,18 @@ struct ImportView: View {
             .sheet(item: $selectedOriginalFile) { originalFile in
                 SimpleBrushEditor(file: originalFile)
             }
-            .fullScreenCover(isPresented: $viewModel.showStitchSheet) {
+            .fullScreenCover(
+                isPresented: $viewModel.showStitchSheet,
+                onDismiss: {
+                    // cover 完全关闭后再呈现编辑器 sheet,避免同帧 present 被丢弃
+                    if let file = pendingRedactFile {
+                        pendingRedactFile = nil
+                        selectedOriginalFile = file
+                    }
+                }
+            ) {
                 StitchEditorView(onRedact: { file in
-                    // 长图入库后直接打开脱敏编辑器
-                    selectedOriginalFile = file as? OriginalFile
+                    pendingRedactFile = file as? OriginalFile
                 })
             }
             .sheet(isPresented: $viewModel.showCreateGroup) {
