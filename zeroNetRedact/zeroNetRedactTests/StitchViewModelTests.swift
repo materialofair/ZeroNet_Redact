@@ -93,4 +93,14 @@ final class StitchViewModelTests: XCTestCase {
         XCTAssertEqual(vm.plan?.items[1].cropTop, 100)
         XCTAssertEqual(vm.plan?.items[1].seamConfidence, 1.0, "手动调整后视为已确认")
     }
+
+    /// 回归:渲染进行中重入 generateAndImport 应直接返回(防双击并发渲染/重复扣配额)
+    func testGenerateAndImportReentrancyGuard() async throws {
+        let vm = StitchViewModel()
+        await vm.setSources(try makeTwoSources())
+        vm.isRendering = true
+        await vm.generateAndImport()
+        XCTAssertNil(vm.finishedFile, "渲染中重入应被拒绝")
+        XCTAssertEqual(UsageTracker.shared.getTodayImageExports(), 0, "重入不得扣配额")
+    }
 }

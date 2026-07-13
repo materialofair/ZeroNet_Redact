@@ -102,6 +102,7 @@ final class StitchViewModel: ObservableObject {
 
     /// 生成长图并导入(配额检查 → 后台渲染 → ImportManager 加密入库)
     func generateAndImport() async {
+        guard !isRendering else { return }
         showPaywall = false
         guard let plan, sources.count >= Self.minImages else { return }
         guard appState.hasUnlimitedAccess || usageTracker.canExportImage() else {
