@@ -161,6 +161,19 @@ struct StitchEditorView: View {
                             }
                     }
                 }
+                if viewModel.sources.count == 1 {
+                    VStack(spacing: 12) {
+                        Text(NSLocalizedString("stitch.empty.hint", comment: ""))
+                            .font(.caption)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                        Button(NSLocalizedString("stitch.selectImages", comment: "")) {
+                            showPicker = true
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                }
             }
             .padding(.horizontal, DesignSystem.Spacing.lg)
             .padding(.bottom, 120)  // 给底部生成栏留空间

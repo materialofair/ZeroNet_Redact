@@ -59,7 +59,7 @@ struct SeamAdjustView: View {
                 value: Binding(
                     get: { upperItem.cropBottom },
                     set: { viewModel.updateSeam(at: index, upperCropBottom: $0) }),
-                range: 0...(upperItem.pixelSize.height - upperItem.cropTop - 50))
+                range: 0...max(1, upperItem.pixelSize.height - upperItem.cropTop - 50))
 
             // 下图顶部裁剪
             sliderRow(
@@ -67,7 +67,7 @@ struct SeamAdjustView: View {
                 value: Binding(
                     get: { lowerItem.cropTop },
                     set: { viewModel.updateSeam(at: index, cropTop: $0) }),
-                range: 0...(lowerItem.pixelSize.height - lowerItem.cropBottom - 50))
+                range: 0...max(1, lowerItem.pixelSize.height - lowerItem.cropBottom - 50))
 
             Spacer()
         }
