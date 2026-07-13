@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ImageIO
 import PDFKit
 import Photos
 import UIKit
@@ -65,29 +66,39 @@ class ImageImportProcessor: FileImportProcessor {
     }
 
     func generateThumbnail(from data: Data) async throws -> Data {
-        guard let image = UIImage(data: data) else {
+        guard let src = CGImageSourceCreateWithData(data as CFData, nil) else {
             throw ImportError.invalidImageData
         }
-
-        let thumbnailSize = CGSize(width: 200, height: 200)
-        let thumbnail = image.resized(to: thumbnailSize)
-
-        guard let thumbnailData = thumbnail.pngData() else {
+        // ImageIO 直接生成降采样缩略图,不解码全图(对 3000 万像素长图至关重要)
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 200,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard
+            let thumb = CGImageSourceCreateThumbnailAtIndex(src, 0, options as CFDictionary),
+            let thumbnailData = UIImage(cgImage: thumb).pngData()
+        else {
             throw ImportError.thumbnailGenerationFailed
         }
-
         return thumbnailData
     }
 
     func extractMetadata(from data: Data) -> [String: Any] {
-        guard let image = UIImage(data: data) else {
-            return [:]
-        }
+        guard let src = CGImageSourceCreateWithData(data as CFData, nil),
+            let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
+            let pixelWidth = props[kCGImagePropertyPixelWidth] as? Int,
+            let pixelHeight = props[kCGImagePropertyPixelHeight] as? Int
+        else { return [:] }
 
+        // 与旧实现(UIImage(data:))语义对齐:
+        // width/height 为"显示尺寸"(EXIF 旋转后),orientation 为 UIImage.Orientation
+        let exif = (props[kCGImagePropertyOrientation] as? UInt32) ?? 1
+        let rotated = (5...8).contains(Int(exif))
         return [
-            "width": Int(image.size.width),
-            "height": Int(image.size.height),
-            "orientation": image.imageOrientation.rawValue,
+            "width": rotated ? pixelHeight : pixelWidth,
+            "height": rotated ? pixelWidth : pixelHeight,
+            "orientation": UIImage.Orientation(exifOrientation: exif).rawValue,
         ]
     }
 
@@ -204,7 +215,9 @@ extension UIImage {
             height: size.height * scaleFactor
         )
 
-        let renderer = UIGraphicsImageRenderer(size: scaledSize)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0  // 使用 1:1 scale 确保精确的尺寸
+        let renderer = UIGraphicsImageRenderer(size: scaledSize, format: format)
         return renderer.image { _ in
             self.draw(in: CGRect(origin: .zero, size: scaledSize))
         }
@@ -238,6 +251,24 @@ enum ImportError: LocalizedError {
             return NSLocalizedString("crypto.error.encryptionFailed", comment: "")
         case .saveFailed:
             return NSLocalizedString("import.error.saveFailed", comment: "")
+        }
+    }
+}
+
+// MARK: - EXIF 方向映射
+
+extension UIImage.Orientation {
+    /// EXIF/TIFF 方向值(1~8)→ UIImage.Orientation
+    init(exifOrientation: UInt32) {
+        switch exifOrientation {
+        case 2: self = .upMirrored
+        case 3: self = .down
+        case 4: self = .downMirrored
+        case 5: self = .leftMirrored
+        case 6: self = .right
+        case 7: self = .rightMirrored
+        case 8: self = .left
+        default: self = .up
         }
     }
 }
