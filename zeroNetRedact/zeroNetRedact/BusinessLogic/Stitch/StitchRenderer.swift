@@ -79,7 +79,8 @@ enum StitchRenderer {
         ctx.fill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
         ctx.interpolationQuality = .high
 
-        var y: CGFloat = 0  // 自顶向下累计
+        var cursor: CGFloat = 0  // 未取整的累计高度(自顶向下)
+        var top: CGFloat = 0  // 当前段整数化后的顶边
         for (index, item) in plan.items.enumerated() {
             try autoreleasepool {
                 let cgImage = try provider.loadCGImage(at: index)
@@ -91,14 +92,19 @@ enum StitchRenderer {
                 else { throw StitchRenderError.imageLoadFailed(index: index) }
 
                 let widthScale = (minWidth * scale) / item.pixelSize.width
-                let drawHeight = item.contentHeight * widthScale
-                // CGContext 原点在左下:目标 y = 总高 - 已累计 - 本段高
+                cursor += item.contentHeight * widthScale
+                // 拼缝整数像素对齐:相邻段共享同一条整数边界。
+                // 分数边界会使光栅化按部分覆盖与白底混合,在每条拼缝留下一条淡色横线。
+                let bottom = min(cursor.rounded(), size.height)
+                let drawHeight = bottom - top
+                guard drawHeight > 0 else { return }  // 极端裁剪下该段不足 1px,跳过
+                // CGContext 原点在左下:目标 y = 总高 - 本段底边
                 ctx.draw(
                     cropped,
                     in: CGRect(
-                        x: 0, y: size.height - y - drawHeight,
+                        x: 0, y: size.height - bottom,
                         width: size.width, height: drawHeight))
-                y += drawHeight
+                top = bottom
             }
         }
 

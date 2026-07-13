@@ -120,4 +120,42 @@ final class StitchRendererTests: XCTestCase {
         let topGray = StitchTestImages.pixelGray(in: output, x: output.width / 2, y: 0)
         XCTAssertEqual(Double(topGray), 0.2, accuracy: 0.08)
     }
+
+    /// 回归:分数像素裁剪值(降采样映射的常态)不得在拼缝处残留白底横线。
+    /// 机制:分数边界光栅化时上段与白底混合、下段再叠加,接缝行残留 ~20% 白底成分。
+    func testRenderFractionalSeamHasNoWhiteLine() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let size = CGSize(width: 390, height: 844)
+        // 深色对(0.1/0.15):白底渗漏会显著抬高接缝行灰度;
+        // 两色差刻意很小,使 JPEG 阶跃振铃(∝ 边缘幅度)不会误触阈值
+        let images: [UIImage] = [0.1, 0.15].map { gray in
+            UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+                ctx.cgContext.setFillColor(CGColor(gray: gray, alpha: 1))
+                ctx.cgContext.fill(CGRect(origin: .zero, size: size))
+            }
+        }
+        // 模拟指纹行→原图像素映射产生的分数裁剪值
+        var itemA = StitchItem(pixelSize: size)
+        itemA.cropBottom = 80.4
+        var itemB = StitchItem(pixelSize: size)
+        itemB.cropTop = 264.6
+        let data = try StitchRenderer.render(
+            plan: StitchPlan(items: [itemA, itemB]),
+            provider: ArrayProvider(images: images))
+        let output = UIImage(data: data)!.cgImage!
+
+        // 全图逐行采样:任何一行都不得明显亮于两种源色(白底渗漏 = 拼缝横线)
+        var maxGray: Double = 0
+        var maxRow = -1
+        for row in 0..<output.height {
+            let gray = Double(
+                StitchTestImages.pixelGray(in: output, x: output.width / 2, y: row))
+            if gray > maxGray {
+                maxGray = gray
+                maxRow = row
+            }
+        }
+        XCTAssertLessThan(maxGray, 0.25, "第 \(maxRow) 行出现白底渗漏横线(灰度 \(maxGray))")
+    }
 }
