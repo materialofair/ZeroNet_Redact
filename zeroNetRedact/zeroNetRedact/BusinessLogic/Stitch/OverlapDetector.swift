@@ -113,4 +113,83 @@ enum OverlapDetector {
         }
         return FixedRegions(headerRows: header, footerRows: footer)
     }
+
+    /// 单个拼缝的检测结果
+    struct SeamResult: Equatable {
+        /// 下图内容区顶部应额外裁剪的行数(指纹行,不含页眉)
+        var overlapRows: Int
+        /// 匹配置信度 0~1;低于阈值时 overlapRows 为 0
+        var confidence: Float
+    }
+
+    /// 在上图内容区中滑动搜索"下图内容区开头探针条"的最佳匹配位置。
+    /// 匹配成功则重叠 = 上图内容区自匹配点到底部的行数,应从下图顶部裁掉。
+    static func findOverlap(
+        upper: [[Float]], lower: [[Float]], fixed: FixedRegions
+    ) -> SeamResult {
+        let none = SeamResult(overlapRows: 0, confidence: 0)
+        guard upper.count > fixed.headerRows + fixed.footerRows,
+            lower.count > fixed.headerRows + fixed.footerRows
+        else { return none }
+
+        let upperContent = Array(upper[fixed.headerRows..<(upper.count - fixed.footerRows)])
+        let lowerContent = Array(lower[fixed.headerRows..<(lower.count - fixed.footerRows)])
+        let probeCount = min(maxProbeRows, lowerContent.count / 4)
+        guard probeCount >= 8, upperContent.count > probeCount else { return none }
+
+        let probe = Array(lowerContent.prefix(probeCount))
+        var bestScore: Float = 0
+        var bestStart = -1
+        for start in stride(from: upperContent.count - probeCount, through: 0, by: -1) {
+            var score: Float = 0
+            for i in 0..<probeCount {
+                score += rowSimilarity(probe[i], upperContent[start + i])
+            }
+            score /= Float(probeCount)
+            if score > bestScore {
+                bestScore = score
+                bestStart = start
+            }
+        }
+        guard bestScore >= seamConfidenceThreshold, bestStart >= 0 else { return none }
+        return SeamResult(overlapRows: upperContent.count - bestStart, confidence: bestScore)
+    }
+
+    /// 计算整组图的拼接方案。
+    /// fingerprints 基于降采样图;裁剪值按 (原图高 / 指纹行数) 映射回原图像素。
+    static func computePlan(fingerprints: [[[Float]]], pixelSizes: [CGSize]) -> StitchPlan {
+        precondition(fingerprints.count == pixelSizes.count)
+        guard fingerprints.count >= 2 else {
+            return StitchPlan(items: pixelSizes.map { StitchItem(pixelSize: $0) })
+        }
+        let fixed = detectFixedRegions(fingerprints)
+        var items = [StitchItem]()
+        items.reserveCapacity(fingerprints.count)
+
+        for i in 0..<fingerprints.count {
+            let rows = fingerprints[i].count
+            guard rows > 0 else {
+                items.append(StitchItem(pixelSize: pixelSizes[i]))
+                continue
+            }
+            let scale = pixelSizes[i].height / CGFloat(rows)
+            var item = StitchItem(pixelSize: pixelSizes[i])
+
+            // 非首张:裁固定页眉 + 与上一张的重叠区
+            if i > 0 {
+                let seam = findOverlap(
+                    upper: fingerprints[i - 1], lower: fingerprints[i], fixed: fixed)
+                let cropRows = fixed.headerRows + seam.overlapRows
+                item.seamConfidence = seam.confidence
+                // 保底:至少保留 10% 内容,防御异常匹配
+                item.cropTop = min(CGFloat(cropRows) * scale, pixelSizes[i].height * 0.9)
+            }
+            // 非末张:裁固定页脚
+            if i < fingerprints.count - 1 {
+                item.cropBottom = CGFloat(fixed.footerRows) * scale
+            }
+            items.append(item)
+        }
+        return StitchPlan(items: items)
+    }
 }

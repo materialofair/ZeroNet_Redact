@@ -84,4 +84,72 @@ final class OverlapDetectorTests: XCTestCase {
         XCTAssertLessThanOrEqual(fixed.headerRows, 200)
         XCTAssertLessThanOrEqual(fixed.footerRows, 200)
     }
+
+    // MARK: 重叠搜索与整组方案
+
+    /// 两张截图内容区重叠 204px,应检出并给出高置信度
+    func testFindOverlapKnownOffset() {
+        let world = StitchTestImages.world(width: 390, height: 3000)
+        let a = StitchTestImages.screenshot(from: world, contentTop: 0, contentHeight: 704)
+        let b = StitchTestImages.screenshot(from: world, contentTop: 500, contentHeight: 704)
+        let fps = [a, b].map { OverlapDetector.rowFingerprints(of: $0.cgImage!) }
+        let fixed = OverlapDetector.detectFixedRegions(fps)
+        let seam = OverlapDetector.findOverlap(upper: fps[0], lower: fps[1], fixed: fixed)
+
+        // 重叠 = 704 - 500 = 204 行(容忍固定区检测误差)
+        XCTAssertEqual(Double(seam.overlapRows), 204, accuracy: 12)
+        XCTAssertGreaterThanOrEqual(seam.confidence, OverlapDetector.seamConfidenceThreshold)
+    }
+
+    /// 两张无重叠的截图:置信度应低于阈值,降级为堆叠(overlapRows = 0)
+    func testFindOverlapNoneWhenDisjoint() {
+        let world = StitchTestImages.world(width: 390, height: 3000)
+        let a = StitchTestImages.screenshot(from: world, contentTop: 0, contentHeight: 704)
+        let b = StitchTestImages.screenshot(from: world, contentTop: 1800, contentHeight: 704)
+        let fps = [a, b].map { OverlapDetector.rowFingerprints(of: $0.cgImage!) }
+        let fixed = OverlapDetector.detectFixedRegions(fps)
+        let seam = OverlapDetector.findOverlap(upper: fps[0], lower: fps[1], fixed: fixed)
+
+        XCTAssertEqual(seam.overlapRows, 0)
+        XCTAssertEqual(seam.confidence, 0)
+    }
+
+    /// 三张连续滚动截图的整组方案:
+    /// 首张保留页眉、末张保留页脚、中间图裁双侧,重叠计入 cropTop
+    func testComputePlanThreeScreenshots() {
+        let world = StitchTestImages.world(width: 390, height: 3000)
+        let tops: [CGFloat] = [0, 500, 1000]
+        let shots = tops.map {
+            StitchTestImages.screenshot(from: world, contentTop: $0, contentHeight: 704)
+        }
+        let fps = shots.map { OverlapDetector.rowFingerprints(of: $0.cgImage!) }
+        let sizes = shots.map { CGSize(width: $0.size.width, height: $0.size.height) }
+        let plan = OverlapDetector.computePlan(fingerprints: fps, pixelSizes: sizes)
+
+        XCTAssertEqual(plan.items.count, 3)
+        // 首张:保留页眉(cropTop 0),裁页脚(约 80)
+        XCTAssertEqual(plan.items[0].cropTop, 0)
+        XCTAssertEqual(Double(plan.items[0].cropBottom), 80, accuracy: 12)
+        // 中间图:cropTop ≈ 页眉 60 + 重叠 204 = 264,cropBottom ≈ 80
+        XCTAssertEqual(Double(plan.items[1].cropTop), 264, accuracy: 20)
+        XCTAssertEqual(Double(plan.items[1].cropBottom), 80, accuracy: 12)
+        // 末张:cropTop ≈ 264,保留页脚(cropBottom 0)
+        XCTAssertEqual(Double(plan.items[2].cropTop), 264, accuracy: 20)
+        XCTAssertEqual(plan.items[2].cropBottom, 0)
+        // 拼出的总内容应连续覆盖 world 的 [0, 1704+60+80 区间内容),即无缝
+        XCTAssertGreaterThanOrEqual(plan.items[1].seamConfidence, 0.92)
+        XCTAssertGreaterThanOrEqual(plan.items[2].seamConfidence, 0.92)
+    }
+
+    /// 单张图:方案退化为原样保留
+    func testComputePlanSingleImage() {
+        let world = StitchTestImages.world(width: 390, height: 800)
+        let fps = [OverlapDetector.rowFingerprints(of: world.cgImage!)]
+        let plan = OverlapDetector.computePlan(
+            fingerprints: fps, pixelSizes: [CGSize(width: 390, height: 800)])
+
+        XCTAssertEqual(plan.items.count, 1)
+        XCTAssertEqual(plan.items[0].cropTop, 0)
+        XCTAssertEqual(plan.items[0].cropBottom, 0)
+    }
 }
