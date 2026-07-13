@@ -175,7 +175,10 @@ class ImageOCRRecognizer: TextRecognition {
         while yTop < cgImage.height {
             let tileH = min(Self.tileHeight, cgImage.height - yTop)
             let rect = CGRect(x: 0, y: yTop, width: cgImage.width, height: tileH)
-            guard let tile = cgImage.cropping(to: rect) else { break }
+            guard let tile = cgImage.cropping(to: rect) else {
+                print("❌ ImageOCRRecognizer: 分块裁剪失败 yTop=\(yTop), tileH=\(tileH),中止识别")
+                throw RecognitionError.recognitionFailed
+            }
             let texts = try await performVisionOCR(on: tile)
 
             // Vision 坐标原点在左下:tile 底边距整图底边的偏移
