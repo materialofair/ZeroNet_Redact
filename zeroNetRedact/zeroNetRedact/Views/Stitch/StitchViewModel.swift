@@ -121,7 +121,11 @@ final class StitchViewModel: ObservableObject {
             if let original = file as? OriginalFile {
                 GroupManager.shared.ensureDefaultGroup()
                 if let group = GroupManager.shared.getDefaultGroup() {
-                    _ = GroupManager.shared.moveFile(original, to: group)
+                    if !GroupManager.shared.moveFile(original, to: group) {
+                        print("❌ StitchViewModel: 分组挂载保存失败 id=\(original.id),文件可能不出现在导入列表")
+                    }
+                } else {
+                    print("❌ StitchViewModel: 默认分组不存在,长图未挂分组 id=\(original.id)")
                 }
             }
             if !appState.hasUnlimitedAccess {
