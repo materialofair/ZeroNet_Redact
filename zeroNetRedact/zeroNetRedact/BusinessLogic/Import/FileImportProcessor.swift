@@ -70,6 +70,7 @@ class ImageImportProcessor: FileImportProcessor {
             throw ImportError.invalidImageData
         }
         // ImageIO 直接生成降采样缩略图,不解码全图(对 3000 万像素长图至关重要)
+        // 注:ImageIO 不放大小图(<200px 保持原尺寸),与旧实现的放大行为不同;缩略图仅供网格显示,UI 层自适应缩放
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceThumbnailMaxPixelSize: 200,
@@ -196,31 +197,6 @@ class PDFImportProcessor: FileImportProcessor {
         metadata["isEncrypted"] = document.isEncrypted
 
         return metadata
-    }
-}
-
-// MARK: - UIImage扩展（缩略图生成）
-
-extension UIImage {
-    /// 调整图片大小（保持宽高比）
-    func resized(to targetSize: CGSize) -> UIImage {
-        let size = self.size
-
-        let widthRatio = targetSize.width / size.width
-        let heightRatio = targetSize.height / size.height
-
-        let scaleFactor = min(widthRatio, heightRatio)
-        let scaledSize = CGSize(
-            width: size.width * scaleFactor,
-            height: size.height * scaleFactor
-        )
-
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1.0  // 使用 1:1 scale 确保精确的尺寸
-        let renderer = UIGraphicsImageRenderer(size: scaledSize, format: format)
-        return renderer.image { _ in
-            self.draw(in: CGRect(origin: .zero, size: scaledSize))
-        }
     }
 }
 
