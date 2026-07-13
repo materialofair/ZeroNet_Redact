@@ -142,6 +142,13 @@ class TextRecognizer {
 
 class ImageOCRRecognizer: TextRecognition {
 
+    /// 超过该高度启用分块识别
+    static let tileHeightThreshold = 8192
+    /// 分块高度
+    static let tileHeight = 4096
+    /// 相邻分块重叠(避免文字被切断漏识)
+    static let tileOverlap = 400
+
     func recognizeText(in data: Data, fileType: FileType) async throws -> [RecognizedText] {
         return try await recognizeWithVision(data: data)
     }
@@ -153,7 +160,62 @@ class ImageOCRRecognizer: TextRecognition {
         else {
             throw RecognitionError.invalidImageData
         }
+        if cgImage.height <= Self.tileHeightThreshold {
+            return try await performVisionOCR(on: cgImage)
+        }
+        return try await recognizeTiled(cgImage: cgImage)
+    }
 
+    /// 长图分块识别:按 tileHeight 高、tileOverlap 重叠切片,
+    /// 每片独立 OCR 后把归一化坐标映射回整图空间,再跨片去重
+    private func recognizeTiled(cgImage: CGImage) async throws -> [RecognizedText] {
+        let fullHeight = CGFloat(cgImage.height)
+        var all: [RecognizedText] = []
+        var yTop = 0
+        while yTop < cgImage.height {
+            let tileH = min(Self.tileHeight, cgImage.height - yTop)
+            let rect = CGRect(x: 0, y: yTop, width: cgImage.width, height: tileH)
+            guard let tile = cgImage.cropping(to: rect) else { break }
+            let texts = try await performVisionOCR(on: tile)
+
+            // Vision 坐标原点在左下:tile 底边距整图底边的偏移
+            let tileBottomOffset = fullHeight - CGFloat(yTop + tileH)
+            for t in texts {
+                let box = t.boundingBox
+                let mapped = CGRect(
+                    x: box.origin.x,
+                    y: (tileBottomOffset + box.origin.y * CGFloat(tileH)) / fullHeight,
+                    width: box.width,
+                    height: box.height * CGFloat(tileH) / fullHeight)
+                all.append(
+                    RecognizedText(
+                        text: t.text, boundingBox: mapped,
+                        confidence: t.confidence, pageIndex: t.pageIndex))
+            }
+            if yTop + tileH >= cgImage.height { break }
+            yTop += Self.tileHeight - Self.tileOverlap
+        }
+        print("🔍 ImageOCRRecognizer: 分块 OCR 完成,合并前 \(all.count) 段文本")
+        return dedupeAcrossTiles(all)
+    }
+
+    /// 跨片去重:同文本且区域相交视为重复,保留置信度高者
+    private func dedupeAcrossTiles(_ texts: [RecognizedText]) -> [RecognizedText] {
+        var result: [RecognizedText] = []
+        for t in texts {
+            if let i = result.firstIndex(where: {
+                $0.text == t.text && $0.boundingBox.intersects(t.boundingBox)
+            }) {
+                if t.confidence > result[i].confidence { result[i] = t }
+            } else {
+                result.append(t)
+            }
+        }
+        return result
+    }
+
+    /// 单张(或单片)Vision OCR
+    private func performVisionOCR(on cgImage: CGImage) async throws -> [RecognizedText] {
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
                 if let error = error {
