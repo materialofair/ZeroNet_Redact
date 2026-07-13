@@ -13,9 +13,11 @@ import XCTest
 final class StitchViewModelTests: XCTestCase {
 
     private var savedPremium = false
+    private var savedReviewMode = false
 
     override func setUp() async throws {
         savedPremium = AppState.shared.isPremium
+        savedReviewMode = UserDefaults.standard.bool(forKey: "reviewModeActivated")
         AppState.shared.isPremium = false
         UserDefaults.standard.set(false, forKey: "reviewModeActivated")
         UsageTracker.shared.resetAllUsage()
@@ -23,6 +25,7 @@ final class StitchViewModelTests: XCTestCase {
 
     override func tearDown() async throws {
         AppState.shared.isPremium = savedPremium
+        UserDefaults.standard.set(savedReviewMode, forKey: "reviewModeActivated")
         UsageTracker.shared.resetAllUsage()
     }
 
@@ -76,7 +79,8 @@ final class StitchViewModelTests: XCTestCase {
         XCTAssertEqual(
             UsageTracker.shared.getTodayImageExports(), 1, "免费用户生成应计 1 次配额")
 
-        // 清理:删除本次导入的 Core Data 记录
+        // 清理:先删磁盘上的加密原图与缩略图,再删 Core Data 记录
+        try? StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
         let context = PersistenceController.shared.container.viewContext
         context.delete(file)
         try context.save()

@@ -47,6 +47,8 @@ final class StitchViewModel: ObservableObject {
 
     /// 从 PhotosPicker 结果加载源图(支持在已有基础上追加)
     func loadImages(_ items: [PhotosPickerItem]) async {
+        showError = false
+        errorMessage = nil
         isDetecting = true
         var loaded: [StitchSource] = []
         for item in items {
@@ -100,6 +102,7 @@ final class StitchViewModel: ObservableObject {
 
     /// 生成长图并导入(配额检查 → 后台渲染 → ImportManager 加密入库)
     func generateAndImport() async {
+        showPaywall = false
         guard let plan, sources.count >= Self.minImages else { return }
         guard appState.hasUnlimitedAccess || usageTracker.canExportImage() else {
             showPaywall = true

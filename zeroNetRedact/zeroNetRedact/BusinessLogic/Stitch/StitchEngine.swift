@@ -19,6 +19,7 @@ struct StitchSource: Identifiable {
     let preview: UIImage
     /// 预览图的行指纹缓存(排序/调整时重算方案无需重新采样)
     let fingerprints: [[Float]]
+    /// 并发契约:渲染路径(Task.detached)只可读取 data(值类型);preview 为 UIImage 非 Sendable,只能在主线程使用
 }
 
 enum StitchEngineError: LocalizedError {
