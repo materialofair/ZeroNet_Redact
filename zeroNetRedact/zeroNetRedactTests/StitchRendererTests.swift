@@ -92,4 +92,32 @@ final class StitchRendererTests: XCTestCase {
             try StitchRenderer.render(
                 plan: StitchPlan(items: []), provider: ArrayProvider(images: [])))
     }
+
+    /// 回归:触发 30MP 压缩路径时,累计绘制高度必须铺满画布(底部不得留白条)
+    func testRenderCappedPathFillsCanvasBottom() throws {
+        // 两张 1170×20000 纯色图(灰度不同),总像素 46.8M 触发压缩
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let size = CGSize(width: 1170, height: 20000)
+        let images: [UIImage] = [0.2, 0.7].map { gray in
+            UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+                ctx.cgContext.setFillColor(CGColor(gray: gray, alpha: 1))
+                ctx.cgContext.fill(CGRect(origin: .zero, size: size))
+            }
+        }
+        let plan = StitchPlan(items: [
+            StitchItem(pixelSize: size), StitchItem(pixelSize: size),
+        ])
+        let data = try StitchRenderer.render(
+            plan: plan, provider: ArrayProvider(images: images))
+        let output = UIImage(data: data)!.cgImage!
+
+        // 底部一行应是第二张图的灰度(0.7),而不是白底(1.0)
+        let bottomGray = StitchTestImages.pixelGray(
+            in: output, x: output.width / 2, y: output.height - 1)
+        XCTAssertEqual(Double(bottomGray), 0.7, accuracy: 0.08, "画布底部留白 → 压缩路径取整误差回归")
+        // 顶部一行应是第一张图的灰度
+        let topGray = StitchTestImages.pixelGray(in: output, x: output.width / 2, y: 0)
+        XCTAssertEqual(Double(topGray), 0.2, accuracy: 0.08)
+    }
 }

@@ -26,6 +26,6 @@ struct StitchItem: Equatable {
 /// 一次拼接的完整方案(算法产出,用户可修改)
 struct StitchPlan: Equatable {
     var items: [StitchItem]
-    /// 超出像素上限时的整体缩放系数(≤1),由渲染器计算
+    /// 预留:超限缩放提示;当前渲染路径由 StitchRenderer.outputSize(for:) 即时计算 scale,本字段暂未填充
     var outputScale: CGFloat = 1.0
 }

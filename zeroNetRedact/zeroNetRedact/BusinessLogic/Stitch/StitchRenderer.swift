@@ -62,10 +62,11 @@ enum StitchRenderer {
     /// 全分辨率渲染为 JPEG 数据
     static func render(plan: StitchPlan, provider: StitchImageProvider) throws -> Data {
         guard !plan.items.isEmpty else { throw StitchRenderError.noItems }
-        let (size, _) = outputSize(for: plan)
+        let (size, scale) = outputSize(for: plan)
         let width = Int(size.width)
         let height = Int(size.height)
         guard width > 0, height > 0,
+            let minWidth = plan.items.map({ $0.pixelSize.width }).min(),
             let ctx = CGContext(
                 data: nil, width: width, height: height,
                 bitsPerComponent: 8, bytesPerRow: 0,
@@ -89,7 +90,7 @@ enum StitchRenderer {
                 guard item.contentHeight > 0, let cropped = cgImage.cropping(to: cropRect)
                 else { throw StitchRenderError.imageLoadFailed(index: index) }
 
-                let widthScale = size.width / item.pixelSize.width
+                let widthScale = (minWidth * scale) / item.pixelSize.width
                 let drawHeight = item.contentHeight * widthScale
                 // CGContext 原点在左下:目标 y = 总高 - 已累计 - 本段高
                 ctx.draw(
