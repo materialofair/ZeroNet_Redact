@@ -10,6 +10,7 @@ import SwiftUI
 struct ImportButtonBar: View {
     let onPhotosImport: () -> Void
     let onDocumentImport: () -> Void
+    let onStitch: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -27,6 +28,14 @@ struct ImportButtonBar: View {
                 title: NSLocalizedString("import.selectPDF", comment: ""),
                 gradient: DesignSystem.Gradients.pdfType,
                 action: onDocumentImport
+            )
+
+            // 拼长图按钮
+            ActionButton(
+                icon: "rectangle.stack.badge.plus",
+                title: NSLocalizedString("stitch.button", comment: ""),
+                gradient: DesignSystem.Gradients.primary,
+                action: onStitch
             )
         }
         .padding(.horizontal, DesignSystem.Spacing.lg)
@@ -74,7 +83,8 @@ private struct ActionButton: View {
         Spacer()
         ImportButtonBar(
             onPhotosImport: { print("Photos import") },
-            onDocumentImport: { print("Document import") }
+            onDocumentImport: { print("Document import") },
+            onStitch: { print("Stitch") }
         )
     }
 }

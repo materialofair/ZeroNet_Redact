@@ -25,7 +25,8 @@ struct ImportView: View {
                             // 空状态 - 显示导入引导
                             ImportEmptyStateView(
                                 onPhotosImport: { viewModel.showPhotosPicker = true },
-                                onDocumentImport: { viewModel.showDocumentPicker = true }
+                                onDocumentImport: { viewModel.showDocumentPicker = true },
+                                onStitch: { viewModel.showStitchSheet = true }
                             )
                         } else {
                             // 文件网格
@@ -41,7 +42,8 @@ struct ImportView: View {
                     } else {
                         ImportButtonBar(
                             onPhotosImport: { viewModel.showPhotosPicker = true },
-                            onDocumentImport: { viewModel.showDocumentPicker = true }
+                            onDocumentImport: { viewModel.showDocumentPicker = true },
+                            onStitch: { viewModel.showStitchSheet = true }
                         )
                     }
                 }
@@ -105,6 +107,12 @@ struct ImportView: View {
             }
             .sheet(item: $selectedOriginalFile) { originalFile in
                 SimpleBrushEditor(file: originalFile)
+            }
+            .fullScreenCover(isPresented: $viewModel.showStitchSheet) {
+                StitchEditorView(onRedact: { file in
+                    // 长图入库后直接打开脱敏编辑器
+                    selectedOriginalFile = file as? OriginalFile
+                })
             }
             .sheet(isPresented: $viewModel.showCreateGroup) {
                 CreateGroupSheet(viewModel: viewModel)

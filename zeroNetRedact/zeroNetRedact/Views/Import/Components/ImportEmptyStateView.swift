@@ -10,6 +10,7 @@ import SwiftUI
 struct ImportEmptyStateView: View {
     let onPhotosImport: () -> Void
     let onDocumentImport: () -> Void
+    let onStitch: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -102,8 +103,16 @@ struct ImportEmptyStateView: View {
                 iconColor: DesignSystem.Colors.warningOrange,
                 action: onDocumentImport
             )
+
+            // 拼接长图
+            ImportButton(
+                icon: "rectangle.stack.badge.plus",
+                title: NSLocalizedString("stitch.button", comment: ""),
+                iconColor: DesignSystem.Colors.primaryPurple,
+                action: onStitch
+            )
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, 24)
     }
 }
 
@@ -150,6 +159,7 @@ private struct ImportButton: View {
 #Preview {
     ImportEmptyStateView(
         onPhotosImport: { print("Photos import") },
-        onDocumentImport: { print("Document import") }
+        onDocumentImport: { print("Document import") },
+        onStitch: {}
     )
 }

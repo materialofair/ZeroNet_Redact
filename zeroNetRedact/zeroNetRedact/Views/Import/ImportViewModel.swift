@@ -7,6 +7,7 @@ import SwiftUI
 class ImportViewModel: ObservableObject {
     @Published var showPhotosPicker = false
     @Published var showDocumentPicker = false
+    @Published var showStitchSheet = false
 
     // 导入进度
     @Published var isImporting = false
