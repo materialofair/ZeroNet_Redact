@@ -130,10 +130,9 @@ final class StitchViewModel: ObservableObject {
                 print("🧵 StitchViewModel: 长图已生成并导入 id=\(file.id)")
 
             case .duplicate(let existingFile):
-                // 复用已有记录:不重复入库、不扣配额;历史无分组记录顺带修复可见性
-                if existingFile.group == nil {
-                    attachToGroup(existingFile, preferred: targetGroup)
-                }
+                // 复用已有记录:不重复入库、不扣配额;
+                // 移动到本次目标分组——用户此刻在哪个分组拼接,就应在哪里看到它
+                attachToGroup(existingFile, preferred: targetGroup)
                 finishedFile = existingFile
                 print("🧵 StitchViewModel: 检测到相同长图,复用已有记录 id=\(existingFile.id)")
             }

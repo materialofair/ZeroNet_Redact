@@ -39,12 +39,21 @@ final class StitchViewModelTests: XCTestCase {
         }
     }
 
-    /// 删除导入产物(磁盘 + Core Data),测试清理用
-    private func deleteImported(_ file: OriginalFile) throws {
-        try? StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
-        let context = PersistenceController.shared.container.viewContext
-        context.delete(file)
-        try context.save()
+    /// 注册导入产物清理(磁盘 + Core Data);teardown 在断言失败时也会执行,避免残留污染后续跑次
+    private func scheduleCleanup(_ file: OriginalImage) {
+        addTeardownBlock { @MainActor in
+            try? StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
+            let context = PersistenceController.shared.container.viewContext
+            context.delete(file)
+            try? context.save()
+        }
+    }
+
+    /// 注册分组清理(在文件清理之后执行:teardown 为 LIFO,先注册的后跑)
+    private func scheduleCleanup(group: FileGroup) {
+        addTeardownBlock { @MainActor in
+            _ = GroupManager.shared.deleteGroup(group)
+        }
     }
 
     func testMaxSelectionCountByEntitlement() {
@@ -82,33 +91,27 @@ final class StitchViewModelTests: XCTestCase {
 
         XCTAssertFalse(vm.showPaywall)
         let file = try XCTUnwrap(vm.finishedFile as? OriginalImage, "应产出 OriginalImage")
+        scheduleCleanup(file)
         XCTAssertEqual(Int(file.width), 390)
         XCTAssertGreaterThan(Int(file.height), 1000, "长图高度应大于单张")
         XCTAssertEqual(
             UsageTracker.shared.getTodayImageExports(), 1, "免费用户生成应计 1 次配额")
         // 导入页按分组过滤查询(group == selectedGroup),无分组的文件在列表中不可见
         XCTAssertNotNil(file.group, "拼接产物必须挂到默认分组,否则导入页查不到")
-
-        // 清理:先删磁盘上的加密原图与缩略图,再删 Core Data 记录
-        try? StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
-        let context = PersistenceController.shared.container.viewContext
-        context.delete(file)
-        try context.save()
     }
 
     /// 拼接产物应挂到调用方指定的目标分组(跟随导入页当前选中分组)
     func testGenerateAndImportAttachesToTargetGroup() async throws {
         let customGroup = try XCTUnwrap(
             GroupManager.shared.createGroup(name: "拼接测试分组"), "创建自定义分组失败")
+        scheduleCleanup(group: customGroup)
         let vm = StitchViewModel()
         await vm.setSources(try makeTwoSources(seed: 77))
         await vm.generateAndImport(targetGroup: customGroup)
 
         let file = try XCTUnwrap(vm.finishedFile as? OriginalImage)
+        scheduleCleanup(file)
         XCTAssertEqual(file.group?.objectID, customGroup.objectID, "应挂到指定分组而非默认分组")
-
-        try deleteImported(file)
-        _ = GroupManager.shared.deleteGroup(customGroup)
     }
 
     /// 同一拼接方案重复生成:应复用已有记录,不重复入库、不重复扣配额
@@ -117,19 +120,25 @@ final class StitchViewModelTests: XCTestCase {
         await vm1.setSources(try makeTwoSources(seed: 99))
         await vm1.generateAndImport()
         let first = try XCTUnwrap(vm1.finishedFile as? OriginalImage)
+        scheduleCleanup(first)
         XCTAssertEqual(UsageTracker.shared.getTodayImageExports(), 1)
 
+        // 第二次在另一个分组下重复生成:应复用记录并移动到该分组
+        let customGroup = try XCTUnwrap(
+            GroupManager.shared.createGroup(name: "去重目标分组"), "创建自定义分组失败")
+        scheduleCleanup(group: customGroup)
         let vm2 = StitchViewModel()
         await vm2.setSources(try makeTwoSources(seed: 99))
-        await vm2.generateAndImport()
+        await vm2.generateAndImport(targetGroup: customGroup)
         let second = try XCTUnwrap(vm2.finishedFile as? OriginalImage)
 
         XCTAssertEqual(
             second.objectID, first.objectID, "重复拼接应返回已有记录而非新建")
         XCTAssertEqual(
             UsageTracker.shared.getTodayImageExports(), 1, "重复拼接不得再扣配额")
-
-        try deleteImported(first)
+        XCTAssertEqual(
+            second.group?.objectID, customGroup.objectID,
+            "复用记录应移动到本次目标分组,用户在当前分组下应能看到它")
     }
 
     func testUpdateSeamMarksManualConfidence() async throws {
