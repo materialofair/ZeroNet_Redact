@@ -22,6 +22,9 @@ struct StitchEditorView: View {
     @State private var showReorder = false
     @State private var showDoneAlert = false
 
+    /// 目标分组(导入页当前选中分组),nil 时 VM 回退默认分组
+    var targetGroup: FileGroup? = nil
+
     /// 用户点"去脱敏"时回调(ImportView 负责打开编辑器)
     let onRedact: (RedactableFile) -> Void
 
@@ -81,7 +84,7 @@ struct StitchEditorView: View {
                 onDismiss: {
                     // 购买/恢复成功后自动继续生成(与 SimpleBrushEditor 配额模式一致)
                     if AppState.shared.hasUnlimitedAccess {
-                        Task { await viewModel.generateAndImport() }
+                        Task { await viewModel.generateAndImport(targetGroup: targetGroup) }
                     }
                 }
             ) {
@@ -213,7 +216,7 @@ struct StitchEditorView: View {
                     .foregroundColor(.orange)
             }
             Button {
-                Task { await viewModel.generateAndImport() }
+                Task { await viewModel.generateAndImport(targetGroup: targetGroup) }
             } label: {
                 HStack(spacing: 8) {
                     if viewModel.isRendering {

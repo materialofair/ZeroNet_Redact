@@ -119,9 +119,11 @@ struct ImportView: View {
                     }
                 }
             ) {
-                StitchEditorView(onRedact: { file in
-                    pendingRedactFile = file as? OriginalFile
-                })
+                StitchEditorView(
+                    targetGroup: viewModel.selectedGroup,
+                    onRedact: { file in
+                        pendingRedactFile = file as? OriginalFile
+                    })
             }
             .sheet(isPresented: $viewModel.showCreateGroup) {
                 CreateGroupSheet(viewModel: viewModel)

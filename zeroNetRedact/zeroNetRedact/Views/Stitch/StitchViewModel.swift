@@ -100,8 +100,9 @@ final class StitchViewModel: ObservableObject {
         plan = updated
     }
 
-    /// 生成长图并导入(配额检查 → 后台渲染 → ImportManager 加密入库)
-    func generateAndImport() async {
+    /// 生成长图并导入(配额检查 → 后台渲染 → ImportManager 去重 + 加密入库)
+    /// - Parameter targetGroup: 目标分组(导入页当前选中分组);nil 时回退默认分组
+    func generateAndImport(targetGroup: FileGroup? = nil) async {
         guard !isRendering else { return }
         showPaywall = false
         guard let plan, sources.count >= Self.minImages else { return }
@@ -116,26 +117,42 @@ final class StitchViewModel: ObservableObject {
             let data = try await Task.detached(priority: .userInitiated) {
                 try StitchEngine.render(plan: plan, sources: sources)
             }.value
-            let file = try await ImportManager.shared.importFile(from: .imageData(data))
-            // 挂到默认分组:导入页按 group == selectedGroup 过滤,无分组的文件不可见
-            if let original = file as? OriginalFile {
-                GroupManager.shared.ensureDefaultGroup()
-                if let group = GroupManager.shared.getDefaultGroup() {
-                    if !GroupManager.shared.moveFile(original, to: group) {
-                        print("❌ StitchViewModel: 分组挂载保存失败 id=\(original.id),文件可能不出现在导入列表")
-                    }
-                } else {
-                    print("❌ StitchViewModel: 默认分组不存在,长图未挂分组 id=\(original.id)")
+            // 与照片导入同路径:SHA256 去重,重复生成同一拼接方案不重复入库
+            switch try await ImportManager.shared.importFileWithDuplicateCheck(
+                from: .imageData(data))
+            {
+            case .success(let file):
+                attachToGroup(file, preferred: targetGroup)
+                if !appState.hasUnlimitedAccess {
+                    usageTracker.recordImageExport()
                 }
+                finishedFile = file
+                print("🧵 StitchViewModel: 长图已生成并导入 id=\(file.id)")
+
+            case .duplicate(let existingFile):
+                // 复用已有记录:不重复入库、不扣配额;历史无分组记录顺带修复可见性
+                if existingFile.group == nil {
+                    attachToGroup(existingFile, preferred: targetGroup)
+                }
+                finishedFile = existingFile
+                print("🧵 StitchViewModel: 检测到相同长图,复用已有记录 id=\(existingFile.id)")
             }
-            if !appState.hasUnlimitedAccess {
-                usageTracker.recordImageExport()
-            }
-            finishedFile = file
-            print("🧵 StitchViewModel: 长图已生成并导入 id=\(file.id)")
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+        }
+    }
+
+    /// 挂到目标分组;导入页按 group == selectedGroup 过滤,无分组的文件不可见
+    private func attachToGroup(_ file: RedactableFile, preferred: FileGroup?) {
+        guard let original = file as? OriginalFile else { return }
+        GroupManager.shared.ensureDefaultGroup()
+        guard let group = preferred ?? GroupManager.shared.getDefaultGroup() else {
+            print("❌ StitchViewModel: 目标/默认分组均不存在,长图未挂分组 id=\(original.id)")
+            return
+        }
+        if !GroupManager.shared.moveFile(original, to: group) {
+            print("❌ StitchViewModel: 分组挂载保存失败 id=\(original.id),文件可能不出现在导入列表")
         }
     }
 

@@ -29,14 +29,22 @@ final class StitchViewModelTests: XCTestCase {
         UsageTracker.shared.resetAllUsage()
     }
 
-    private func makeTwoSources() throws -> [StitchSource] {
-        let world = StitchTestImages.world(width: 390, height: 3000)
+    private func makeTwoSources(seed: UInt64 = 7) throws -> [StitchSource] {
+        let world = StitchTestImages.world(width: 390, height: 3000, seed: seed)
         return try [0.0, 500.0].map { top in
             try StitchEngine.makeSource(
                 from: StitchTestImages.screenshot(
                     from: world, contentTop: top, contentHeight: 704
                 ).pngData()!)
         }
+    }
+
+    /// 删除导入产物(磁盘 + Core Data),测试清理用
+    private func deleteImported(_ file: OriginalFile) throws {
+        try? StorageManager.shared.deleteOriginal(id: file.id, type: file.fileType)
+        let context = PersistenceController.shared.container.viewContext
+        context.delete(file)
+        try context.save()
     }
 
     func testMaxSelectionCountByEntitlement() {
@@ -86,6 +94,42 @@ final class StitchViewModelTests: XCTestCase {
         let context = PersistenceController.shared.container.viewContext
         context.delete(file)
         try context.save()
+    }
+
+    /// 拼接产物应挂到调用方指定的目标分组(跟随导入页当前选中分组)
+    func testGenerateAndImportAttachesToTargetGroup() async throws {
+        let customGroup = try XCTUnwrap(
+            GroupManager.shared.createGroup(name: "拼接测试分组"), "创建自定义分组失败")
+        let vm = StitchViewModel()
+        await vm.setSources(try makeTwoSources(seed: 77))
+        await vm.generateAndImport(targetGroup: customGroup)
+
+        let file = try XCTUnwrap(vm.finishedFile as? OriginalImage)
+        XCTAssertEqual(file.group?.objectID, customGroup.objectID, "应挂到指定分组而非默认分组")
+
+        try deleteImported(file)
+        _ = GroupManager.shared.deleteGroup(customGroup)
+    }
+
+    /// 同一拼接方案重复生成:应复用已有记录,不重复入库、不重复扣配额
+    func testGenerateAndImportDeduplicatesRepeatedStitch() async throws {
+        let vm1 = StitchViewModel()
+        await vm1.setSources(try makeTwoSources(seed: 99))
+        await vm1.generateAndImport()
+        let first = try XCTUnwrap(vm1.finishedFile as? OriginalImage)
+        XCTAssertEqual(UsageTracker.shared.getTodayImageExports(), 1)
+
+        let vm2 = StitchViewModel()
+        await vm2.setSources(try makeTwoSources(seed: 99))
+        await vm2.generateAndImport()
+        let second = try XCTUnwrap(vm2.finishedFile as? OriginalImage)
+
+        XCTAssertEqual(
+            second.objectID, first.objectID, "重复拼接应返回已有记录而非新建")
+        XCTAssertEqual(
+            UsageTracker.shared.getTodayImageExports(), 1, "重复拼接不得再扣配额")
+
+        try deleteImported(first)
     }
 
     func testUpdateSeamMarksManualConfidence() async throws {
