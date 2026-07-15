@@ -252,7 +252,11 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
     private func applyRectangle(
         to image: UIImage, at region: CGRect, color: UIColor, opacity: Float
     ) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: image.size)
+        // 保持原图scale:默认format按屏幕倍率(3x)渲染,会把位图放大9倍像素量,
+        // 相机照片导出PNG时内存暴涨导致OOM闪退
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = image.scale
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
 
         return renderer.image { context in
             // 绘制原图
@@ -267,7 +271,10 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
     /// 合成图片（将前景图片的指定区域绘制到背景图片上）
     private func compositeImage(background: UIImage, foreground: UIImage, region: CGRect) -> UIImage
     {
-        let renderer = UIGraphicsImageRenderer(size: background.size)
+        // 保持原图scale,避免按屏幕倍率放大位图(见applyRectangle)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = background.scale
+        let renderer = UIGraphicsImageRenderer(size: background.size, format: format)
 
         return renderer.image { context in
             // 绘制背景
