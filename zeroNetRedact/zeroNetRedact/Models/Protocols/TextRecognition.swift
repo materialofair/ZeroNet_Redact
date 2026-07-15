@@ -29,12 +29,22 @@ struct RecognizedText: Identifiable {
     let boundingBox: CGRect
     let confidence: Float
     let pageIndex: Int?  // PDF多页支持
+    /// 取text中某个子串(NSRange,UTF-16)的边界框,坐标系与boundingBox一致
+    /// 由识别器提供(如Vision的字符级几何);nil时调用方回退到整行boundingBox
+    let substringBox: ((NSRange) -> CGRect?)?
 
-    init(text: String, boundingBox: CGRect, confidence: Float, pageIndex: Int? = nil) {
+    init(
+        text: String,
+        boundingBox: CGRect,
+        confidence: Float,
+        pageIndex: Int? = nil,
+        substringBox: ((NSRange) -> CGRect?)? = nil
+    ) {
         self.text = text
         self.boundingBox = boundingBox
         self.confidence = confidence
         self.pageIndex = pageIndex
+        self.substringBox = substringBox
     }
 }
 

@@ -51,42 +51,48 @@ class TextRecognizer {
         ]
 
         for text in texts {
-            // 清理文本：移除空格和常见分隔符
-            let cleanedText = text.text.replacingOccurrences(of: " ", with: "")
-                .replacingOccurrences(of: "-", with: "")
-                .replacingOccurrences(of: "_", with: "")
+            // 清理文本：移除空格和常见分隔符,并记录清理后索引→原始索引的映射
+            let (cleanedText, cleanedIndexMap) = Self.cleanedTextWithIndexMap(text.text)
 
-            for (pattern, type) in patterns {
-                // 同时检测原始文本和清理后的文本
-                let textsToCheck = [text.text, cleanedText]
+            // 同时检测原始文本和清理后的文本(附带匹配范围→原始范围的映射)
+            let variants: [(checkText: String, mapToOriginal: (NSRange) -> NSRange?)] = [
+                (text.text, { $0 }),
+                (cleanedText, { Self.mapRangeToOriginal($0, indexMap: cleanedIndexMap) }),
+            ]
 
-                for checkText in textsToCheck {
+            patternLoop: for (pattern, type) in patterns {
+                for (checkText, mapToOriginal) in variants {
                     let matches = SensitivePatterns.findMatches(in: checkText, pattern: pattern)
 
                     for match in matches {
-                        if let range = Range(match.range, in: checkText) {
-                            let matchedText = String(checkText[range])
+                        guard let range = Range(match.range, in: checkText) else { continue }
+                        let matchedText = String(checkText[range])
 
-                            // 额外验证：避免误报
-                            if isValidSensitiveData(matchedText, type: type) {
-                                regions.append(
-                                    SensitiveRegion(
-                                        type: type,
-                                        boundingBox: text.boundingBox,
-                                        confidence: text.confidence,
-                                        pageIndex: text.pageIndex,
-                                        isConfirmed: false,
-                                        recognizedText: matchedText
-                                    ))
+                        // 额外验证：避免误报
+                        guard isValidSensitiveData(matchedText, type: type) else { continue }
 
-                                // 找到一个匹配就停止该文本的检测
-                                break
-                            }
+                        // 优先取匹配子串的精确框(如Vision字符级几何),回退到整行框
+                        let box: CGRect
+                        if let originalRange = mapToOriginal(match.range),
+                            let substringBox = text.substringBox?(originalRange)
+                        {
+                            box = substringBox
+                        } else {
+                            box = text.boundingBox
                         }
-                    }
 
-                    if !regions.isEmpty && regions.last?.boundingBox == text.boundingBox {
-                        break
+                        regions.append(
+                            SensitiveRegion(
+                                type: type,
+                                boundingBox: box,
+                                confidence: text.confidence,
+                                pageIndex: text.pageIndex,
+                                isConfirmed: false,
+                                recognizedText: matchedText
+                            ))
+
+                        // 找到一个匹配就停止该文本的检测
+                        break patternLoop
                     }
                 }
             }
@@ -94,6 +100,32 @@ class TextRecognizer {
 
         // 去重：合并重叠的区域
         return deduplicateRegions(regions)
+    }
+
+    /// 清理文本(移除空格、-、_),返回清理结果与"清理后UTF-16索引→原始UTF-16索引"映射
+    private static func cleanedTextWithIndexMap(_ text: String) -> (String, [Int]) {
+        let removed: Set<unichar> = [0x20, 0x2D, 0x5F]  // 空格、-、_
+        let nsText = text as NSString
+        var units: [unichar] = []
+        var indexMap: [Int] = []
+        for i in 0..<nsText.length {
+            let unit = nsText.character(at: i)
+            if removed.contains(unit) { continue }
+            units.append(unit)
+            indexMap.append(i)
+        }
+        return (String(utf16CodeUnits: units, count: units.count), indexMap)
+    }
+
+    /// 将清理后文本中的匹配范围映射回原始文本范围(含被移除的分隔符)
+    private static func mapRangeToOriginal(_ range: NSRange, indexMap: [Int]) -> NSRange? {
+        guard range.length > 0,
+            range.location >= 0,
+            range.location + range.length <= indexMap.count
+        else { return nil }
+        let start = indexMap[range.location]
+        let end = indexMap[range.location + range.length - 1] + 1
+        return NSRange(location: start, length: end - start)
     }
 
     /// 验证敏感数据的有效性
@@ -155,15 +187,88 @@ class ImageOCRRecognizer: TextRecognition {
 
     /// Apple Vision 文字识别 (优化版)
     private func recognizeWithVision(data: Data) async throws -> [RecognizedText] {
-        guard let image = UIImage(data: data),
+        // 先归一化EXIF方向:cgImage是未旋转的原始位图,若不归一化,
+        // Vision返回的坐标基于原始空间,与显示空间(旋转后)错位
+        guard let image = UIImage(data: data)?.normalizedToUpOrientation(),
             let cgImage = image.cgImage
         else {
             throw RecognitionError.invalidImageData
         }
         if cgImage.height <= Self.tileHeightThreshold {
-            return try await performVisionOCR(on: cgImage)
+            return try await recognizeBestOrientation(on: cgImage)
         }
         return try await recognizeTiled(cgImage: cgImage)
+    }
+
+    /// 多方向识别:正向识别效果不佳时(如证件横放拍摄),
+    /// 再按90°/180°/270°各识别一次,取整体置信度最高的一组,坐标映射回原图空间
+    private func recognizeBestOrientation(on cgImage: CGImage) async throws -> [RecognizedText] {
+        var best = try await performVisionOCR(on: cgImage)
+        var bestScore = Self.recognitionScore(best)
+
+        // 正向识别文本多且平均置信度高(常规截图/正拍照片)时直接采用,避免4倍耗时
+        if best.count >= 5, bestScore / Float(best.count) >= 0.6 {
+            return best
+        }
+
+        for orientation in [CGImagePropertyOrientation.right, .left, .down] {
+            let texts = try await performVisionOCR(on: cgImage, orientation: orientation)
+            let mapped = texts.map { Self.remapToUpSpace($0, from: orientation) }
+            let score = Self.recognitionScore(mapped)
+            if score > bestScore {
+                best = mapped
+                bestScore = score
+            }
+        }
+        return best
+    }
+
+    /// 识别质量评分:置信度求和(正确方向下可识别的文本显著更多、置信度更高)
+    private static func recognitionScore(_ texts: [RecognizedText]) -> Float {
+        texts.reduce(0) { $0 + $1.confidence }
+    }
+
+    /// 将某方向识别结果的归一化坐标映射回原始位图(.up)空间
+    private static func remapToUpSpace(
+        _ text: RecognizedText, from orientation: CGImagePropertyOrientation
+    ) -> RecognizedText {
+        guard orientation != .up else { return text }
+        let innerBox = text.substringBox
+        return RecognizedText(
+            text: text.text,
+            boundingBox: remapRect(text.boundingBox, from: orientation),
+            confidence: text.confidence,
+            pageIndex: text.pageIndex,
+            substringBox: innerBox.map { inner in
+                { range in inner(range).map { Self.remapRect($0, from: orientation) } }
+            }
+        )
+    }
+
+    /// 归一化矩形(左下原点)从orientation校正空间映射回原始位图空间
+    private static func remapRect(
+        _ rect: CGRect, from orientation: CGImagePropertyOrientation
+    ) -> CGRect {
+        func mapPoint(_ p: CGPoint) -> CGPoint {
+            switch orientation {
+            case .right:  // 原图需顺时针90°才正 → 校正空间点绕回:(x,y)→(1-y,x)
+                return CGPoint(x: 1 - p.y, y: p.x)
+            case .left:  // 原图需逆时针90°才正:(x,y)→(y,1-x)
+                return CGPoint(x: p.y, y: 1 - p.x)
+            case .down:  // 180°:(x,y)→(1-x,1-y)
+                return CGPoint(x: 1 - p.x, y: 1 - p.y)
+            default:
+                return p
+            }
+        }
+        let a = mapPoint(CGPoint(x: rect.minX, y: rect.minY))
+        let b = mapPoint(CGPoint(x: rect.maxX, y: rect.maxY))
+        return CGRect(
+            x: min(a.x, b.x),
+            y: min(a.y, b.y),
+            width: abs(a.x - b.x),
+            height: abs(a.y - b.y)
+        )
     }
 
     /// 长图分块识别:按 tileHeight 高、tileOverlap 重叠切片,
@@ -183,17 +288,22 @@ class ImageOCRRecognizer: TextRecognition {
 
             // Vision 坐标原点在左下:tile 底边距整图底边的偏移
             let tileBottomOffset = fullHeight - CGFloat(yTop + tileH)
-            for t in texts {
-                let box = t.boundingBox
-                let mapped = CGRect(
+            let remapToFullImage: (CGRect) -> CGRect = { box in
+                CGRect(
                     x: box.origin.x,
                     y: (tileBottomOffset + box.origin.y * CGFloat(tileH)) / fullHeight,
                     width: box.width,
                     height: box.height * CGFloat(tileH) / fullHeight)
+            }
+            for t in texts {
+                let innerBox = t.substringBox
                 all.append(
                     RecognizedText(
-                        text: t.text, boundingBox: mapped,
-                        confidence: t.confidence, pageIndex: t.pageIndex))
+                        text: t.text, boundingBox: remapToFullImage(t.boundingBox),
+                        confidence: t.confidence, pageIndex: t.pageIndex,
+                        substringBox: innerBox.map { inner in
+                            { range in inner(range).map(remapToFullImage) }
+                        }))
             }
             if yTop + tileH >= cgImage.height { break }
             yTop += Self.tileHeight - Self.tileOverlap
@@ -218,7 +328,10 @@ class ImageOCRRecognizer: TextRecognition {
     }
 
     /// 单张(或单片)Vision OCR
-    private func performVisionOCR(on cgImage: CGImage) async throws -> [RecognizedText] {
+    private func performVisionOCR(
+        on cgImage: CGImage,
+        orientation: CGImagePropertyOrientation = .up
+    ) async throws -> [RecognizedText] {
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
                 if let error = error {
@@ -236,11 +349,19 @@ class ImageOCRRecognizer: TextRecognition {
                         return nil
                     }
 
+                    let recognizedString = topCandidate.string
                     return RecognizedText(
-                        text: topCandidate.string,
+                        text: recognizedString,
                         boundingBox: observation.boundingBox,
                         confidence: topCandidate.confidence,
-                        pageIndex: nil
+                        pageIndex: nil,
+                        // 子串精确框:敏感号码只占一行的一部分时,取号码本身的几何
+                        substringBox: { nsRange in
+                            guard let range = Range(nsRange, in: recognizedString),
+                                let rect = try? topCandidate.boundingBox(for: range)
+                            else { return nil }
+                            return rect.boundingBox
+                        }
                     )
                 }
 
@@ -261,7 +382,8 @@ class ImageOCRRecognizer: TextRecognition {
                 "男", "女", "汉族",
             ]
 
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            let handler = VNImageRequestHandler(
+                cgImage: cgImage, orientation: orientation, options: [:])
             try? handler.perform([request])
         }
     }
@@ -294,9 +416,19 @@ class PDFTextRecognizer: TextRecognition {
             let words = pageContent.components(separatedBy: .whitespacesAndNewlines)
                 .filter { !$0.isEmpty }
 
+            // 词按出现顺序切分,顺序推进搜索起点,保证重复词也能定位到各自的实际位置
+            let nsContent = pageContent as NSString
+            var searchLocation = 0
+
             for word in words {
+                let searchRange = NSRange(
+                    location: searchLocation, length: nsContent.length - searchLocation)
+                let wordRange = nsContent.range(of: word, range: searchRange)
+                guard wordRange.location != NSNotFound else { continue }
+                searchLocation = wordRange.location + wordRange.length
+
                 // 在PDF中查找这个词的位置
-                if let selections = page.selection(for: NSRange(location: 0, length: word.count)),
+                if let selections = page.selection(for: wordRange),
                     let firstSelection = selections.selectionsByLine().first
                 {
                     let bounds = firstSelection.bounds(for: page)
@@ -317,6 +449,21 @@ class PDFTextRecognizer: TextRecognition {
 
     func detectSensitiveInfo(in texts: [RecognizedText]) -> [SensitiveRegion] {
         return TextRecognizer.shared.detectSensitiveRegions(in: texts)
+    }
+}
+
+// MARK: - UIImage 方向归一化
+
+extension UIImage {
+    /// 将带EXIF方向的图片重绘为orientation == .up的位图
+    /// OCR与坐标换算都必须基于显示空间(旋转后),原始位图空间会导致检测框错位
+    func normalizedToUpOrientation() -> UIImage {
+        guard imageOrientation != .up else { return self }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
     }
 }
 

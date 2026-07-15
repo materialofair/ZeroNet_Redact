@@ -93,7 +93,9 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         print("📐 图片scale: \(image.scale)")
 
         // 将图片转换为数据用于OCR识别
-        guard let imageData = image.pngData() else {
+        // 先归一化EXIF方向:pngData()不会应用方向信息,直接编码会得到未旋转的原始位图,
+        // 导致OCR坐标与显示空间错位
+        guard let imageData = image.normalizedToUpOrientation().pngData() else {
             print("❌ detectSensitiveRegions: 无法转换图片为PNG数据")
             throw EditorError.noImageLoaded
         }
