@@ -429,15 +429,24 @@ struct SimpleBrushEditor: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: displaySize.width, height: displaySize.height)
-                .onAppear { imageSize = displaySize }
-                .onChange(of: image.size) { imageSize = displaySize }
+                // 以图片实际渲染帧为准同步显示尺寸(布局变化如检测结果条弹出时也会触发),
+                // 否则涂抹/手势的屏幕坐标换算会基于陈旧尺寸而整体偏移
+                .onGeometryChange(for: CGSize.self) { proxy in
+                    proxy.size
+                } action: { newSize in
+                    imageSize = newSize
+                }
 
             // 涂抹路径、检测框和注释边框
-            Canvas { context, _ in
-                drawDetectedRegionHighlights(context: context)
+            // 用Canvas回调提供的真实画布尺寸换算(画布与图片同框),
+            // 不依赖imageSize状态,布局变化瞬间也不会错位
+            Canvas { context, canvasSize in
+                let drawConverter = CoordinateConverter(
+                    imageSize: canvasSize, viewModel: viewModel)
+                drawDetectedRegionHighlights(context: context, converter: drawConverter)
                 drawBrushStrokes(context: context)
                 if canvasMode == .drag {
-                    drawRedactionBorders(context: context)
+                    drawRedactionBorders(context: context, converter: drawConverter)
                 }
             }
             .frame(width: displaySize.width, height: displaySize.height)
@@ -458,9 +467,9 @@ struct SimpleBrushEditor: View {
 
     // MARK: - Canvas Drawing
 
-    private func drawDetectedRegionHighlights(context: GraphicsContext) {
+    private func drawDetectedRegionHighlights(context: GraphicsContext, converter: CoordinateConverter) {
         for region in viewModel.regionsForCurrentPage {
-            guard let rect = coordinateConverter.regionScreenRect(for: region) else { continue }
+            guard let rect = converter.regionScreenRect(for: region) else { continue }
             let path = Path(roundedRect: rect, cornerRadius: 4)
             context.fill(path, with: .color(.orange.opacity(0.18)))
             context.stroke(path, with: .color(.orange), lineWidth: 2)
@@ -510,11 +519,11 @@ struct SimpleBrushEditor: View {
         }
     }
 
-    private func drawRedactionBorders(context: GraphicsContext) {
+    private func drawRedactionBorders(context: GraphicsContext, converter: CoordinateConverter) {
         if viewModel.isPDFFile {
             let annotations = viewModel.getCurrentPageAnnotations()
             for (index, pdfBounds) in annotations {
-                if let screenRect = coordinateConverter.pdfRectToScreen(pdfBounds) {
+                if let screenRect = converter.pdfRectToScreen(pdfBounds) {
                     drawRegionBorder(
                         context: context, rect: screenRect, index: index)
                 }
@@ -522,7 +531,7 @@ struct SimpleBrushEditor: View {
         } else if viewModel.isImageFile {
             let regions = viewModel.getImageRedactionRegions()
             for (index, imageBounds) in regions {
-                if let screenRect = coordinateConverter.imageRectToScreen(imageBounds) {
+                if let screenRect = converter.imageRectToScreen(imageBounds) {
                     drawRegionBorder(
                         context: context, rect: screenRect, index: index)
                 }
