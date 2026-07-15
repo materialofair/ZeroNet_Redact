@@ -144,39 +144,43 @@ struct SimpleBrushEditor: View {
 
     @ViewBuilder
     private var editorContent: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.white
-                Color.black.opacity(0.05)
+        ZStack {
+            Color.white
+            Color.black.opacity(0.05)
 
-                if isInitialLoad || viewModel.isLoading {
-                    EditorLoadingView()
-                } else if let image = viewModel.currentImage {
-                    ZStack(alignment: .leading) {
-                        imageCanvas(image: image, geometry: geometry)
+            if isInitialLoad || viewModel.isLoading {
+                EditorLoadingView()
+            } else if let image = viewModel.currentImage {
+                // 控制栏占据布局而非悬浮遮挡:栏出现时图片区域变窄,
+                // 图片等比缩小完整可见;栏隐藏时恢复满宽
+                HStack(spacing: 0) {
+                    if hasRedactionRegions && isScaleBarVisible {
+                        ScaleControlBar(
+                            isDragMode: canvasMode == .drag,
+                            hasSelection: selectedAnnotationIndex != nil,
+                            onScaleUp: { scaleSelectedRegion(scale: scaleStep) },
+                            onScaleDown: { scaleSelectedRegion(scale: 1.0 / scaleStep) },
+                            onDelete: deleteSelectedRegion,
+                            onEnableDrag: { setCanvasMode(.drag) }
+                        )
+                        .disabled(viewModel.isExporting)
+                        .transition(.move(edge: .leading).combined(with: .opacity))
+                    }
 
-                        if hasRedactionRegions && isScaleBarVisible {
-                            ScaleControlBar(
-                                isDragMode: canvasMode == .drag,
-                                hasSelection: selectedAnnotationIndex != nil,
-                                onScaleUp: { scaleSelectedRegion(scale: scaleStep) },
-                                onScaleDown: { scaleSelectedRegion(scale: 1.0 / scaleStep) },
-                                onDelete: deleteSelectedRegion,
-                                onEnableDrag: { setCanvasMode(.drag) }
-                            )
-                            .disabled(viewModel.isExporting)
-                            .transition(.move(edge: .leading).combined(with: .opacity))
+                    ZStack {
+                        GeometryReader { geometry in
+                            imageCanvas(image: image, geometry: geometry)
                         }
 
                         if canvasMode == .zoom && (canvasScale != 1.0 || canvasOffset != .zero) {
                             resetZoomButton
                         }
                     }
-                    .animation(.easeInOut(duration: 0.2), value: hasRedactionRegions)
-                    .animation(.easeInOut(duration: 0.2), value: isScaleBarVisible)
-                } else {
-                    EditorErrorView()
                 }
+                .animation(.easeInOut(duration: 0.2), value: hasRedactionRegions)
+                .animation(.easeInOut(duration: 0.2), value: isScaleBarVisible)
+            } else {
+                EditorErrorView()
             }
         }
     }
