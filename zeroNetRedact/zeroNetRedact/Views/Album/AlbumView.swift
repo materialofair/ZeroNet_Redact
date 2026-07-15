@@ -403,6 +403,11 @@ struct RedactedFileGridItem: View {
                                         .clipShape(
                                             RoundedRectangle(
                                                 cornerRadius: DesignSystem.CornerRadius.medium - 2))
+                                        // clipShape只裁剪显示不裁剪命中区域:长图缩略图的
+                                        // 溢出部分会偷走相邻卡片的点击,必须显式约束命中范围
+                                        .contentShape(
+                                            RoundedRectangle(
+                                                cornerRadius: DesignSystem.CornerRadius.medium - 2))
                                 } else {
                                     VStack(spacing: 6) {
                                         Image(

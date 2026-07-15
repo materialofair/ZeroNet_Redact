@@ -304,6 +304,9 @@ struct StitchReorderSheet: View {
                             .frame(width: 44, height: 44)
                             .clipped()
                             .cornerRadius(6)
+                            // clipped只裁剪显示不裁剪命中区域:长图缩略图的
+                            // 溢出部分会偷走相邻行的点击,必须显式约束命中范围
+                            .contentShape(Rectangle())
                         Text("\(Int(source.pixelSize.width))×\(Int(source.pixelSize.height))")
                             .font(.caption)
                             .foregroundColor(DesignSystem.Colors.textSecondary)
