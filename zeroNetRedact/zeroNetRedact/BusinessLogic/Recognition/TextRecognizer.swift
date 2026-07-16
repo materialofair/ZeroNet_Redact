@@ -206,8 +206,9 @@ class ImageOCRRecognizer: TextRecognition {
         var best = try await performVisionOCR(on: cgImage)
         var bestScore = Self.recognitionScore(best)
 
-        // 正向识别文本多且平均置信度高(常规截图/正拍照片)时直接采用,避免4倍耗时
-        if best.count >= 5, bestScore / Float(best.count) >= 0.6 {
+        // 正向识别出足够多的可信文本(常规截图/正拍照片,约等于5块@0.6+)时
+        // 直接采用,避免4倍耗时;与下方方向比较使用同一评分口径
+        if bestScore >= 3.0 {
             return best
         }
 
@@ -223,9 +224,11 @@ class ImageOCRRecognizer: TextRecognition {
         return best
     }
 
-    /// 识别质量评分:置信度求和(正确方向下可识别的文本显著更多、置信度更高)
+    /// 识别质量评分:只累计可信文本块(置信度≥0.5)的置信度之和。
+    /// 正确方向下可信文本显著更多;错误方向把背景纹理碎成的低置信块不计入,
+    /// 避免"碎块以量取胜"选错方向
     private static func recognitionScore(_ texts: [RecognizedText]) -> Float {
-        texts.reduce(0) { $0 + $1.confidence }
+        texts.filter { $0.confidence >= 0.5 }.reduce(0) { $0 + $1.confidence }
     }
 
     /// 将某方向识别结果的归一化坐标映射回原始位图(.up)空间
@@ -333,16 +336,37 @@ class ImageOCRRecognizer: TextRecognition {
         orientation: CGImagePropertyOrientation = .up
     ) async throws -> [RecognizedText] {
         return try await withCheckedThrowingContinuation { continuation in
-            let request = VNRecognizeTextRequest { request, error in
-                if let error = error {
+            let request = VNRecognizeTextRequest()
+
+            // 🔧 优化配置 - 针对中文身份证识别
+            request.recognitionLevel = .accurate  // 使用最高精度
+            request.recognitionLanguages = ["zh-Hans", "en-US"]  // 简体中文 + 英文
+            request.usesLanguageCorrection = true  // 启用语言纠正
+            request.minimumTextHeight = 0.005  // 降低最小文字高度，识别更小的字
+
+            // 添加身份证常见词汇，提高识别准确率
+            request.customWords = [
+                "身份证", "公民身份号码", "居民身份证",
+                "姓名", "性别", "民族", "出生", "住址", "公民身份",
+                "签发机关", "有效期限", "年", "月", "日",
+                "男", "女", "汉族",
+            ]
+
+            let handler = VNImageRequestHandler(
+                cgImage: cgImage, orientation: orientation, options: [:])
+
+            // Vision的perform是同步阻塞调用,而工程默认MainActor隔离会把它压在主线程;
+            // 移到后台队列执行。单一resume点:perform正常返回后读results,
+            // 抛错则如实透传,不会悬挂也不会重复resume
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    try handler.perform([request])
+                } catch {
                     continuation.resume(throwing: error)
                     return
                 }
 
-                guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                    continuation.resume(returning: [])
-                    return
-                }
+                let observations = request.results ?? []
 
                 let texts = observations.compactMap { observation -> RecognizedText? in
                     guard let topCandidate = observation.topCandidates(1).first else {
@@ -367,24 +391,6 @@ class ImageOCRRecognizer: TextRecognition {
 
                 continuation.resume(returning: texts)
             }
-
-            // 🔧 优化配置 - 针对中文身份证识别
-            request.recognitionLevel = .accurate  // 使用最高精度
-            request.recognitionLanguages = ["zh-Hans", "en-US"]  // 简体中文 + 英文
-            request.usesLanguageCorrection = true  // 启用语言纠正
-            request.minimumTextHeight = 0.005  // 降低最小文字高度，识别更小的字
-
-            // 添加身份证常见词汇，提高识别准确率
-            request.customWords = [
-                "身份证", "公民身份号码", "居民身份证",
-                "姓名", "性别", "民族", "出生", "住址", "公民身份",
-                "签发机关", "有效期限", "年", "月", "日",
-                "男", "女", "汉族",
-            ]
-
-            let handler = VNImageRequestHandler(
-                cgImage: cgImage, orientation: orientation, options: [:])
-            try? handler.perform([request])
         }
     }
 

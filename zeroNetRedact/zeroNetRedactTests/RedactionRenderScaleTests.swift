@@ -52,31 +52,31 @@ final class RedactionRenderScaleTests: XCTestCase {
     }
 
     /// 矩形遮盖后像素尺寸应与原图一致(修复前会按屏幕倍率放大成3x)
-    func testRectangleRedactionPreservesPixelDimensions() {
+    func testRectangleRedactionPreservesPixelDimensions() throws {
         editor.currentImage = makeImage(width: 300, height: 400)
 
         editor.applyRedaction(
             at: CGRect(x: 10, y: 10, width: 50, height: 50), effect: .solidBlack)
 
-        let output = try! XCTUnwrap(editor.currentImage?.cgImage)
+        let output = try XCTUnwrap(editor.currentImage?.cgImage)
         XCTAssertEqual(output.width, 300, "涂抹后位图宽度不应变化")
         XCTAssertEqual(output.height, 400, "涂抹后位图高度不应变化")
     }
 
     /// 马赛克(走compositeImage合成路径)同样不应放大位图
-    func testMosaicRedactionPreservesPixelDimensions() {
+    func testMosaicRedactionPreservesPixelDimensions() throws {
         editor.currentImage = makeImage(width: 300, height: 400)
 
         editor.applyRedaction(
             at: CGRect(x: 10, y: 10, width: 50, height: 50), effect: .mosaic(pixelSize: 10))
 
-        let output = try! XCTUnwrap(editor.currentImage?.cgImage)
+        let output = try XCTUnwrap(editor.currentImage?.cgImage)
         XCTAssertEqual(output.width, 300, "马赛克后位图宽度不应变化")
         XCTAssertEqual(output.height, 400, "马赛克后位图高度不应变化")
     }
 
     /// 连续多次涂抹也不应逐次放大
-    func testRepeatedRedactionsDoNotInflatePixels() {
+    func testRepeatedRedactionsDoNotInflatePixels() throws {
         editor.currentImage = makeImage(width: 300, height: 400)
 
         for i in 0..<3 {
@@ -84,7 +84,7 @@ final class RedactionRenderScaleTests: XCTestCase {
                 at: CGRect(x: 10 + i * 20, y: 10, width: 30, height: 30), effect: .solidBlack)
         }
 
-        let output = try! XCTUnwrap(editor.currentImage?.cgImage)
+        let output = try XCTUnwrap(editor.currentImage?.cgImage)
         XCTAssertEqual(output.width, 300)
         XCTAssertEqual(output.height, 400)
     }

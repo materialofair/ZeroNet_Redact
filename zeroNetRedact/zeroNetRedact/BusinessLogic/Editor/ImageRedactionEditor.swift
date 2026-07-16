@@ -106,9 +106,10 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         let ocrRecognizer = ImageOCRRecognizer()
         let texts = try await ocrRecognizer.recognizeText(in: imageData, fileType: .image)
 
+        // 隐私:系统日志可能进入Console/诊断包,只输出长度与几何,不输出识别原文
         print("✅ OCR识别到 \(texts.count) 个文本块")
         for (index, text) in texts.enumerated() {
-            print("  📝 文本[\(index)]: '\(text.text)'")
+            print("  📝 文本[\(index)]: 长度\(text.text.count)")
             print(
                 "     归一化坐标: origin(\(text.boundingBox.origin.x), \(text.boundingBox.origin.y)) size(\(text.boundingBox.size.width) x \(text.boundingBox.size.height))"
             )
@@ -121,7 +122,7 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         print("✅ 检测到 \(regions.count) 个敏感区域")
         for (index, region) in regions.enumerated() {
             print("  🔴 敏感区域[\(index)]: \(region.type.displayName)")
-            print("     匹配文本: \(region.recognizedText ?? "未知")")
+            print("     匹配文本长度: \(region.recognizedText?.count ?? 0)")
             print("     归一化坐标: \(region.boundingBox)")
             print("     置信度: \(region.confidence)")
         }
