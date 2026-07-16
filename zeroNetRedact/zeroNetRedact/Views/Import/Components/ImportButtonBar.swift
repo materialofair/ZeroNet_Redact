@@ -30,13 +30,15 @@ struct ImportButtonBar: View {
                 action: onDocumentImport
             )
 
-            // 拼长图按钮
-            ActionButton(
-                icon: "rectangle.stack.badge.plus",
-                title: NSLocalizedString("stitch.button", comment: ""),
-                gradient: DesignSystem.Gradients.primary,
-                action: onStitch
-            )
+            // 拼长图按钮(暂缓发布,由功能开关控制)
+            if FeatureFlags.stitchEnabled {
+                ActionButton(
+                    icon: "rectangle.stack.badge.plus",
+                    title: NSLocalizedString("stitch.button", comment: ""),
+                    gradient: DesignSystem.Gradients.primary,
+                    action: onStitch
+                )
+            }
         }
         .padding(.horizontal, DesignSystem.Spacing.lg)
         .padding(.top, 12)

@@ -104,13 +104,15 @@ struct ImportEmptyStateView: View {
                 action: onDocumentImport
             )
 
-            // 拼接长图
-            ImportButton(
-                icon: "rectangle.stack.badge.plus",
-                title: NSLocalizedString("stitch.button", comment: ""),
-                iconColor: DesignSystem.Colors.primaryPurple,
-                action: onStitch
-            )
+            // 拼接长图(暂缓发布,由功能开关控制)
+            if FeatureFlags.stitchEnabled {
+                ImportButton(
+                    icon: "rectangle.stack.badge.plus",
+                    title: NSLocalizedString("stitch.button", comment: ""),
+                    iconColor: DesignSystem.Colors.primaryPurple,
+                    action: onStitch
+                )
+            }
         }
         .padding(.horizontal, 24)
     }
