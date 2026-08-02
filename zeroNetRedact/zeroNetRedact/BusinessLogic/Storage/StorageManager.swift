@@ -17,6 +17,7 @@ class StorageManager {
     private let originalsURL: URL
     private let thumbnailsURL: URL
     private let redactedURL: URL
+    private let videoWorkURL: URL
 
     private init() {
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -25,6 +26,7 @@ class StorageManager {
         originalsURL = documentsURL.appendingPathComponent("Originals")
         thumbnailsURL = documentsURL.appendingPathComponent("Thumbnails")
         redactedURL = documentsURL.appendingPathComponent("Redacted")
+        videoWorkURL = documentsURL.appendingPathComponent("VideoWork")
 
         createDirectoryStructure()
     }
@@ -35,10 +37,14 @@ class StorageManager {
         let directories = [
             originalsURL.appendingPathComponent("Images"),
             originalsURL.appendingPathComponent("PDFs"),
+            originalsURL.appendingPathComponent("Videos"),
             thumbnailsURL.appendingPathComponent("Images"),
             thumbnailsURL.appendingPathComponent("PDFs"),
+            thumbnailsURL.appendingPathComponent("Videos"),
             redactedURL.appendingPathComponent("Images"),
             redactedURL.appendingPathComponent("PDFs"),
+            redactedURL.appendingPathComponent("Videos"),
+            videoWorkURL,
         ]
 
         for directory in directories {
@@ -54,7 +60,7 @@ class StorageManager {
 
     /// 保存加密的原文件
     func saveEncryptedOriginal(data: Data, id: UUID, type: FileType) throws -> URL {
-        let subdir = type == .image ? "Images" : "PDFs"
+        let subdir = type.storageDirectoryName
         let url =
             originalsURL
             .appendingPathComponent(subdir)
@@ -66,7 +72,7 @@ class StorageManager {
 
     /// 保存加密的缩略图
     func saveEncryptedThumbnail(data: Data, id: UUID, type: FileType) throws -> URL {
-        let subdir = type == .image ? "Images" : "PDFs"
+        let subdir = type.storageDirectoryName
         let url =
             thumbnailsURL
             .appendingPathComponent(subdir)
@@ -78,17 +84,8 @@ class StorageManager {
 
     /// 保存脱敏文件（明文）
     func saveRedactedFile(data: Data, id: UUID, type: FileType) throws -> URL {
-        let subdir: String
-        let ext: String
-
-        switch type {
-        case .image:
-            subdir = "Images"
-            ext = "png"
-        case .pdf:
-            subdir = "PDFs"
-            ext = "pdf"
-        }
+        let subdir = type.storageDirectoryName
+        let ext = type.redactedFileExtension
 
         let url =
             redactedURL
@@ -122,7 +119,7 @@ class StorageManager {
 
     /// 保存脱敏文件的缩略图（明文）
     func saveRedactedThumbnail(data: Data, id: UUID, type: FileType) throws -> URL {
-        let subdir = type == .image ? "Images" : "PDFs"
+        let subdir = type.storageDirectoryName
         let url =
             redactedURL
             .appendingPathComponent(subdir)
@@ -174,7 +171,7 @@ class StorageManager {
     // MARK: - 获取文件URL
 
     func getOriginalURL(for id: UUID, type: FileType) -> URL {
-        let subdir = type == .image ? "Images" : "PDFs"
+        let subdir = type.storageDirectoryName
         return
             originalsURL
             .appendingPathComponent(subdir)
@@ -182,7 +179,7 @@ class StorageManager {
     }
 
     func getThumbnailURL(for id: UUID, type: FileType) -> URL {
-        let subdir = type == .image ? "Images" : "PDFs"
+        let subdir = type.storageDirectoryName
         return
             thumbnailsURL
             .appendingPathComponent(subdir)
@@ -190,8 +187,8 @@ class StorageManager {
     }
 
     func getRedactedURL(for id: UUID, type: FileType) -> URL {
-        let subdir = type == .image ? "Images" : "PDFs"
-        let ext = type == .image ? "png" : "pdf"
+        let subdir = type.storageDirectoryName
+        let ext = type.redactedFileExtension
         return
             redactedURL
             .appendingPathComponent(subdir)
@@ -217,6 +214,70 @@ class StorageManager {
         } catch CocoaError.fileNoSuchFile {
             // 文件已不存在，无需处理
         }
+        let thumbnailURL = getRedactedThumbnailURL(for: id, type: type)
+        try? FileManager.default.removeItem(at: thumbnailURL)
+    }
+
+    func getRedactedThumbnailURL(for id: UUID, type: FileType) -> URL {
+        redactedURL
+            .appendingPathComponent(type.storageDirectoryName)
+            .appendingPathComponent("\(id.uuidString)_thumb.png")
+    }
+
+    /// 将媒体文件原子保存到原文件加密目录。调用方负责保证 sourceURL 是完整密文。
+    func commitEncryptedOriginal(from sourceURL: URL, id: UUID, type: FileType) throws -> URL {
+        let destinationURL = getOriginalURL(for: id, type: type)
+        return try replaceAtomically(from: sourceURL, to: destinationURL)
+    }
+
+    /// 将已完成的脱敏视频原子保存到相册目录，避免大视频进入 Data 内存路径。
+    func commitRedactedFile(from sourceURL: URL, id: UUID, type: FileType) throws -> URL {
+        let destinationURL = getRedactedURL(for: id, type: type)
+        return try replaceAtomically(from: sourceURL, to: destinationURL)
+    }
+
+    /// 创建仅供一次视频编辑会话使用的私有工作目录。
+    func createVideoWorkspace() throws -> URL {
+        let url = videoWorkURL.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: url,
+            withIntermediateDirectories: true,
+            attributes: [.protectionKey: FileProtectionType.complete]
+        )
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var mutableURL = url
+        try mutableURL.setResourceValues(values)
+        return url
+    }
+
+    func removeVideoWorkspace(_ url: URL) {
+        guard url.deletingLastPathComponent().standardizedFileURL == videoWorkURL.standardizedFileURL
+        else { return }
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func cleanupVideoWorkspaces() {
+        guard let children = try? FileManager.default.contentsOfDirectory(
+            at: videoWorkURL,
+            includingPropertiesForKeys: nil
+        ) else { return }
+        for child in children {
+            try? FileManager.default.removeItem(at: child)
+        }
+    }
+
+    private func replaceAtomically(from sourceURL: URL, to destinationURL: URL) throws -> URL {
+        let directory = destinationURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? FileManager.default.removeItem(at: destinationURL)
+        do {
+            try FileManager.default.moveItem(at: sourceURL, to: destinationURL)
+        } catch {
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            try? FileManager.default.removeItem(at: sourceURL)
+        }
+        return destinationURL
     }
 
     // MARK: - 文件信息
@@ -291,7 +352,7 @@ class StorageManager {
 
     /// 删除文件
     func deleteFile(id: UUID, type: FileType) throws {
-        let typeDir = type == .image ? "Images" : "PDFs"
+        let typeDir = type.storageDirectoryName
         let originalURL = originalsURL.appendingPathComponent(typeDir).appendingPathComponent(
             "\(id.uuidString).encrypted")
         let thumbnailURL = thumbnailsURL.appendingPathComponent(typeDir).appendingPathComponent(

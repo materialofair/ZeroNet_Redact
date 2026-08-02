@@ -29,6 +29,9 @@ struct zeroNetRedactApp: App {
     }()
 
     init() {
+        // 上次运行若被系统终止，启动时清理仅供视频处理使用的明文工作副本。
+        StorageManager.shared.cleanupVideoWorkspaces()
+
         // 初始化默认分组和迁移现有文件
         GroupManager.shared.ensureDefaultGroup()
         GroupManager.shared.migrateExistingFiles()

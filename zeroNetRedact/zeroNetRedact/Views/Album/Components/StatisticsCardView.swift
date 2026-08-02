@@ -60,6 +60,7 @@ struct StatisticsCardView: View {
         VStack(alignment: .trailing, spacing: 4) {
             let imageCount = files.filter { $0.fileType == .image }.count
             let pdfCount = files.filter { $0.fileType == .pdf }.count
+            let videoCount = files.filter { $0.fileType == .video }.count
 
             if imageCount > 0 {
                 typeCountRow(
@@ -69,6 +70,12 @@ struct StatisticsCardView: View {
             if pdfCount > 0 {
                 typeCountRow(
                     icon: "doc.fill", count: pdfCount, color: DesignSystem.Colors.warningOrange)
+            }
+
+            if videoCount > 0 {
+                typeCountRow(
+                    icon: "video.fill", count: videoCount,
+                    color: DesignSystem.Colors.successGreen)
             }
         }
     }

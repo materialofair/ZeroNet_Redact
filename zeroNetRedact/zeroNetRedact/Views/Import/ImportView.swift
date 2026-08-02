@@ -1,12 +1,17 @@
 import CoreData
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ImportView: View {
     @StateObject private var viewModel = ImportViewModel()
     @State private var selectedOriginalFile: OriginalFile?
     @State private var pendingRedactFile: OriginalFile?
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
+    @State private var selectedVideoItem: PhotosPickerItem?
+    @State private var selectedVideo: OriginalVideo?
+    @State private var showVideoSourceDialog = false
+    @State private var showVideoFileImporter = false
 
     var body: some View {
         NavigationStack {
@@ -26,6 +31,7 @@ struct ImportView: View {
                             // 空状态 - 显示导入引导
                             ImportEmptyStateView(
                                 onPhotosImport: { viewModel.showPhotosPicker = true },
+                                onVideoImport: { showVideoSourceDialog = true },
                                 onDocumentImport: { viewModel.showDocumentPicker = true },
                                 onStitch: { viewModel.showStitchSheet = true }
                             )
@@ -43,6 +49,7 @@ struct ImportView: View {
                     } else {
                         ImportButtonBar(
                             onPhotosImport: { viewModel.showPhotosPicker = true },
+                            onVideoImport: { showVideoSourceDialog = true },
                             onDocumentImport: { viewModel.showDocumentPicker = true },
                             onStitch: { viewModel.showStitchSheet = true }
                         )
@@ -103,11 +110,59 @@ struct ImportView: View {
                     }
                 }
             }
+            .photosPicker(
+                isPresented: $viewModel.showVideoPicker,
+                selection: $selectedVideoItem,
+                matching: .videos
+            )
+            .onChange(of: selectedVideoItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    defer { selectedVideoItem = nil }
+                    do {
+                        if let imported = try await newItem.loadTransferable(type: ImportedVideo.self) {
+                            await viewModel.importVideo(from: imported.url)
+                        }
+                    } catch {
+                        viewModel.errorMessage = error.localizedDescription
+                        viewModel.showError = true
+                    }
+                }
+            }
+            .confirmationDialog(
+                NSLocalizedString("video.import.source", comment: ""),
+                isPresented: $showVideoSourceDialog
+            ) {
+                Button(NSLocalizedString("video.import.photos", comment: "")) {
+                    viewModel.showVideoPicker = true
+                }
+                Button(NSLocalizedString("video.import.files", comment: "")) {
+                    showVideoFileImporter = true
+                }
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            }
+            .fileImporter(
+                isPresented: $showVideoFileImporter,
+                allowedContentTypes: [.movie],
+                allowsMultipleSelection: false
+            ) { result in
+                guard case .success(let urls) = result, let url = urls.first else {
+                    if case .failure(let error) = result {
+                        viewModel.errorMessage = error.localizedDescription
+                        viewModel.showError = true
+                    }
+                    return
+                }
+                Task { await viewModel.importVideo(from: url) }
+            }
             .sheet(isPresented: $viewModel.showDocumentPicker) {
                 DocumentPickerView(viewModel: viewModel)
             }
             .sheet(item: $selectedOriginalFile) { originalFile in
                 SimpleBrushEditor(file: originalFile)
+            }
+            .fullScreenCover(item: $selectedVideo) { video in
+                VideoEditorView(video: video)
             }
             .fullScreenCover(
                 isPresented: $viewModel.showStitchSheet,
@@ -200,7 +255,11 @@ struct ImportView: View {
                         if viewModel.isSelectionMode {
                             viewModel.toggleSelection(file)
                         } else {
-                            selectedOriginalFile = file
+                            if let video = file as? OriginalVideo {
+                                selectedVideo = video
+                            } else {
+                                selectedOriginalFile = file
+                            }
                         }
                     }
                 }

@@ -158,7 +158,7 @@ class AppState: ObservableObject {
         // 2) 删除磁盘上的原文件、缩略图与脱敏文件，并复核确实已删除
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         var remainingFolders: [String] = []
-        for folder in ["Originals", "Thumbnails", "Redacted"] {
+        for folder in ["Originals", "Thumbnails", "Redacted", "VideoWork"] {
             let folderURL = documentsURL.appendingPathComponent(folder)
             try? FileManager.default.removeItem(at: folderURL)
             if FileManager.default.fileExists(atPath: folderURL.path) {

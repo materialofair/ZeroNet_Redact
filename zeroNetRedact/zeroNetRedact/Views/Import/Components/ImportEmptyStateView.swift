@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ImportEmptyStateView: View {
     let onPhotosImport: () -> Void
+    let onVideoImport: () -> Void
     let onDocumentImport: () -> Void
     let onStitch: () -> Void
 
@@ -98,6 +99,13 @@ struct ImportEmptyStateView: View {
 
             // 导入PDF文件
             ImportButton(
+                icon: "video.fill",
+                title: NSLocalizedString("import.selectVideo", comment: ""),
+                iconColor: DesignSystem.Colors.successGreen,
+                action: onVideoImport
+            )
+
+            ImportButton(
                 icon: "doc.text.fill",
                 title: NSLocalizedString("import.selectPDF", comment: ""),
                 iconColor: DesignSystem.Colors.warningOrange,
@@ -161,6 +169,7 @@ private struct ImportButton: View {
 #Preview {
     ImportEmptyStateView(
         onPhotosImport: { print("Photos import") },
+        onVideoImport: { print("Video import") },
         onDocumentImport: { print("Document import") },
         onStitch: {}
     )

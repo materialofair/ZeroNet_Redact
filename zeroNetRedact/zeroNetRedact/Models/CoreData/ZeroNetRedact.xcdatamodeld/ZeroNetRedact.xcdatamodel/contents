@@ -34,6 +34,13 @@
         <attribute name="pageCount" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="title" attributeType="String" defaultValueString=""/>
     </entity>
+    <entity name="OriginalVideo" representedClassName="OriginalVideo" parentEntity="OriginalFile" syncable="YES">
+        <attribute name="duration" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="hasAudio" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="height" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="nominalFrameRate" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="width" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
     <entity name="RedactedFile" representedClassName="RedactedFile" syncable="YES">
         <attribute name="exportedAt" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="filePath" attributeType="String"/>

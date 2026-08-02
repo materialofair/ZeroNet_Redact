@@ -265,19 +265,42 @@ struct FileTypeBadge: View {
     var size: CGFloat = 24
 
     var body: some View {
-        Image(systemName: fileType == .image ? "photo.fill" : "doc.fill")
+        Image(systemName: badgeIcon)
             .font(.system(size: size * 0.45, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(
                 Circle()
                     .fill(
-                        fileType == .image
-                            ? DesignSystem.Gradients.imageType : DesignSystem.Gradients.pdfType)
+                        badgeGradient)
             )
             .shadow(
-                color: (fileType == .image ? Color.cyan : DesignSystem.Colors.warningOrange)
+                color: badgeColor
                     .opacity(0.4), radius: 4, x: 0, y: 2)
+    }
+
+    private var badgeIcon: String {
+        switch fileType {
+        case .image: return "photo.fill"
+        case .pdf: return "doc.fill"
+        case .video: return "video.fill"
+        }
+    }
+
+    private var badgeGradient: LinearGradient {
+        switch fileType {
+        case .image: return DesignSystem.Gradients.imageType
+        case .pdf: return DesignSystem.Gradients.pdfType
+        case .video: return DesignSystem.Gradients.success
+        }
+    }
+
+    private var badgeColor: Color {
+        switch fileType {
+        case .image: return .cyan
+        case .pdf: return DesignSystem.Colors.warningOrange
+        case .video: return DesignSystem.Colors.successGreen
+        }
     }
 }
 

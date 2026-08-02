@@ -154,15 +154,10 @@ struct OriginalFileGridItem: View {
     private var placeholderView: some View {
         VStack(spacing: 6) {
             Image(
-                systemName: file.fileType == .image
-                    ? "photo.fill" : "doc.text.fill"
+                systemName: file.fileType.icon
             )
             .font(.system(size: 28, weight: .medium))
-            .foregroundStyle(
-                file.fileType == .image
-                    ? DesignSystem.Gradients.imageType
-                    : DesignSystem.Gradients.pdfType
-            )
+            .foregroundStyle(placeholderGradient)
             Text(NSLocalizedString("file.original", comment: ""))
                 .font(.caption2)
                 .foregroundColor(DesignSystem.Colors.textTertiary)
@@ -211,6 +206,20 @@ struct OriginalFileGridItem: View {
             Text(file.createdAt, style: .time)
                 .font(.caption2)
                 .foregroundColor(DesignSystem.Colors.textSecondary)
+
+            if let video = file as? OriginalVideo {
+                Text(Duration.seconds(video.duration).formatted(.time(pattern: .minuteSecond)))
+                    .font(.caption2)
+                    .foregroundColor(DesignSystem.Colors.textTertiary)
+            }
+        }
+    }
+
+    private var placeholderGradient: LinearGradient {
+        switch file.fileType {
+        case .image: return DesignSystem.Gradients.imageType
+        case .pdf: return DesignSystem.Gradients.pdfType
+        case .video: return DesignSystem.Gradients.success
         }
     }
 

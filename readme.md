@@ -20,7 +20,7 @@
 
 ### 核心理念
 
-- **零网络** — 应用完全离线运行，没有网络权限，你的照片永远不会被上传
+- **零网络** — 应用完全离线运行，没有网络权限，你的文件永远不会被上传
 - **本地处理** — 所有脱敏操作都在你的设备上完成，没有云端、没有服务器
 - **隐私至上** — 无账号、无追踪、无广告，我们不知道你是谁，也不想知道
 - **开源透明** — 开源不是为了免费，而是为了让你可以验证我们的承诺，建立彼此的信任
@@ -32,6 +32,9 @@
 - 高斯模糊
 - 撤销/重做
 - 加密存储原图
+- 视频逐帧人脸检测，支持强模糊与卡通贴纸遮挡
+- 固定匿名男声、匿名女声、机器人和静音预设
+- 视频原件认证分块加密，处理与换声完全离线
 - 导出到相册或分享
 
 ### 系统要求
@@ -55,7 +58,7 @@ open zeroNetRedact.xcodeproj
 
 **我们的承诺：不收集任何数据。**
 
-- 所有图片处理都在本地完成
+- 所有图片、PDF 和视频处理都在本地完成
 - 加密文件仅存储在你的设备上
 - 我们不会上传任何图片或数据
 - 我们不会追踪你的使用行为
@@ -80,7 +83,7 @@ In an era where data is stolen at will, we worry about exposing phone numbers, a
 
 ### Core Philosophy
 
-- **Zero Network** — The app runs completely offline with no network permissions. Your photos never get uploaded.
+- **Zero Network** — The app runs completely offline with no network permissions. Your files never get uploaded.
 - **Local Processing** — All redaction happens on your device. No cloud, no servers.
 - **Privacy First** — No accounts, no tracking, no ads. We don't know who you are, and we don't want to.
 - **Open Source** — Open source isn't about being free—it's about letting you verify our promises and building mutual trust.
@@ -92,6 +95,9 @@ In an era where data is stolen at will, we worry about exposing phone numbers, a
 - Gaussian blur
 - Undo/Redo
 - Encrypted storage for originals
+- Frame-by-frame video face detection with strong blur or cartoon sticker covering
+- Fixed anonymous male, anonymous female, robot, and mute voice presets
+- Authenticated chunk encryption for source videos; processing and voice effects stay offline
 - Export to Photos or Share
 
 ### Requirements
@@ -115,7 +121,7 @@ open zeroNetRedact.xcodeproj
 
 **Our Promise: We collect nothing.**
 
-- All image processing happens locally
+- All image, PDF, and video processing happens locally
 - Encrypted files are stored only on your device
 - We never upload any images or data
 - We never track your usage

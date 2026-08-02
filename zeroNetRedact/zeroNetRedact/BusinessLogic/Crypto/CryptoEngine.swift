@@ -10,11 +10,12 @@ import Foundation
 import Security
 
 /// 加密引擎单例
-class CryptoEngine {
+nonisolated class CryptoEngine: @unchecked Sendable {
     static let shared = CryptoEngine()
 
     private let keychain = KeychainManager()
     private let masterKeyTag = "com.zeronet.redact.masterkey"
+    private let masterKeyLock = NSLock()
 
     private init() {}
 
@@ -22,6 +23,9 @@ class CryptoEngine {
 
     /// 获取或创建主密钥
     private func getMasterKey() throws -> SymmetricKey {
+        masterKeyLock.lock()
+        defer { masterKeyLock.unlock() }
+
         // 尝试从Keychain读取
         if let keyData = keychain.readKey(tag: masterKeyTag) {
             return SymmetricKey(data: keyData)
@@ -35,6 +39,11 @@ class CryptoEngine {
         try keychain.saveKey(keyData, tag: masterKeyTag)
 
         return key
+    }
+
+    /// 与大文件分块加密共享同一应用主密钥。保持模块内可见，避免向 UI 暴露密钥材料。
+    func fileEncryptionKey() throws -> SymmetricKey {
+        try getMasterKey()
     }
 
     // MARK: - 加密/解密
@@ -113,6 +122,8 @@ class CryptoEngine {
 
     /// 重置主密钥（慎用！会导致所有已加密数据无法解密）
     func resetMasterKey() throws {
+        masterKeyLock.lock()
+        defer { masterKeyLock.unlock() }
         let newKey = SymmetricKey(size: .bits256)
         let keyData = newKey.withUnsafeBytes { Data($0) }
         try keychain.deleteKey(tag: masterKeyTag)
@@ -127,7 +138,7 @@ class CryptoEngine {
 
 // MARK: - Keychain管理器
 
-class KeychainManager {
+nonisolated class KeychainManager: @unchecked Sendable {
 
     /// 保存密钥到Keychain
     func saveKey(_ keyData: Data, tag: String) throws {
@@ -139,7 +150,11 @@ class KeychainManager {
         ]
 
         // 删除旧密钥（如果存在）
-        SecItemDelete(query as CFDictionary)
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassKey,
+            kSecAttrApplicationTag as String: tag.data(using: .utf8)!,
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
 
         // 添加新密钥
         let status = SecItemAdd(query as CFDictionary, nil)

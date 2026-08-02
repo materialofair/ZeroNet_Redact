@@ -6,6 +6,7 @@ import SwiftUI
 @MainActor
 class ImportViewModel: ObservableObject {
     @Published var showPhotosPicker = false
+    @Published var showVideoPicker = false
     @Published var showDocumentPicker = false
     @Published var showStitchSheet = false
 
@@ -123,6 +124,28 @@ class ImportViewModel: ObservableObject {
             }
         }
         await performBatchImport(sources, loadFailedCount: loadFailedCount)
+    }
+
+    func importVideo(from url: URL) async {
+        isImporting = true
+        importCompletedCount = 0
+        importTotalCount = 1
+        defer {
+            isImporting = false
+            importCompletedCount = 0
+            importTotalCount = 0
+        }
+        do {
+            _ = try await VideoImportService.shared.importVideo(from: url, group: selectedGroup)
+            importCompletedCount = 1
+            loadOriginalFiles()
+            presentSuccessToast(
+                String(format: NSLocalizedString("import.success.toast", comment: ""), 1)
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     func importDocuments(_ urls: [URL]) async {
@@ -375,6 +398,9 @@ class ImportViewModel: ObservableObject {
         // 先取出属性值：对象删除并保存后属性会变成 nil，再访问非可选属性会崩溃
         let fileID = file.id
         let fileType = file.fileType
+        let redactedSnapshots = file.redactedVersionsArray.map {
+            (id: $0.id, type: $0.fileType)
+        }
 
         context.delete(file)
         do {
@@ -394,6 +420,11 @@ class ImportViewModel: ObservableObject {
         }
         let cacheKey = "original_thumbnail_\(fileID.uuidString)"
         ImageCache.shared.removeImage(forKey: cacheKey)
+        for snapshot in redactedSnapshots {
+            try? StorageManager.shared.deleteRedacted(id: snapshot.id, type: snapshot.type)
+            ImageCache.shared.removeImage(
+                forKey: "redacted_thumbnail_\(snapshot.id.uuidString)")
+        }
 
         loadOriginalFiles()
         loadGroups()
@@ -409,7 +440,13 @@ class ImportViewModel: ObservableObject {
         guard !filesToDelete.isEmpty else { return }
 
         // 快照 (id, fileType)：对象删除并保存后不能再读取其属性
-        let snapshots = filesToDelete.map { (id: $0.id, type: $0.fileType) }
+        let snapshots = filesToDelete.map { file in
+            (
+                id: file.id,
+                type: file.fileType,
+                redacted: file.redactedVersionsArray.map { (id: $0.id, type: $0.fileType) }
+            )
+        }
 
         for file in filesToDelete {
             context.delete(file)
@@ -435,6 +472,11 @@ class ImportViewModel: ObservableObject {
             }
             let cacheKey = "original_thumbnail_\(snapshot.id.uuidString)"
             ImageCache.shared.removeImage(forKey: cacheKey)
+            for redacted in snapshot.redacted {
+                try? StorageManager.shared.deleteRedacted(id: redacted.id, type: redacted.type)
+                ImageCache.shared.removeImage(
+                    forKey: "redacted_thumbnail_\(redacted.id.uuidString)")
+            }
         }
 
         print("✅ 已批量删除 \(snapshots.count) 个原始文件")

@@ -28,6 +28,9 @@ class EditorFactory {
                 fatalError("文件类型不匹配：期望OriginalPDF，实际\(type(of: file))")
             }
             return AnyRedactionEditor(PDFRedactionEditor(file: pdfFile))
+
+        case .video:
+            fatalError("视频必须由 VideoEditorView 打开，不能进入图片/PDF编辑器")
         }
     }
 }

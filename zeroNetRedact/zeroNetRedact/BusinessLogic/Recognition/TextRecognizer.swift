@@ -20,6 +20,9 @@ class TextRecognizer {
 
     /// 识别文件中的文字
     func recognizeText(in file: OriginalFile) async throws -> [RecognizedText] {
+        guard file.fileType != .video else {
+            return []
+        }
         // 加载并解密数据
         let encryptedData = try StorageManager.shared.loadEncryptedOriginal(
             id: file.id, type: file.fileType)
@@ -32,6 +35,8 @@ class TextRecognizer {
             recognizer = ImageOCRRecognizer()
         case .pdf:
             recognizer = PDFTextRecognizer()
+        case .video:
+            return []
         }
 
         return try await recognizer.recognizeText(in: data, fileType: file.fileType)

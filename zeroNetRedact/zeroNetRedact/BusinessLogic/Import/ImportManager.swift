@@ -108,6 +108,8 @@ class ImportManager {
             processor = ImageImportProcessor()
         case .pdf:
             processor = PDFImportProcessor()
+        case .video:
+            throw ImportError.unsupportedSource
         }
 
         // 3. 加载原始数据
@@ -173,6 +175,8 @@ class ImportManager {
             processor = ImageImportProcessor()
         case .pdf:
             processor = PDFImportProcessor()
+        case .video:
+            throw ImportError.unsupportedSource
         }
 
         // 3. 加载原始数据
@@ -290,6 +294,8 @@ class ImportManager {
                 isEncrypted: isEncrypted,
                 contentHash: contentHash
             )
+        case .video:
+            throw ImportError.unsupportedSource
         }
     }
 
@@ -331,6 +337,11 @@ class PersistenceController {
 
     init() {
         container = NSPersistentContainer(name: "ZeroNetRedact")
+
+        if let description = container.persistentStoreDescriptions.first {
+            description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
+            description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+        }
 
         container.loadPersistentStores { description, error in
             if let error = error {

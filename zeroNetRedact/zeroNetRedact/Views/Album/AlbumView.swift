@@ -1,5 +1,6 @@
 import CoreData
 import PDFKit
+import AVKit
 import SwiftUI
 
 // MARK: - PDFDocument扩展，使其可用于fullScreenCover的item绑定
@@ -25,6 +26,7 @@ struct AlbumView: View {
     @State private var previewFile: RedactedFile?
     @State private var previewImage: UIImage?
     @State private var previewPDFDocument: PDFDocument?
+    @State private var previewVideo: VideoPreviewItem?
     @State private var isLoadingPreview = false
     @State private var previewFailedFile: RedactedFile?
     @State private var showPreviewFailedAlert = false
@@ -111,6 +113,12 @@ struct AlbumView: View {
             .fullScreenCover(item: $previewPDFDocument) { document in
                 if let file = previewFile {
                     PDFPreviewView(pdfDocument: document, file: file, viewModel: viewModel)
+                        .onDisappear { previewFile = nil }
+                }
+            }
+            .fullScreenCover(item: $previewVideo) { item in
+                if let file = previewFile {
+                    RedactedVideoPreviewView(url: item.url, file: file, viewModel: viewModel)
                         .onDisappear { previewFile = nil }
                 }
             }
@@ -275,6 +283,16 @@ struct AlbumView: View {
             return
         }
 
+        if file.fileType == .video {
+            if Task.isCancelled { return }
+            await MainActor.run {
+                previewFile = file
+                previewVideo = VideoPreviewItem(url: file.fileURL)
+                isLoadingPreview = false
+            }
+            return
+        }
+
         do {
             let data = try StorageManager.shared.loadRedactedFile(
                 id: file.id,
@@ -410,10 +428,7 @@ struct RedactedFileGridItem: View {
                                                 cornerRadius: DesignSystem.CornerRadius.medium - 2))
                                 } else {
                                     VStack(spacing: 6) {
-                                        Image(
-                                            systemName: file.fileType == .image
-                                                ? "photo.fill" : "doc.text.fill"
-                                        )
+                                        Image(systemName: file.fileType.icon)
                                         .font(.system(size: 28, weight: .medium))
                                         .foregroundStyle(DesignSystem.Gradients.success)
                                         Text(NSLocalizedString("album.redacted", comment: ""))
@@ -522,6 +537,10 @@ struct RedactedFileGridItem: View {
                 }
             }
 
+            if file.fileType == .video {
+                return
+            }
+
             let data = try StorageManager.shared.loadRedactedFile(
                 id: file.id,
                 type: file.fileType
@@ -565,6 +584,60 @@ struct RedactedFileGridItem: View {
         } catch {
             print("❌ 加载脱敏文件缩略图失败: \(error)")
         }
+    }
+}
+
+private struct VideoPreviewItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+struct RedactedVideoPreviewView: View {
+    let url: URL
+    let file: RedactedFile
+    @ObservedObject var viewModel: AlbumViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var player: AVPlayer
+    @State private var showShareSheet = false
+
+    init(url: URL, file: RedactedFile, viewModel: AlbumViewModel) {
+        self.url = url
+        self.file = file
+        self.viewModel = viewModel
+        _player = State(initialValue: AVPlayer(url: url))
+    }
+
+    var body: some View {
+        NavigationStack {
+            VideoPlayer(player: player)
+                .background(Color.black.ignoresSafeArea())
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        HStack(spacing: 20) {
+                            FilePreviewActionsMenu(file: file, viewModel: viewModel) {
+                                dismiss()
+                            }
+                            Button {
+                                showShareSheet = true
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                        }
+                    }
+                }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [url])
+        }
+        .onDisappear { player.pause() }
     }
 }
 

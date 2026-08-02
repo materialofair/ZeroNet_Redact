@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ImportButtonBar: View {
     let onPhotosImport: () -> Void
+    let onVideoImport: () -> Void
     let onDocumentImport: () -> Void
     let onStitch: () -> Void
 
@@ -23,6 +24,13 @@ struct ImportButtonBar: View {
             )
 
             // 导入PDF按钮
+            ActionButton(
+                icon: "video.fill",
+                title: NSLocalizedString("import.selectVideo", comment: ""),
+                gradient: DesignSystem.Gradients.success,
+                action: onVideoImport
+            )
+
             ActionButton(
                 icon: "doc.text.fill",
                 title: NSLocalizedString("import.selectPDF", comment: ""),
@@ -85,6 +93,7 @@ private struct ActionButton: View {
         Spacer()
         ImportButtonBar(
             onPhotosImport: { print("Photos import") },
+            onVideoImport: { print("Video import") },
             onDocumentImport: { print("Document import") },
             onStitch: { print("Stitch") }
         )
