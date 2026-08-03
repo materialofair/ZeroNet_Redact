@@ -173,8 +173,8 @@
 "premium.title" = "高级版";
 "premium.header.title" = "解锁无限脱敏";
 "premium.header.subtitle" = "移除每日限制，随心所欲脱敏文件";
-"premium.feature.unlimitedImages" = "无限图片脱敏";
-"premium.feature.unlimitedImages.desc" = "图片导出不限次数";
+"premium.feature.unlimitedImages" = "无限制图片与视频脱敏";
+"premium.feature.unlimitedImages.desc" = "图片与视频导出不限次数，支持任意大小视频";
 "premium.feature.unlimitedDocs" = "无限文档脱敏";
 "premium.feature.unlimitedDocs.desc" = "PDF 导出不限次数";
 "premium.feature.lifetime" = "永久使用";
@@ -194,9 +194,9 @@
 "store.product.premium.name" = "无限制脱敏";
 
 /* Usage */
-"usage.status.format" = "图片: %d/%d, 文档: %d/%d";
+"usage.status.format" = "媒体: %d/%d, 文档: %d/%d";
 "usage.limit.title" = "今日配额已用完";
-"usage.limit.message" = "免费用户每天最多可导出 3 张图片和 3 个文档。升级到 Pro 可解锁无限使用。";
+"usage.limit.message" = "免费用户每天最多可脱敏 3 个媒体文件（图片/视频）和 3 个文档。升级到 Pro 可解锁无限使用。";
 "usage.limit.upgrade" = "立即升级";
 
 /* Common */
@@ -575,6 +575,8 @@
 "video.sticker.description.sunglasses" = "墨镜贴纸完整遮住面部区域。";
 "video.sticker.description.panda" = "熊猫贴纸完整盖住每张脸。";
 "video.sticker.description.alien" = "外星人贴纸完整盖住每张脸。";
+"video.premium.required.title" = "视频超过免费限制";
+"video.premium.required.message" = "免费版支持 ≤300MB 的视频，开通高级版可脱敏任意大小视频。";
 "video.preview.protectedWorkspace" = "设备端私有工作区";
 "video.preview.redactionOn" = "人脸遮挡预览";
 "video.preview.reviewHint" = "播放或拖动进度条，检查视频中的每个场景。";

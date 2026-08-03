@@ -206,7 +206,7 @@ class EditorViewModel: ObservableObject {
         // 免费用户：检查配额
         let tracker = UsageTracker.shared
         if file.fileType == .image {
-            return tracker.canExportImage()
+            return tracker.canExportMedia()
         } else {
             return tracker.canExportDocument()
         }
@@ -219,7 +219,7 @@ class EditorViewModel: ObservableObject {
 
         let tracker = UsageTracker.shared
         if file.fileType == .image {
-            tracker.recordImageExport()
+            tracker.recordMediaExport()
         } else {
             tracker.recordDocExport()
         }

@@ -71,6 +71,41 @@ struct VideoEditorView: View {
                 ShareSheet(items: [file.fileURL])
             }
         }
+        // 免费用户每日配额（图片+视频合并）已用完
+        .alert(
+            NSLocalizedString("usage.limit.title", comment: ""),
+            isPresented: $viewModel.showUsageLimitAlert
+        ) {
+            Button(NSLocalizedString("usage.limit.upgrade", comment: "")) {
+                viewModel.showPremiumView = true
+            }
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("usage.limit.message", comment: ""))
+        }
+        // 视频超过免费大小限制（300MB），需要高级版
+        .alert(
+            NSLocalizedString("video.premium.required.title", comment: ""),
+            isPresented: $viewModel.showPremiumSizeAlert
+        ) {
+            Button(NSLocalizedString("usage.limit.upgrade", comment: "")) {
+                viewModel.showPremiumView = true
+            }
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("video.premium.required.message", comment: ""))
+        }
+        // 高级版购买页；购买成功后自动重试导出
+        .sheet(
+            isPresented: $viewModel.showPremiumView,
+            onDismiss: {
+                if AppState.shared.hasUnlimitedAccess {
+                    viewModel.export()
+                }
+            }
+        ) {
+            PremiumView()
+        }
         .sensoryFeedback(.success, trigger: viewModel.phase == .completed)
         .task { viewModel.start() }
         .onDisappear {

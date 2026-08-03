@@ -12,16 +12,19 @@ class UsageTracker: ObservableObject {
 
     // MARK: - Constants
 
-    /// 免费用户每日图片导出限制
-    static let dailyImageLimit = 3
+    /// 免费用户每日媒体（图片+视频合并）导出限制
+    static let dailyMediaLimit = 3
 
     /// 免费用户每日文档导出限制
     static let dailyDocLimit = 3
 
+    /// 免费用户可脱敏的视频大小上限（超过需开通高级版）
+    static let freeVideoSizeLimit: Int64 = 300 * 1024 * 1024
+
     // MARK: - AppStorage Properties
 
-    /// 今日图片导出次数
-    @AppStorage("dailyImageExports") private var dailyImageExports: Int = 0
+    /// 今日媒体（图片+视频）导出次数；存储键沿用历史 key，避免重置存量计数
+    @AppStorage("dailyImageExports") private var dailyMediaExports: Int = 0
 
     /// 今日文档导出次数
     @AppStorage("dailyDocExports") private var dailyDocExports: Int = 0
@@ -31,14 +34,14 @@ class UsageTracker: ObservableObject {
 
     // MARK: - Published Properties
 
-    /// 今日已使用图片导出次数
-    @Published private(set) var usedImageExports: Int = 0
+    /// 今日已使用媒体（图片+视频）导出次数
+    @Published private(set) var usedMediaExports: Int = 0
 
     /// 今日已使用文档导出次数
     @Published private(set) var usedDocExports: Int = 0
 
-    /// 今日剩余图片导出次数
-    @Published private(set) var remainingImageExports: Int = 0
+    /// 今日剩余媒体（图片+视频）导出次数
+    @Published private(set) var remainingMediaExports: Int = 0
 
     /// 今日剩余文档导出次数
     @Published private(set) var remainingDocExports: Int = 0
@@ -55,22 +58,22 @@ class UsageTracker: ObservableObject {
         // 同步执行一次，设置初始值
         let today = Self.todayString()
         if lastExportDate != today {
-            dailyImageExports = 0
+            dailyMediaExports = 0
             dailyDocExports = 0
             lastExportDate = today
         }
-        usedImageExports = dailyImageExports
+        usedMediaExports = dailyMediaExports
         usedDocExports = dailyDocExports
-        remainingImageExports = max(0, Self.dailyImageLimit - dailyImageExports)
+        remainingMediaExports = max(0, Self.dailyMediaLimit - dailyMediaExports)
         remainingDocExports = max(0, Self.dailyDocLimit - dailyDocExports)
     }
 
     // MARK: - Public Methods
 
-    /// 检查是否可以导出图片
-    func canExportImage() -> Bool {
+    /// 检查是否可以导出媒体（图片/视频共用同一每日配额）
+    func canExportMedia() -> Bool {
         checkAndResetDaily()
-        return dailyImageExports < Self.dailyImageLimit
+        return dailyMediaExports < Self.dailyMediaLimit
     }
 
     /// 检查是否可以导出文档
@@ -79,12 +82,12 @@ class UsageTracker: ObservableObject {
         return dailyDocExports < Self.dailyDocLimit
     }
 
-    /// 记录一次图片导出
-    func recordImageExport() {
+    /// 记录一次媒体导出（图片/视频共用同一每日配额）
+    func recordMediaExport() {
         checkAndResetDaily()
-        dailyImageExports += 1
+        dailyMediaExports += 1
         updateRemainingCounts()
-        print("📊 UsageTracker: 图片导出 \(dailyImageExports)/\(Self.dailyImageLimit)")
+        print("📊 UsageTracker: 媒体导出 \(dailyMediaExports)/\(Self.dailyMediaLimit)")
     }
 
     /// 记录一次文档导出
@@ -95,10 +98,10 @@ class UsageTracker: ObservableObject {
         print("📊 UsageTracker: 文档导出 \(dailyDocExports)/\(Self.dailyDocLimit)")
     }
 
-    /// 获取今日图片导出次数
-    func getTodayImageExports() -> Int {
+    /// 获取今日媒体导出次数
+    func getTodayMediaExports() -> Int {
         checkAndResetDaily()
-        return dailyImageExports
+        return dailyMediaExports
     }
 
     /// 获取今日文档导出次数
@@ -115,7 +118,7 @@ class UsageTracker: ObservableObject {
 
     /// 清除全部使用记录（用于销毁式重置）
     func resetAllUsage() {
-        dailyImageExports = 0
+        dailyMediaExports = 0
         dailyDocExports = 0
         lastExportDate = ""
         updateRemainingCounts()
@@ -129,7 +132,7 @@ class UsageTracker: ObservableObject {
 
         if lastExportDate != today {
             // 新的一天，重置计数
-            dailyImageExports = 0
+            dailyMediaExports = 0
             dailyDocExports = 0
             lastExportDate = today
             print("🔄 UsageTracker: 新的一天，计数已重置")
@@ -138,9 +141,9 @@ class UsageTracker: ObservableObject {
 
     /// 更新使用次数
     private func updateRemainingCounts() {
-        usedImageExports = dailyImageExports
+        usedMediaExports = dailyMediaExports
         usedDocExports = dailyDocExports
-        remainingImageExports = max(0, Self.dailyImageLimit - dailyImageExports)
+        remainingMediaExports = max(0, Self.dailyMediaLimit - dailyMediaExports)
         remainingDocExports = max(0, Self.dailyDocLimit - dailyDocExports)
     }
 
@@ -159,23 +162,23 @@ extension UsageTracker {
 
     /// 使用状态描述
     struct UsageStatus {
-        let imageUsed: Int
-        let imageLimit: Int
+        let mediaUsed: Int
+        let mediaLimit: Int
         let docUsed: Int
         let docLimit: Int
 
-        var imageRemaining: Int { imageLimit - imageUsed }
+        var mediaRemaining: Int { mediaLimit - mediaUsed }
         var docRemaining: Int { docLimit - docUsed }
 
-        var isImageLimitReached: Bool { imageRemaining <= 0 }
+        var isMediaLimitReached: Bool { mediaRemaining <= 0 }
         var isDocLimitReached: Bool { docRemaining <= 0 }
-        var isAnyLimitReached: Bool { isImageLimitReached || isDocLimitReached }
+        var isAnyLimitReached: Bool { isMediaLimitReached || isDocLimitReached }
 
         /// 本地化的状态文本
         var localizedStatusText: String {
             String(
                 format: NSLocalizedString("usage.status.format", comment: ""),
-                imageRemaining, imageLimit, docRemaining, docLimit)
+                mediaRemaining, mediaLimit, docRemaining, docLimit)
         }
     }
 
@@ -183,8 +186,8 @@ extension UsageTracker {
     func getUsageStatus() -> UsageStatus {
         checkAndResetDaily()
         return UsageStatus(
-            imageUsed: dailyImageExports,
-            imageLimit: Self.dailyImageLimit,
+            mediaUsed: dailyMediaExports,
+            mediaLimit: Self.dailyMediaLimit,
             docUsed: dailyDocExports,
             docLimit: Self.dailyDocLimit
         )

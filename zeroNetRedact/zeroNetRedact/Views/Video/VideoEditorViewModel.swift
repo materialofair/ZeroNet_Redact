@@ -21,6 +21,13 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var faceCount = 0
     @Published private(set) var errorMessage: String?
     @Published private(set) var exportedFile: RedactedFile?
+
+    /// 免费用户每日配额（图片+视频合并）已用完
+    @Published var showUsageLimitAlert = false
+    /// 视频超过免费大小限制（300MB），需要高级版
+    @Published var showPremiumSizeAlert = false
+    /// 高级版购买页
+    @Published var showPremiumView = false
     @Published var sticker: VideoRedactionSticker = .orangeSmiley {
         didSet { refreshPreview() }
     }
@@ -81,6 +88,26 @@ final class VideoEditorViewModel: ObservableObject {
 
     func export() {
         guard phase == .ready, let sourceURL, let workspace else { return }
+        // 免费用户校验：大视频需会员 + 每日媒体配额（图片/视频合并）
+        guard AppState.shared.hasUnlimitedAccess || canExportForFreeUser() else { return }
+        beginExport(sourceURL: sourceURL, workspace: workspace)
+    }
+
+    /// 免费用户导出校验；通过则返回 true。
+    /// 超过 300MB 的视频要求高级版；每日媒体配额与图片共用（3 次/天）。
+    private func canExportForFreeUser() -> Bool {
+        if video.fileSize > UsageTracker.freeVideoSizeLimit {
+            showPremiumSizeAlert = true
+            return false
+        }
+        guard UsageTracker.shared.canExportMedia() else {
+            showUsageLimitAlert = true
+            return false
+        }
+        return true
+    }
+
+    private func beginExport(sourceURL: URL, workspace: URL) {
         phase = .exporting
         progress = 0
         errorMessage = nil
@@ -140,6 +167,9 @@ final class VideoEditorViewModel: ObservableObject {
                 progress = 0.95
 
                 let redacted = try persistExport(stagedURL: exportURL)
+                if !AppState.shared.hasUnlimitedAccess {
+                    UsageTracker.shared.recordMediaExport()
+                }
                 exportedFile = redacted
                 phase = .completed
                 progress = 1

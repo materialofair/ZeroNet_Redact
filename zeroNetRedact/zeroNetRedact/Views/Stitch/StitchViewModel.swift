@@ -106,7 +106,7 @@ final class StitchViewModel: ObservableObject {
         guard !isRendering else { return }
         showPaywall = false
         guard let plan, sources.count >= Self.minImages else { return }
-        guard appState.hasUnlimitedAccess || usageTracker.canExportImage() else {
+        guard appState.hasUnlimitedAccess || usageTracker.canExportMedia() else {
             showPaywall = true
             return
         }
@@ -124,7 +124,7 @@ final class StitchViewModel: ObservableObject {
             case .success(let file):
                 attachToGroup(file, preferred: targetGroup)
                 if !appState.hasUnlimitedAccess {
-                    usageTracker.recordImageExport()
+                    usageTracker.recordMediaExport()
                 }
                 finishedFile = file
                 print("🧵 StitchViewModel: 长图已生成并导入 id=\(file.id)")

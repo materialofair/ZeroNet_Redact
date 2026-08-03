@@ -173,8 +173,8 @@
 "premium.title" = "Premium";
 "premium.header.title" = "Unlock Unlimited";
 "premium.header.subtitle" = "Remove daily limits and redact as many files as you want";
-"premium.feature.unlimitedImages" = "Unlimited Image Redaction";
-"premium.feature.unlimitedImages.desc" = "No daily limit on images";
+"premium.feature.unlimitedImages" = "Unlimited Photo & Video Redaction";
+"premium.feature.unlimitedImages.desc" = "No daily limits on photos or videos, any size";
 "premium.feature.unlimitedDocs" = "Unlimited Document Redaction";
 "premium.feature.unlimitedDocs.desc" = "No daily limit on PDFs";
 "premium.feature.lifetime" = "Lifetime Access";
@@ -194,9 +194,9 @@
 "store.product.premium.name" = "Unlimited Redactions";
 
 /* Usage */
-"usage.status.format" = "Images: %d/%d, Docs: %d/%d";
+"usage.status.format" = "Media: %d/%d, Docs: %d/%d";
 "usage.limit.title" = "Daily Limit Reached";
-"usage.limit.message" = "Free users can export up to 3 images and 3 documents per day. Upgrade to Pro for unlimited access.";
+"usage.limit.message" = "Free users can redact up to 3 media files (photos/videos) and 3 documents per day. Upgrade to Pro for unlimited access.";
 "usage.limit.upgrade" = "Upgrade Now";
 
 /* Common */
@@ -575,6 +575,8 @@
 "video.sticker.description.sunglasses" = "A sunglasses sticker fully covers the face area.";
 "video.sticker.description.panda" = "A panda sticker covers each face.";
 "video.sticker.description.alien" = "An alien sticker covers each face.";
+"video.premium.required.title" = "Video Exceeds Free Limit";
+"video.premium.required.message" = "The free tier supports videos up to 300MB. Upgrade to redact videos of any size.";
 "video.preview.protectedWorkspace" = "Private on-device workspace";
 "video.preview.redactionOn" = "Face covering preview";
 "video.preview.reviewHint" = "Play or scrub through the video to review every scene.";

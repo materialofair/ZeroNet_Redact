@@ -284,12 +284,12 @@ struct SettingsView: View {
                                         .font(.caption)
                                         .foregroundColor(DesignSystem.Colors.primaryBlue)
                                     Text(
-                                        "\(usageTracker.usedImageExports)/\(UsageTracker.dailyImageLimit)"
+                                        "\(usageTracker.usedMediaExports)/\(UsageTracker.dailyMediaLimit)"
                                     )
                                     .font(.caption)
                                     .foregroundColor(
-                                        usageTracker.usedImageExports
-                                            >= UsageTracker.dailyImageLimit
+                                        usageTracker.usedMediaExports
+                                            >= UsageTracker.dailyMediaLimit
                                             ? DesignSystem.Colors.dangerRed
                                             : DesignSystem.Colors.textSecondary)
                                 }

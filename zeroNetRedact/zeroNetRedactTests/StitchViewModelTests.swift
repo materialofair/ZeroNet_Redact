@@ -73,8 +73,8 @@ final class StitchViewModelTests: XCTestCase {
 
     func testGenerateBlockedWhenQuotaExhausted() async throws {
         // 耗尽今日 3 次图片配额
-        for _ in 0..<UsageTracker.dailyImageLimit {
-            UsageTracker.shared.recordImageExport()
+        for _ in 0..<UsageTracker.dailyMediaLimit {
+            UsageTracker.shared.recordMediaExport()
         }
         let vm = StitchViewModel()
         await vm.setSources(try makeTwoSources())
@@ -95,7 +95,7 @@ final class StitchViewModelTests: XCTestCase {
         XCTAssertEqual(Int(file.width), 390)
         XCTAssertGreaterThan(Int(file.height), 1000, "长图高度应大于单张")
         XCTAssertEqual(
-            UsageTracker.shared.getTodayImageExports(), 1, "免费用户生成应计 1 次配额")
+            UsageTracker.shared.getTodayMediaExports(), 1, "免费用户生成应计 1 次配额")
         // 导入页按分组过滤查询(group == selectedGroup),无分组的文件在列表中不可见
         XCTAssertNotNil(file.group, "拼接产物必须挂到默认分组,否则导入页查不到")
     }
@@ -121,7 +121,7 @@ final class StitchViewModelTests: XCTestCase {
         await vm1.generateAndImport()
         let first = try XCTUnwrap(vm1.finishedFile as? OriginalImage)
         scheduleCleanup(first)
-        XCTAssertEqual(UsageTracker.shared.getTodayImageExports(), 1)
+        XCTAssertEqual(UsageTracker.shared.getTodayMediaExports(), 1)
 
         // 第二次在另一个分组下重复生成:应复用记录并移动到该分组
         let customGroup = try XCTUnwrap(
@@ -135,7 +135,7 @@ final class StitchViewModelTests: XCTestCase {
         XCTAssertEqual(
             second.objectID, first.objectID, "重复拼接应返回已有记录而非新建")
         XCTAssertEqual(
-            UsageTracker.shared.getTodayImageExports(), 1, "重复拼接不得再扣配额")
+            UsageTracker.shared.getTodayMediaExports(), 1, "重复拼接不得再扣配额")
         XCTAssertEqual(
             second.group?.objectID, customGroup.objectID,
             "复用记录应移动到本次目标分组,用户在当前分组下应能看到它")
@@ -156,6 +156,6 @@ final class StitchViewModelTests: XCTestCase {
         vm.isRendering = true
         await vm.generateAndImport()
         XCTAssertNil(vm.finishedFile, "渲染中重入应被拒绝")
-        XCTAssertEqual(UsageTracker.shared.getTodayImageExports(), 0, "重入不得扣配额")
+        XCTAssertEqual(UsageTracker.shared.getTodayMediaExports(), 0, "重入不得扣配额")
     }
 }
