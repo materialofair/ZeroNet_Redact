@@ -2,7 +2,7 @@
 //  ImportButtonBar.swift
 //  ZeroNet Redact
 //
-//  底部导入按钮栏组件
+//  底部导入按钮栏组件（有文件时显示）
 //
 
 import SwiftUI
@@ -14,75 +14,58 @@ struct ImportButtonBar: View {
     let onStitch: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            // 导入图片按钮
-            ActionButton(
+        // 2x2 紧凑卡片网格，与空状态导入卡片保持同一套视觉语言
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible()),
+            ],
+            spacing: 10
+        ) {
+            ImportActionTile(
                 icon: "photo.on.rectangle.angled",
                 title: NSLocalizedString("import.selectPhotos", comment: ""),
-                gradient: DesignSystem.Gradients.primary,
+                iconColor: DesignSystem.Colors.primaryBlue,
+                style: .compact,
                 action: onPhotosImport
             )
 
-            // 导入PDF按钮
-            ActionButton(
+            ImportActionTile(
                 icon: "video.fill",
                 title: NSLocalizedString("import.selectVideo", comment: ""),
-                gradient: DesignSystem.Gradients.success,
+                iconColor: DesignSystem.Colors.successGreen,
+                style: .compact,
                 action: onVideoImport
             )
 
-            ActionButton(
+            ImportActionTile(
                 icon: "doc.text.fill",
                 title: NSLocalizedString("import.selectPDF", comment: ""),
-                gradient: DesignSystem.Gradients.pdfType,
+                iconColor: DesignSystem.Colors.warningOrange,
+                style: .compact,
                 action: onDocumentImport
             )
 
             // 拼长图按钮(暂缓发布,由功能开关控制)
             if FeatureFlags.stitchEnabled {
-                ActionButton(
+                ImportActionTile(
                     icon: "rectangle.stack.badge.plus",
                     title: NSLocalizedString("stitch.button", comment: ""),
-                    gradient: DesignSystem.Gradients.stitch,
+                    iconColor: DesignSystem.Colors.primaryPurple,
+                    style: .compact,
                     action: onStitch
                 )
             }
         }
         .padding(.horizontal, DesignSystem.Spacing.lg)
-        .padding(.top, 12)
-        .padding(.bottom, 20)
+        .padding(.top, 10)
+        .padding(.bottom, DesignSystem.Spacing.xl)
         .background(
             Rectangle()
                 .fill(.ultraThinMaterial)
                 .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: -4)
                 .ignoresSafeArea(edges: .bottom)
         )
-    }
-}
-
-// MARK: - 操作按钮组件
-
-private struct ActionButton: View {
-    let icon: String
-    let title: String
-    let gradient: LinearGradient
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .medium))
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(gradient)
-            .foregroundColor(.white)
-            .cornerRadius(DesignSystem.CornerRadius.medium)
-        }
     }
 }
 

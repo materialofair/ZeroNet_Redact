@@ -375,7 +375,7 @@ struct ImportView: View {
 private enum Layout {
     static let gridColumns = 3
     static let gridSpacing: CGFloat = 12
-    static let bottomPadding: CGFloat = 100
+    static let bottomPadding: CGFloat = 160
     static let maxPhotoSelection = 10
 }
 
