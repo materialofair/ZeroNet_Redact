@@ -43,7 +43,7 @@ struct ImportButtonBar: View {
                 ActionButton(
                     icon: "rectangle.stack.badge.plus",
                     title: NSLocalizedString("stitch.button", comment: ""),
-                    gradient: DesignSystem.Gradients.primary,
+                    gradient: DesignSystem.Gradients.stitch,
                     action: onStitch
                 )
             }

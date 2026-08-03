@@ -75,6 +75,13 @@ enum DesignSystem {
             endPoint: .bottomTrailing
         )
 
+        /// 拼长图类型渐变（紫色）
+        static let stitch = LinearGradient(
+            colors: [Color(hex: "5E5CE6"), Colors.primaryPurple],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+
         /// 危险渐变（红色）
         static let danger = LinearGradient(
             colors: [Colors.dangerRed, Color(hex: "FF6B6B")],

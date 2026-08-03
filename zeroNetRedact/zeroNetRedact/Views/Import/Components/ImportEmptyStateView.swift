@@ -80,32 +80,34 @@ struct ImportEmptyStateView: View {
         }
     }
 
-    /// 导入按钮组视图
+    /// 导入按钮组视图 - 2x2 等尺寸网格
     private var importButtonsView: some View {
-        HStack(alignment: .top, spacing: 12) {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: DesignSystem.Spacing.md),
+                GridItem(.flexible()),
+            ],
+            spacing: DesignSystem.Spacing.md
+        ) {
             // 从相册导入图片 —— 单次选择上限提示只跟图片按钮关联（该上限不适用于 PDF）
-            VStack(spacing: 8) {
-                ImportButton(
-                    icon: "photo.on.rectangle.angled",
-                    title: NSLocalizedString("import.selectPhotos", comment: ""),
-                    iconColor: DesignSystem.Colors.primaryBlue,
-                    action: onPhotosImport
-                )
+            ImportActionTile(
+                icon: "photo.on.rectangle.angled",
+                title: NSLocalizedString("import.selectPhotos", comment: ""),
+                caption: NSLocalizedString("import.maxSelection", comment: ""),
+                iconColor: DesignSystem.Colors.primaryBlue,
+                action: onPhotosImport
+            )
 
-                Text(NSLocalizedString("import.maxSelection", comment: ""))
-                    .font(.caption)
-                    .foregroundColor(DesignSystem.Colors.textTertiary)
-            }
-
-            // 导入PDF文件
-            ImportButton(
+            // 导入视频
+            ImportActionTile(
                 icon: "video.fill",
                 title: NSLocalizedString("import.selectVideo", comment: ""),
                 iconColor: DesignSystem.Colors.successGreen,
                 action: onVideoImport
             )
 
-            ImportButton(
+            // 导入PDF文件
+            ImportActionTile(
                 icon: "doc.text.fill",
                 title: NSLocalizedString("import.selectPDF", comment: ""),
                 iconColor: DesignSystem.Colors.warningOrange,
@@ -114,7 +116,7 @@ struct ImportEmptyStateView: View {
 
             // 拼接长图(暂缓发布,由功能开关控制)
             if FeatureFlags.stitchEnabled {
-                ImportButton(
+                ImportActionTile(
                     icon: "rectangle.stack.badge.plus",
                     title: NSLocalizedString("stitch.button", comment: ""),
                     iconColor: DesignSystem.Colors.primaryPurple,
@@ -122,45 +124,81 @@ struct ImportEmptyStateView: View {
                 )
             }
         }
-        .padding(.horizontal, 24)
+        .frame(maxWidth: 460)
+        .padding(.horizontal, DesignSystem.Spacing.xxl)
     }
 }
 
-// MARK: - 导入按钮组件
+// MARK: - 导入操作卡片组件
 
-private struct ImportButton: View {
+/// 等尺寸导入操作卡片：左侧彩色图标 + 右侧标题（可选副标题）
+private struct ImportActionTile: View {
     let icon: String
     let title: String
+    var caption: String?
     let iconColor: Color
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 10) {
-                // 图标圆形背景
-                ZStack {
-                    Circle()
-                        .fill(iconColor.opacity(0.1))
-                        .frame(width: 56, height: 56)
+            HStack(spacing: DesignSystem.Spacing.md) {
+                // 图标圆角底色
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(iconColor)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
+                            .fill(iconColor.opacity(colorScheme == .dark ? 0.24 : 0.12))
+                    )
 
-                    Image(systemName: icon)
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundColor(iconColor)
+                // 标题 + 可选副标题
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+
+                    if let caption {
+                        Text(caption)
+                            .font(.caption)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                 }
-
-                // 标题
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
+            .padding(.horizontal, DesignSystem.Spacing.md)
+            .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
             .background(DesignSystem.Colors.backgroundCard)
             .cornerRadius(DesignSystem.CornerRadius.large)
-            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                    .stroke(
+                        colorScheme == .dark ? Color.white.opacity(0.1) : Color.clear,
+                        lineWidth: 1
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ActionTileButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityHint(caption ?? "")
+    }
+}
+
+/// 导入卡片按压反馈
+private struct ActionTileButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
