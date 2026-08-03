@@ -411,52 +411,55 @@ struct VideoEditorView: View {
                 subtitle: NSLocalizedString("video.effect.subtitle", comment: "")
             )
 
-            LazyVGrid(
-                columns: effectColumns,
-                spacing: DesignSystem.Spacing.md
-            ) {
-                ForEach(VideoRedactionEffect.allCases) { effect in
-                    effectOption(effect)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DesignSystem.Spacing.sm) {
+                    ForEach(VideoRedactionSticker.allCases) { sticker in
+                        effectOption(sticker)
+                    }
                 }
+                .padding(.trailing, DesignSystem.Spacing.sm)
             }
         }
     }
 
-    private func effectOption(_ effect: VideoRedactionEffect) -> some View {
-        let isSelected = viewModel.effect == effect
+    /// 紧凑贴纸卡片：单行横向滑动选择。固定宽度、高度随内容自适应，
+    /// 大字号辅助功能下名称可以换行而不裁切。
+    private func effectOption(_ sticker: VideoRedactionSticker) -> some View {
+        let isSelected = viewModel.sticker == sticker
         return Button {
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                viewModel.effect = effect
+                viewModel.sticker = sticker
             }
         } label: {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                HStack {
-                    Image(systemName: effect.icon)
-                        .font(.title3.weight(.semibold))
+            VStack(spacing: DesignSystem.Spacing.xs) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: sticker.icon)
+                        .font(.system(size: 26, weight: .semibold))
                         .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : DesignSystem.Colors.textSecondary)
-                    Spacer()
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : DesignSystem.Colors.textTertiary)
+                        .frame(width: 38, height: 38)
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 15))
+                            .foregroundStyle(DesignSystem.Colors.primaryBlue)
+                            .background(Circle().fill(DesignSystem.Colors.backgroundPrimary))
+                    }
                 }
 
-                Text(effect.displayName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(DesignSystem.Colors.textPrimary)
-                    .multilineTextAlignment(.leading)
-
-                Text(effect.description)
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.textSecondary)
-                    .multilineTextAlignment(.leading)
+                Text(sticker.displayName)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : DesignSystem.Colors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
-            .padding(DesignSystem.Spacing.md)
+            .frame(width: 84)
+            .padding(.vertical, DesignSystem.Spacing.sm)
             .background(
                 isSelected
                     ? DesignSystem.Colors.primaryBlue.opacity(0.10)
-                    : DesignSystem.Colors.backgroundSecondary
+                    : DesignSystem.Colors.backgroundSecondary,
+                in: RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
             )
             .overlay {
                 RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
@@ -465,9 +468,9 @@ struct VideoEditorView: View {
                         lineWidth: isSelected ? 1.5 : 1
                     )
             }
-            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(sticker.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityHint(NSLocalizedString("video.accessibility.effectHint", comment: ""))
     }
@@ -683,16 +686,6 @@ struct VideoEditorView: View {
         return min(420, max(340, usable * 0.45))
     }
 
-    private var effectColumns: [GridItem] {
-        if dynamicTypeSize.isAccessibilitySize {
-            return [GridItem(.flexible())]
-        }
-        return [
-            GridItem(.flexible(), spacing: DesignSystem.Spacing.md),
-            GridItem(.flexible(), spacing: DesignSystem.Spacing.md),
-        ]
-    }
-
     private var processingTitle: String {
         switch viewModel.phase {
         case .preparing: return NSLocalizedString("video.status.preparing", comment: "")
@@ -797,13 +790,19 @@ private enum VideoOrientationController {
     }
 }
 
-private extension VideoRedactionEffect {
+private extension VideoRedactionSticker {
     var description: String {
         switch self {
-        case .strongBlur:
-            return NSLocalizedString("video.effect.description.strongBlur", comment: "")
-        case .cartoonSticker:
-            return NSLocalizedString("video.effect.description.cartoonSticker", comment: "")
+        case .orangeSmiley:
+            return NSLocalizedString("video.sticker.description.orangeSmiley", comment: "")
+        case .blueSmiley:
+            return NSLocalizedString("video.sticker.description.blueSmiley", comment: "")
+        case .sunglasses:
+            return NSLocalizedString("video.sticker.description.sunglasses", comment: "")
+        case .panda:
+            return NSLocalizedString("video.sticker.description.panda", comment: "")
+        case .alien:
+            return NSLocalizedString("video.sticker.description.alien", comment: "")
         }
     }
 }

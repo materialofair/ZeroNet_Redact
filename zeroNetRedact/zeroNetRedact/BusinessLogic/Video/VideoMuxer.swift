@@ -2,11 +2,9 @@
 import Foundation
 
 nonisolated final class VideoMuxer: @unchecked Sendable {
-    func replaceAudio(
-        videoURL: URL,
-        audioURL: URL?,
-        destinationURL: URL
-    ) async throws {
+    /// 用源视频轨（含旋转变换）和可选音轨构建导出 composition。
+    /// 供换音/静音导出与测试复用，保证音画同步与方向一致。
+    static func makeComposition(videoURL: URL, audioURL: URL?) async throws -> AVAsset {
         let videoAsset = AVURLAsset(url: videoURL)
         guard let sourceVideoTrack = try await videoAsset.loadTracks(withMediaType: .video).first else {
             throw VideoProcessingError.missingVideoTrack
@@ -40,6 +38,15 @@ nonisolated final class VideoMuxer: @unchecked Sendable {
                 )
             }
         }
+        return composition
+    }
+
+    func replaceAudio(
+        videoURL: URL,
+        audioURL: URL?,
+        destinationURL: URL
+    ) async throws {
+        let composition = try await Self.makeComposition(videoURL: videoURL, audioURL: audioURL)
 
         guard let session = AVAssetExportSession(
             asset: composition,

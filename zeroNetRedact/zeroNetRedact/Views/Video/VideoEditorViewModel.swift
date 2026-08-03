@@ -21,7 +21,7 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var faceCount = 0
     @Published private(set) var errorMessage: String?
     @Published private(set) var exportedFile: RedactedFile?
-    @Published var effect: VideoRedactionEffect = .strongBlur {
+    @Published var sticker: VideoRedactionSticker = .orangeSmiley {
         didSet { refreshPreview() }
     }
     @Published var voicePreset: VoicePreset = .original {
@@ -60,6 +60,7 @@ final class VideoEditorViewModel: ObservableObject {
 
     func start() {
         guard workTask == nil else { return }
+        configurePlaybackAudioSession()
         workTask = Task { await prepareAndAnalyze() }
     }
 
@@ -85,31 +86,31 @@ final class VideoEditorViewModel: ObservableObject {
         errorMessage = nil
         workTask = Task {
             do {
-                let staged = workspace.appendingPathComponent("redacted-with-source-audio.mp4")
-                try await VideoExporter().export(
-                    sourceURL: sourceURL,
-                    destinationURL: staged,
-                    timeline: timeline,
-                    effect: effect,
-                    progress: { [weak self] value in
-                        Task { @MainActor in self?.progress = value * 0.72 }
-                    }
-                )
-                try Task.checkCancellation()
-                let finalStaged: URL
+                let exportURL = workspace.appendingPathComponent("redacted-export.mp4")
                 switch voicePreset {
                 case .original:
-                    finalStaged = staged
-                case .mute:
-                    let muted = workspace.appendingPathComponent("redacted-muted.mp4")
-                    try await VideoMuxer().replaceAudio(
-                        videoURL: staged,
-                        audioURL: nil,
-                        destinationURL: muted
+                    try await VideoExporter().export(
+                        sourceURL: sourceURL,
+                        destinationURL: exportURL,
+                        timeline: timeline,
+                        sticker: sticker,
+                        audio: .original,
+                        progress: { [weak self] value in
+                            Task { @MainActor in self?.progress = value * 0.95 }
+                        }
                     )
-                    try? FileManager.default.removeItem(at: staged)
-                    finalStaged = muted
-                    progress = 0.95
+                case .mute:
+                    // 静音导出在导出阶段直接去掉音轨，避免先带音导出再二次转码。
+                    try await VideoExporter().export(
+                        sourceURL: sourceURL,
+                        destinationURL: exportURL,
+                        timeline: timeline,
+                        sticker: sticker,
+                        audio: .mute,
+                        progress: { [weak self] value in
+                            Task { @MainActor in self?.progress = value * 0.95 }
+                        }
+                    )
                 case .anonymousMale, .anonymousFemale, .robot:
                     let processedAudio = workspace.appendingPathComponent("processed-audio.m4a")
                     let audioURL = try await VideoAudioProcessor().process(
@@ -117,22 +118,28 @@ final class VideoEditorViewModel: ObservableObject {
                         destinationURL: processedAudio,
                         preset: voicePreset,
                         progress: { [weak self] value in
-                            Task { @MainActor in self?.progress = 0.72 + value * 0.18 }
+                            Task { @MainActor in self?.progress = value * 0.2 }
                         }
                     )
-                    let voiced = workspace.appendingPathComponent("redacted-voiced.mp4")
-                    try await VideoMuxer().replaceAudio(
-                        videoURL: staged,
-                        audioURL: audioURL,
-                        destinationURL: voiced
+                    try Task.checkCancellation()
+                    guard let audioURL else { throw VideoProcessingError.missingAudioTrack }
+                    // 处理后的音轨直接并入本次导出，视频只编码一次。
+                    try await VideoExporter().export(
+                        sourceURL: sourceURL,
+                        destinationURL: exportURL,
+                        timeline: timeline,
+                        sticker: sticker,
+                        audio: .replace(audioURL),
+                        progress: { [weak self] value in
+                            Task { @MainActor in self?.progress = 0.2 + value * 0.75 }
+                        }
                     )
-                    try? FileManager.default.removeItem(at: staged)
                     try? FileManager.default.removeItem(at: processedAudio)
-                    finalStaged = voiced
-                    progress = 0.95
                 }
+                try Task.checkCancellation()
+                progress = 0.95
 
-                let redacted = try persistExport(stagedURL: finalStaged)
+                let redacted = try persistExport(stagedURL: exportURL)
                 exportedFile = redacted
                 phase = .completed
                 progress = 1
@@ -152,6 +159,7 @@ final class VideoEditorViewModel: ObservableObject {
         previewTask?.cancel()
         player.pause()
         player.replaceCurrentItem(with: nil)
+        releasePlaybackAudioSession()
         previewTask = nil
         previewAsset = nil
         isVoicePreviewActive = false
@@ -243,39 +251,19 @@ final class VideoEditorViewModel: ObservableObject {
 
     /// 把画面脱敏后的音轨（或空）与源视频画面合成一个预览组合，保证音画同步。
     private func makePreviewComposition(sourceURL: URL, audioURL: URL?) async throws -> AVAsset {
-        let asset = AVURLAsset(url: sourceURL)
-        let duration = try await asset.load(.duration)
-        let composition = AVMutableComposition()
-        guard let sourceVideo = try await asset.loadTracks(withMediaType: .video).first,
-              let videoTrack = composition.addMutableTrack(
-                  withMediaType: .video,
-                  preferredTrackID: kCMPersistentTrackID_Invalid
-              )
-        else { throw VideoProcessingError.missingVideoTrack }
-        try videoTrack.insertTimeRange(
-            CMTimeRange(start: .zero, duration: duration),
-            of: sourceVideo,
-            at: .zero
-        )
-        videoTrack.preferredTransform = try await sourceVideo.load(.preferredTransform)
+        try await VideoMuxer.makeComposition(videoURL: sourceURL, audioURL: audioURL)
+    }
 
-        if let audioURL {
-            let audioAsset = AVURLAsset(url: audioURL)
-            if let sourceAudio = try await audioAsset.loadTracks(withMediaType: .audio).first,
-                let audioTrack = composition.addMutableTrack(
-                    withMediaType: .audio,
-                    preferredTrackID: kCMPersistentTrackID_Invalid
-                )
-            {
-                let audioDuration = min(duration, try await audioAsset.load(.duration))
-                try audioTrack.insertTimeRange(
-                    CMTimeRange(start: .zero, duration: audioDuration),
-                    of: sourceAudio,
-                    at: .zero
-                )
-            }
-        }
-        return composition
+    /// 预览/试听播放需要显式使用 `.playback` 分类：默认的 `.soloAmbient`
+    /// 跟随静音拨片，会导致相册里有声的视频进入工作区后播放无声。
+    private func configurePlaybackAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .moviePlayback)
+        try? session.setActive(true)
+    }
+
+    private func releasePlaybackAudioSession() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func prepareAndAnalyze() async {
@@ -326,7 +314,7 @@ final class VideoEditorViewModel: ObservableObject {
         item.videoComposition = VideoCompositionFactory.make(
             asset: asset,
             timeline: timeline,
-            effect: effect
+            sticker: sticker
         )
         let resumeTime = VideoPlaybackTime.resumeTime(from: player)
         player.replaceCurrentItem(with: item)

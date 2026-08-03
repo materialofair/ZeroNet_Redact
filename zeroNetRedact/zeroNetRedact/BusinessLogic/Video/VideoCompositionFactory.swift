@@ -6,7 +6,7 @@ enum VideoCompositionFactory {
     static func make(
         asset: AVAsset,
         timeline: VideoFaceTimeline,
-        effect: VideoRedactionEffect
+        sticker: VideoRedactionSticker
     ) -> AVVideoComposition {
         let renderer = VideoRedactionRenderer()
         let composition = AVMutableVideoComposition(
@@ -16,7 +16,7 @@ enum VideoCompositionFactory {
                 let output = renderer.render(
                     source: request.sourceImage,
                     normalizedRects: rects,
-                    effect: effect
+                    sticker: sticker
                 )
                 request.finish(with: output, context: nil)
             }

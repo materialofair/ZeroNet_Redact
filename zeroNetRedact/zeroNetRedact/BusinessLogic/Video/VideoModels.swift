@@ -2,23 +2,33 @@ import AVFoundation
 import CoreGraphics
 import Foundation
 
-enum VideoRedactionEffect: String, CaseIterable, Identifiable, Sendable {
-    case strongBlur
-    case cartoonSticker
+/// 视频人脸遮挡统一使用不透明卡通贴纸（不再提供强模糊）。
+enum VideoRedactionSticker: String, CaseIterable, Identifiable, Sendable {
+    case orangeSmiley
+    case blueSmiley
+    case sunglasses
+    case panda
+    case alien
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .strongBlur: return NSLocalizedString("video.effect.strongBlur", comment: "")
-        case .cartoonSticker: return NSLocalizedString("video.effect.cartoonSticker", comment: "")
+        case .orangeSmiley: return NSLocalizedString("video.sticker.orangeSmiley", comment: "")
+        case .blueSmiley: return NSLocalizedString("video.sticker.blueSmiley", comment: "")
+        case .sunglasses: return NSLocalizedString("video.sticker.sunglasses", comment: "")
+        case .panda: return NSLocalizedString("video.sticker.panda", comment: "")
+        case .alien: return NSLocalizedString("video.sticker.alien", comment: "")
         }
     }
 
     var icon: String {
         switch self {
-        case .strongBlur: return "aqi.medium"
-        case .cartoonSticker: return "face.smiling.inverse"
+        case .orangeSmiley: return "face.smiling.inverse"
+        case .blueSmiley: return "face.smiling"
+        case .sunglasses: return "sunglasses.fill"
+        case .panda: return "pawprint.fill"
+        case .alien: return "face.dashed"
         }
     }
 }
