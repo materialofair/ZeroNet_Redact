@@ -55,7 +55,7 @@ struct AboutView: View {
                 .foregroundColor(DesignSystem.Colors.textPrimary)
 
             // 版本号
-            Text(String(format: NSLocalizedString("about.version", comment: ""), "1.0.0"))
+            Text(String(format: NSLocalizedString("about.version", comment: ""), Bundle.main.appVersion))
                 .font(.subheadline)
                 .foregroundColor(DesignSystem.Colors.textSecondary)
 

@@ -177,7 +177,7 @@ struct SettingsView: View {
                         }
                     }
 
-                    Text("v1.0.0")
+                    Text("v\(Bundle.main.appVersion)")
                         .font(.subheadline)
                         .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
@@ -480,7 +480,7 @@ struct SettingsView: View {
                 title: NSLocalizedString("settings.aboutApp", comment: "")
             ) {
                 HStack(spacing: 6) {
-                    Text("v1.0.0")
+                    Text("v\(Bundle.main.appVersion)")
                         .font(.subheadline)
                         .foregroundColor(DesignSystem.Colors.textSecondary)
 
