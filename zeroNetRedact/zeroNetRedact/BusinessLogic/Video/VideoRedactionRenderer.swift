@@ -2,7 +2,20 @@ import CoreImage
 import UIKit
 
 final class VideoRedactionRenderer {
-    private var stickerCache: [VideoRedactionSticker: CIImage] = [:]
+    /// 贴纸图在 init 时全部预生成，之后只读。
+    /// AVMutableVideoComposition 的 CIFilter 回调由 AVFoundation 在后台队列
+    /// （可能并发）调用，若沿用"懒加载 + 可变字典"缓存，Release 优化下会
+    /// 因数据竞争崩溃；预生成后 render 为纯只读操作，天然线程安全。
+    private let stickerCache: [VideoRedactionSticker: CIImage]
+
+    init() {
+        var cache: [VideoRedactionSticker: CIImage] = [:]
+        cache.reserveCapacity(VideoRedactionSticker.allCases.count)
+        for sticker in VideoRedactionSticker.allCases {
+            cache[sticker] = Self.makeStickerImage(sticker)
+        }
+        stickerCache = cache
+    }
 
     func render(
         source: CIImage,
@@ -30,7 +43,7 @@ final class VideoRedactionRenderer {
         rect: CGRect,
         sticker: VideoRedactionSticker
     ) -> CIImage {
-        let stickerImage = cachedStickerImage(for: sticker)
+        guard let stickerImage = stickerCache[sticker] else { return source }
         let transform = CGAffineTransform(
             translationX: rect.minX,
             y: rect.minY
@@ -41,16 +54,7 @@ final class VideoRedactionRenderer {
         return stickerImage.transformed(by: transform).composited(over: source)
     }
 
-    private func cachedStickerImage(for sticker: VideoRedactionSticker) -> CIImage {
-        if let cached = stickerCache[sticker] {
-            return cached
-        }
-        let image = makeStickerImage(sticker)
-        stickerCache[sticker] = image
-        return image
-    }
-
-    private func makeStickerImage(_ sticker: VideoRedactionSticker) -> CIImage {
+    private static func makeStickerImage(_ sticker: VideoRedactionSticker) -> CIImage {
         let size = CGSize(width: 512, height: 512)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { context in
