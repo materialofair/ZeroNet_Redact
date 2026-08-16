@@ -36,6 +36,9 @@ class EditorViewModel: ObservableObject {
     @Published var showUsageLimitAlert = false
     @Published var showPremiumView = false
 
+    /// 导出成功但使用了视觉遮盖兜底时的警告文案
+    @Published private(set) var exportWarning: String?
+
     private(set) var editor: AnyRedactionEditor?
 
     // MARK: - 辅助处理器
@@ -238,6 +241,7 @@ class EditorViewModel: ObservableObject {
 
         isExporting = true
         defer { isExporting = false }
+        exportWarning = nil
 
         if Task.isCancelled {
             print("⚠️ EditorViewModel: 导出已取消，跳过处理")
@@ -370,6 +374,15 @@ class EditorViewModel: ObservableObject {
 
                         // 记录导出使用量（免费用户计数）
                         self.recordExportUsage()
+
+                        // 真删除失败退回视觉遮盖时，提示用户
+                        if let pdfEditor = editor?.baseEditor as? PDFRedactionEditor,
+                            pdfEditor.usedFallbackExport
+                        {
+                            self.exportWarning = NSLocalizedString(
+                                "export.fallbackWarning", comment: "")
+                        }
+
                         didSaveRecord = true
                     } catch {
                         print("❌ 保存打码文件到相册失败: \(error)")

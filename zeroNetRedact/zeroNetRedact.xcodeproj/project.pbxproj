@@ -111,6 +111,7 @@
 				40BC83522ECD6F1900097DEC /* Frameworks */,
 				40BC83532ECD6F1900097DEC /* Resources */,
 				ABCD00010000000000000001 /* Increment build number */,
+				ABCD00010000000000000002 /* Build MuPDF (if needed) */,
 			);
 			buildRules = (
 			);
@@ -255,6 +256,25 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"${SRCROOT}/scripts/bump-build-number.sh\"";
 		};
+		ABCD00010000000000000002 /* Build MuPDF (if needed) */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build MuPDF (if needed)";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"${SRCROOT}/../scripts/build-mupdf.sh\"";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 
@@ -306,6 +326,7 @@
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../third_party/mupdf-build/include";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -370,6 +391,7 @@
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../third_party/mupdf-build/include";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -439,6 +461,9 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../third_party/mupdf-build/include";
+				OTHER_LDFLAGS = "$(inherited) $(SRCROOT)/../third_party/mupdf-build/lib/$(PLATFORM_NAME)/libmupdf.a $(SRCROOT)/../third_party/mupdf-build/lib/$(PLATFORM_NAME)/libmupdf-third.a";
+				SWIFT_OBJC_BRIDGING_HEADER = "zeroNetRedact/BusinessLogic/PDFRedaction/MuPDFBridging.h";
 				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -473,6 +498,9 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../third_party/mupdf-build/include";
+				OTHER_LDFLAGS = "$(inherited) $(SRCROOT)/../third_party/mupdf-build/lib/$(PLATFORM_NAME)/libmupdf.a $(SRCROOT)/../third_party/mupdf-build/lib/$(PLATFORM_NAME)/libmupdf-third.a";
+				SWIFT_OBJC_BRIDGING_HEADER = "zeroNetRedact/BusinessLogic/PDFRedaction/MuPDFBridging.h";
 				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact;
 				PRODUCT_NAME = "$(TARGET_NAME)";

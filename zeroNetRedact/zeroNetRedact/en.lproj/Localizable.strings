@@ -45,6 +45,7 @@
 /* Export */
 "export.success" = "Export Successful";
 "export.failed" = "Export Failed";
+"export.fallbackWarning" = "True redaction unavailable — exported with visual cover only (text may still be extractable)";
 
 /* Common */
 "common.cancel" = "Cancel";

@@ -71,6 +71,9 @@ open zeroNetRedact.xcodeproj
 
 [GPL-3.0 License](LICENSE)
 
+App 自身代码以 GPL-3.0 许可；二进制链接 MuPDF（AGPL-3.0）后按 AGPL-3.0
+分发（GPLv3 §13），详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
 ---
 
 ## English
@@ -133,6 +136,10 @@ If you have any questions or suggestions, feel free to reach out via [GitHub Iss
 ### License
 
 [GPL-3.0 License](LICENSE)
+
+The app's own source code is GPL-3.0; the distributed binary links MuPDF
+(AGPL-3.0) and is therefore distributed under AGPL-3.0 (GPLv3 §13). See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 

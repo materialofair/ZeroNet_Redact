@@ -887,9 +887,11 @@ struct SimpleBrushEditor: View {
 
             await MainActor.run {
                 if success {
-                    showToast(
-                        message: NSLocalizedString("export.success.detail", comment: ""),
-                        isSuccess: true)
+                    var message = NSLocalizedString("export.success.detail", comment: "")
+                    if let warning = viewModel.exportWarning {
+                        message = warning + "\n" + message
+                    }
+                    showToast(message: message, isSuccess: true)
                 } else if !viewModel.showUsageLimitAlert {
                     // 配额超限已通过alert提示，其余失败原因展示错误Toast且保留编辑内容
                     let message =

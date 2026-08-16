@@ -78,6 +78,9 @@ The built-in offline text recognition engine automatically finds phone numbers, 
 PRECISE MANUAL REDACTION
 Just draw with your finger. Pinch to zoom for small text, choose mosaic, blur, solid black or colored block effects, pick from three brush sizes, and undo/redo freely. Move or resize applied redactions any time before export.
 
+TRUE PDF REDACTION
+PDF redaction goes beyond a visual cover: text underneath redacted areas is physically removed from the exported PDF, so it cannot be selected, copied, or extracted — the rest of the page stays selectable vector text.
+
 REAL PRIVACY, BY DESIGN
 • 100% offline: no network requests, no account required — your files never leave your device
 • Encrypted at rest: imported originals are stored with AES-GCM encryption, protected by a password plus Face ID / Touch ID

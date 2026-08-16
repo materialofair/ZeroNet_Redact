@@ -25,9 +25,16 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
 
     private(set) var currentFile: OriginalPDF?
     private var originalDocument: PDFDocument?
+    private var originalPDFData: Data?
     private let crypto = CryptoEngine.shared
     private let storage = StorageManager.shared
     private let recognizer = TextRecognizer.shared
+
+    /// 标记本 App 创建的遮盖注释，导出时据此识别真删除区域
+    static let redactionAnnotationMarker = "com.zeronet.redact"
+
+    /// 真删除失败时退回视觉遮盖导出（EditorViewModel 据此提示用户）
+    private(set) var usedFallbackExport = false
 
     init(file: OriginalPDF) {
         self.currentFile = file
@@ -50,10 +57,11 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         // 2. 解密
         let decryptedData = try crypto.decrypt(data: encryptedData)
 
-        // 3. 加载PDF
+        // 3. 加载PDF（保留干净的原始数据，供导出时做真删除）
         guard let document = PDFDocument(data: decryptedData) else {
             throw EditorError.noPDFLoaded
         }
+        self.originalPDFData = decryptedData
 
         await MainActor.run {
             self.originalDocument = document
@@ -124,6 +132,9 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
 
         print("📝 PDFRedactionEditor: 添加annotation at \(region), color=\(fillColor)")
 
+        // 标记为本 App 创建的遮盖注释
+        annotation.userName = Self.redactionAnnotationMarker
+
         // 添加到页面
         page.addAnnotation(annotation)
 
@@ -159,19 +170,71 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
             throw EditorError.noPDFLoaded
         }
 
-        // 注意：PDFKit在iOS中不支持直接应用redaction
-        // 这里导出时注释会保留在PDF中，作为视觉遮挡
-        // 对于真正的内容删除，需要使用专业PDF处理库
+        // 1. 收集当前生效的遮盖区域（直接读取页面上的注释，尊重用户的删除操作）
+        var regions: [PDFRedactionRegion] = []
+        var overlays: [(pageIndex: Int, bounds: CGRect, color: UIColor)] = []
 
-        // 清理元数据
-        sanitizeMetadata(document: document)
+        for pageIndex in 0..<document.pageCount {
+            guard let page = document.page(at: pageIndex) else { continue }
+            for annotation in page.annotations where annotation.userName == Self.redactionAnnotationMarker {
+                let bounds = annotation.bounds
+                let color = annotation.interiorColor ?? UIColor.black
+                regions.append(PDFRedactionRegion(pageIndex: pageIndex, rect: bounds))
+                overlays.append((pageIndex: pageIndex, bounds: bounds, color: color))
+            }
+        }
 
-        // 导出为Data
-        guard let data = document.dataRepresentation() else {
+        // 2. 干净底稿：原始数据 + 元数据清理
+        //   （MuPDF C API 无元数据写入接口，元数据清理保留在 PDFKit 侧）
+        guard let originalData = originalPDFData,
+            let cleanDocument = PDFDocument(data: originalData)
+        else {
+            throw EditorError.noPDFLoaded
+        }
+        sanitizeMetadata(document: cleanDocument)
+        guard let cleanData = cleanDocument.dataRepresentation() else {
             throw EditorError.exportFailed
         }
 
-        return data
+        // 3. 真删除：MuPDF 把遮盖区域内的文字从内容流中物理移除
+        //   （坐标约定：PDFKit annotation.bounds 与 MuPDF set_annot_rect
+        //     同为页面显示空间，直接传递；旋转页由 MuPDF page_ctm 处理）
+        let redactedData: Data
+        do {
+            redactedData = try await Task.detached(priority: .userInitiated) {
+                try MuPDFRedactor.redact(pdfData: cleanData, regions: regions)
+            }.value
+            usedFallbackExport = false
+        } catch {
+            // 兜底：真删除失败时退回旧的视觉遮盖路径
+            print("⚠️ PDFRedactionEditor: MuPDF 真删除失败，退回视觉遮盖导出: \(error)")
+            sanitizeMetadata(document: document)
+            guard let fallbackData = document.dataRepresentation() else {
+                throw EditorError.exportFailed
+            }
+            usedFallbackExport = true
+            return fallbackData
+        }
+
+        // 4. 重新叠加效果覆盖层：与编辑器所见保持一致（纯视觉填充，不含文字）
+        guard let redactedDocument = PDFDocument(data: redactedData) else {
+            throw EditorError.exportFailed
+        }
+        for overlay in overlays {
+            guard let page = redactedDocument.page(at: overlay.pageIndex) else { continue }
+            let annotation = PDFAnnotation(bounds: overlay.bounds, forType: .square, withProperties: nil)
+            annotation.interiorColor = overlay.color
+            annotation.color = overlay.color
+            annotation.border = PDFBorder()
+            annotation.border?.lineWidth = 0
+            annotation.shouldDisplay = true
+            annotation.shouldPrint = true
+            page.addAnnotation(annotation)
+        }
+        guard let finalData = redactedDocument.dataRepresentation() else {
+            throw EditorError.exportFailed
+        }
+        return finalData
     }
 
     // MARK: - PDF特有功能

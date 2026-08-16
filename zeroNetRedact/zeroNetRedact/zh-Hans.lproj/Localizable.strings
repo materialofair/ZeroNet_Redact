@@ -45,6 +45,7 @@
 /* Export */
 "export.success" = "导出成功";
 "export.failed" = "导出失败";
+"export.fallbackWarning" = "真删除不可用，本次导出为视觉遮盖（文字仍可能被提取）";
 
 /* Common */
 "common.cancel" = "取消";
