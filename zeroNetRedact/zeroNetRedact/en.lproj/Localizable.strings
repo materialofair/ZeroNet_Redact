@@ -30,7 +30,7 @@
 
 /* Actions */
 "action.undoStroke" = "Undo";
-"action.undoRedaction" = "Redo";
+"action.redoStroke" = "Redo";
 "action.applyRedaction" = "Apply";
 
 /* Scale Control */
@@ -278,6 +278,9 @@
 "group.deletedWithOriginals" = "Group deleted, %d original files moved to Default Group";
 "group.deletedWithRedacted" = "Group deleted, %d redacted files moved to Default Group";
 "group.deletedWithBoth" = "Group deleted, %d original files and %d redacted files moved to Default Group";
+"group.renameFailed" = "Failed to rename group, please try again";
+"group.iconFailed" = "Failed to change icon, please try again";
+"import.move.failed" = "Failed to move file to group, please try again";
 "group.deleteFailed" = "Delete failed, please try again";
 
 /* Icons */
@@ -298,6 +301,17 @@
 "common.delete" = "Delete";
 
 /* Import */
+"onboarding.step1.title" = "Import your files";
+"onboarding.step1.description" = "Add photos, PDFs or videos. Everything is processed only on this device — nothing is uploaded.";
+"onboarding.step2.title" = "Cover sensitive content";
+"onboarding.step2.description" = "Brush over what you want hidden, or use one-tap detection as a helper. Detection is only an aid — always review the results yourself.";
+"onboarding.step3.title" = "Export a redacted copy";
+"onboarding.step3.description" = "Exporting creates a redacted copy. Your original file is never modified. Preview before you share.";
+"onboarding.skip" = "Skip";
+"onboarding.next" = "Next";
+"onboarding.done" = "Done";
+"onboarding.pageIndicator" = "Step %d of %d";
+"onboarding.revisit" = "How redaction works";
 "import.title" = "Import";
 "import.loading" = "Importing...";
 "import.failed" = "Import Failed";
@@ -372,6 +386,7 @@
 "drawing.mode.rectangle" = "Rectangle";
 
 /* File Types */
+"list.filter.all" = "All";
 "fileType.image" = "Image";
 "fileType.pdf" = "PDF";
 "fileType.unknown" = "Unknown";
@@ -503,7 +518,14 @@
 "editor.rotateConfirm.message" = "Rotating clears all applied redactions and cannot be undone. Continue?";
 "editor.rotateConfirm.rotateAnyway" = "Rotate Anyway";
 "editor.autoApplied" = "Unapplied strokes were applied automatically";
+"editor.detect.selectedCount" = "Selected: %d";
+"editor.detect.applySelected" = "Apply %d Selected";
+"editor.detect.ignoreSelected" = "Ignore %d";
+"editor.detect.applyOne" = "Apply this region";
+"editor.detect.ignoreOne" = "Ignore this region";
+"editor.detect.chipHint" = "Tap to select and highlight on canvas";
 "editor.detect.applyAll" = "Apply All";
+"export.progress.title" = "Exporting %d%%";
 "export.success.detail" = "Saved to Redacted Files";
 
 /* Pre-existing missing keys (backfill) */
@@ -558,6 +580,7 @@
 "stitch.done.later" = "Later";
 "stitch.error.renderFailed" = "Failed to generate. Try fewer images.";
 "stitch.limit.hint" = "Free version stitches up to %d images. Upgrade for %d.";
+"stitch.limit.dropped" = "This stitch supports up to %d images; %d selected image(s) were not added.";
 "stitch.empty.hint" = "Pick 2+ screenshots to auto-stitch into one long image";
 
 /* Video redaction */
@@ -591,6 +614,7 @@
 "video.preview.reviewHint" = "Play or scrub through the video to review every scene.";
 "video.notice.offline" = "Processing stays on this device. The source video is never uploaded.";
 "video.status.preparing" = "Decrypting private working copy…";
+"video.status.etaRemaining" = "About %@ remaining";
 "video.status.analyzing" = "Detecting all faces frame by frame…";
 "video.status.exporting" = "Exporting redacted video…";
 "video.status.facesFound" = "%d face tracks found";

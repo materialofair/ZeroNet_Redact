@@ -6,6 +6,8 @@ import SwiftUI
 class AlbumViewModel: ObservableObject {
     @Published var redactedFiles: [RedactedFile] = []
     @Published var filterType: FileType?
+    /// 列表排序（此前硬编码 exportedAt 降序）
+    @Published var sortOption: FileSortOption = .newest
 
     // 分组相关
     @Published var allGroups: [FileGroup] = []
@@ -44,7 +46,14 @@ class AlbumViewModel: ObservableObject {
     /// 加载脱敏文件列表
     func loadFiles() {
         let request: NSFetchRequest<RedactedFile> = RedactedFile.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "exportedAt", ascending: false)]
+        switch sortOption {
+        case .newest:
+            request.sortDescriptors = [NSSortDescriptor(key: "exportedAt", ascending: false)]
+        case .oldest:
+            request.sortDescriptors = [NSSortDescriptor(key: "exportedAt", ascending: true)]
+        case .largest:
+            request.sortDescriptors = [NSSortDescriptor(key: "fileSize", ascending: false)]
+        }
 
         // 构建谓词
         var predicates: [NSPredicate] = []
@@ -73,15 +82,21 @@ class AlbumViewModel: ObservableObject {
         }
     }
 
-    /// 移动文件到分组
-    func moveFileToGroup(_ file: RedactedFile, group: FileGroup) {
+    /// 移动文件到分组，返回是否成功（失败时弹出错误提示，不关闭分组选择器）
+    @discardableResult
+    func moveFileToGroup(_ file: RedactedFile, group: FileGroup) -> Bool {
         file.group = group
         do {
             try context.save()
             print("✅ 脱敏文件已移动到分组: \(group.name ?? "未命名")")
             loadFiles()
+            return true
         } catch {
             print("❌ 移动脱敏文件到分组失败: \(error)")
+            context.rollback()
+            errorMessage = NSLocalizedString("import.move.failed", comment: "")
+            showError = true
+            return false
         }
     }
 
@@ -105,11 +120,14 @@ class AlbumViewModel: ObservableObject {
             return
         }
 
-        // 2. 记录已提交，再清理磁盘文件与缩略图缓存（失败仅记录日志）
+        // 2. 记录已提交，再清理磁盘文件与缩略图缓存（失败不阻塞删除，但汇总提示，与导入页口径一致）
         do {
             try StorageManager.shared.deleteRedacted(id: fileID, type: fileType)
         } catch {
             print("❌ 删除脱敏文件磁盘数据失败: \(fileID), \(error)")
+            errorMessage = String(
+                format: NSLocalizedString("import.delete.diskCleanupIncomplete", comment: ""), 1)
+            showError = true
         }
         let cacheKey = "redacted_thumbnail_\(fileID.uuidString)"
         ImageCache.shared.removeImage(forKey: cacheKey)
@@ -142,15 +160,24 @@ class AlbumViewModel: ObservableObject {
             return
         }
 
-        // Core Data 记录已提交，逐个清理磁盘文件与缩略图缓存（失败仅记录日志，不影响已提交的删除）
+        // Core Data 记录已提交，逐个清理磁盘文件与缩略图缓存；
+        // 磁盘清理失败不阻塞删除，但汇总数量提示（此前静默，与导入页行为不一致）
+        var failedDiskCleanupCount = 0
         for snapshot in snapshots {
             do {
                 try StorageManager.shared.deleteRedacted(id: snapshot.id, type: snapshot.fileType)
             } catch {
                 print("❌ 删除脱敏文件磁盘数据失败: \(snapshot.id), \(error)")
+                failedDiskCleanupCount += 1
             }
             let cacheKey = "redacted_thumbnail_\(snapshot.id.uuidString)"
             ImageCache.shared.removeImage(forKey: cacheKey)
+        }
+        if failedDiskCleanupCount > 0 {
+            errorMessage = String(
+                format: NSLocalizedString("import.delete.diskCleanupIncomplete", comment: ""),
+                failedDiskCleanupCount)
+            showError = true
         }
 
         loadFiles()

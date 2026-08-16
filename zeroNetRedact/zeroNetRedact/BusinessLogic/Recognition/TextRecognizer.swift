@@ -19,7 +19,10 @@ class TextRecognizer {
     // MARK: - 统一识别接口
 
     /// 识别文件中的文字
-    func recognizeText(in file: OriginalFile) async throws -> [RecognizedText] {
+    func recognizeText(
+        in file: OriginalFile,
+        progress: ((Double) -> Void)? = nil
+    ) async throws -> [RecognizedText] {
         guard file.fileType != .video else {
             return []
         }
@@ -39,7 +42,8 @@ class TextRecognizer {
             return []
         }
 
-        return try await recognizer.recognizeText(in: data, fileType: file.fileType)
+        return try await recognizer.recognizeText(
+            in: data, fileType: file.fileType, progress: progress)
     }
 
     // MARK: - 检测敏感信息
@@ -157,13 +161,16 @@ class TextRecognizer {
     }
 
     /// 去重和合并重叠的检测区域
+    /// 按 (pageIndex, bounds) 分组去重：不同页相同坐标的检测结果不互为重复，
+    /// 否则 PDF 后页与首页同位置的敏感信息会被误删（正确性问题，见 PageIndexDedupTests）
     private func deduplicateRegions(_ regions: [SensitiveRegion]) -> [SensitiveRegion] {
         var uniqueRegions: [SensitiveRegion] = []
 
         for region in regions {
-            // 检查是否与已有区域重叠
+            // 仅与同页已有区域比较（nil 页码视为独立页，nil 与 nil 同组）
             let hasOverlap = uniqueRegions.contains { existing in
-                existing.boundingBox.intersects(region.boundingBox)
+                existing.pageIndex == region.pageIndex
+                    && existing.boundingBox.intersects(region.boundingBox)
             }
 
             if !hasOverlap {
@@ -186,12 +193,16 @@ class ImageOCRRecognizer: TextRecognition {
     /// 相邻分块重叠(避免文字被切断漏识)
     static let tileOverlap = 400
 
-    func recognizeText(in data: Data, fileType: FileType) async throws -> [RecognizedText] {
-        return try await recognizeWithVision(data: data)
+    func recognizeText(
+        in data: Data, fileType: FileType, progress: ((Double) -> Void)?
+    ) async throws -> [RecognizedText] {
+        return try await recognizeWithVision(data: data, progress: progress)
     }
 
     /// Apple Vision 文字识别 (优化版)
-    private func recognizeWithVision(data: Data) async throws -> [RecognizedText] {
+    private func recognizeWithVision(
+        data: Data, progress: ((Double) -> Void)?
+    ) async throws -> [RecognizedText] {
         // 先归一化EXIF方向:cgImage是未旋转的原始位图,若不归一化,
         // Vision返回的坐标基于原始空间,与显示空间(旋转后)错位
         guard let image = UIImage(data: data)?.normalizedToUpOrientation(),
@@ -200,24 +211,31 @@ class ImageOCRRecognizer: TextRecognition {
             throw RecognitionError.invalidImageData
         }
         if cgImage.height <= Self.tileHeightThreshold {
-            return try await recognizeBestOrientation(on: cgImage)
+            return try await recognizeBestOrientation(on: cgImage, progress: progress)
         }
-        return try await recognizeTiled(cgImage: cgImage)
+        return try await recognizeTiled(cgImage: cgImage, progress: progress)
     }
 
     /// 多方向识别:正向识别效果不佳时(如证件横放拍摄),
     /// 再按90°/180°/270°各识别一次,取整体置信度最高的一组,坐标映射回原图空间
-    private func recognizeBestOrientation(on cgImage: CGImage) async throws -> [RecognizedText] {
+    private func recognizeBestOrientation(
+        on cgImage: CGImage, progress: ((Double) -> Void)?
+    ) async throws -> [RecognizedText] {
         var best = try await performVisionOCR(on: cgImage)
         var bestScore = Self.recognitionScore(best)
+
+        // 最多 4 轮方向识别，每轮完成 1/4 进度
+        progress?(0.25)
 
         // 正向识别出足够多的可信文本(常规截图/正拍照片,约等于5块@0.6+)时
         // 直接采用,避免4倍耗时;与下方方向比较使用同一评分口径
         if bestScore >= 3.0 {
+            progress?(1.0)
             return best
         }
 
-        for orientation in [CGImagePropertyOrientation.right, .left, .down] {
+        let orientations: [CGImagePropertyOrientation] = [.right, .left, .down]
+        for (round, orientation) in orientations.enumerated() {
             let texts = try await performVisionOCR(on: cgImage, orientation: orientation)
             let mapped = texts.map { Self.remapToUpSpace($0, from: orientation) }
             let score = Self.recognitionScore(mapped)
@@ -225,7 +243,9 @@ class ImageOCRRecognizer: TextRecognition {
                 best = mapped
                 bestScore = score
             }
+            progress?(0.25 * Double(round + 2))
         }
+        progress?(1.0)
         return best
     }
 
@@ -281,8 +301,14 @@ class ImageOCRRecognizer: TextRecognition {
 
     /// 长图分块识别:按 tileHeight 高、tileOverlap 重叠切片,
     /// 每片独立 OCR 后把归一化坐标映射回整图空间,再跨片去重
-    private func recognizeTiled(cgImage: CGImage) async throws -> [RecognizedText] {
+    private func recognizeTiled(
+        cgImage: CGImage, progress: ((Double) -> Void)?
+    ) async throws -> [RecognizedText] {
         let fullHeight = CGFloat(cgImage.height)
+        // 总片数（用于进度上报；按推进步长估算，最后一环由 min(1,...) 封顶）
+        let totalTiles = max(
+            1, Int(ceil(Double(cgImage.height) / Double(Self.tileHeight - Self.tileOverlap))))
+        var tileIndex = 0
         var all: [RecognizedText] = []
         var yTop = 0
         while yTop < cgImage.height {
@@ -293,6 +319,9 @@ class ImageOCRRecognizer: TextRecognition {
                 throw RecognitionError.recognitionFailed
             }
             let texts = try await performVisionOCR(on: tile)
+
+            tileIndex += 1
+            progress?(min(1, Double(tileIndex) / Double(totalTiles)))
 
             // Vision 坐标原点在左下:tile 底边距整图底边的偏移
             let tileBottomOffset = fullHeight - CGFloat(yTop + tileH)
@@ -317,6 +346,7 @@ class ImageOCRRecognizer: TextRecognition {
             yTop += Self.tileHeight - Self.tileOverlap
         }
         print("🔍 ImageOCRRecognizer: 分块 OCR 完成,合并前 \(all.count) 段文本")
+        progress?(1.0)
         return dedupeAcrossTiles(all)
     }
 
@@ -408,7 +438,9 @@ class ImageOCRRecognizer: TextRecognition {
 
 class PDFTextRecognizer: TextRecognition {
 
-    func recognizeText(in data: Data, fileType: FileType) async throws -> [RecognizedText] {
+    func recognizeText(
+        in data: Data, fileType: FileType, progress: ((Double) -> Void)?
+    ) async throws -> [RecognizedText] {
         guard let document = PDFDocument(data: data) else {
             throw RecognitionError.invalidPDFData
         }
@@ -417,6 +449,8 @@ class PDFTextRecognizer: TextRecognition {
 
         // 遍历所有页面
         for pageIndex in 0..<document.pageCount {
+            // 逐页上报进度
+            progress?(Double(pageIndex) / Double(document.pageCount))
             guard let page = document.page(at: pageIndex),
                 let pageContent = page.string
             else {
@@ -455,6 +489,7 @@ class PDFTextRecognizer: TextRecognition {
             }
         }
 
+        progress?(1.0)
         return allTexts
     }
 

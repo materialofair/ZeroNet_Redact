@@ -13,6 +13,10 @@ class EditorViewModel: ObservableObject {
     @Published var isDetecting = false
     @Published var isExporting = false
     @Published var errorMessage: String?
+    /// 检测进度（0...1；nil 表示未在检测）
+    @Published var detectProgress: Double?
+    /// 检测失败原因（UI 据此展示错误提示，与导出错误分开存放避免串扰）
+    @Published var detectErrorMessage: String?
 
     @Published var selectedEffect: RedactionEffect = .solidBlack
     @Published var detectedRegions: [SensitiveRegion] = []
@@ -38,8 +42,19 @@ class EditorViewModel: ObservableObject {
 
     /// 导出成功但使用了视觉遮盖兜底时的警告文案
     @Published private(set) var exportWarning: String?
+    /// 导出进度（0...1；nil 表示未在导出）
+    @Published var exportProgress: Double?
+    /// 最近一次成功导出的文件 URL（供分享 sheet 使用）
+    @Published private(set) var exportedFileURL: URL?
 
     private(set) var editor: AnyRedactionEditor?
+
+    // MARK: - 渲染同步
+
+    /// 图片编辑器 currentImage 订阅：后台渲染完成时把成品图同步到本 VM
+    private var imageSubscription: AnyCancellable?
+    /// PDF 页渲染代数：连续渲染时以代数丢弃过期结果
+    private var pdfRenderGeneration: UInt64 = 0
 
     // MARK: - 辅助处理器
 
@@ -74,6 +89,15 @@ class EditorViewModel: ObservableObject {
 
             print("🔄 EditorViewModel: 正在调用 editor.loadFile()...")
             try await editor?.loadFile()
+
+            // 图片编辑器：订阅后台渲染结果（currentImage 异步更新）
+            if let imageEditor = editor?.baseEditor as? ImageRedactionEditor {
+                imageSubscription = imageEditor.$currentImage
+                    .receive(on: RunLoop.main)
+                    .sink { [weak self] image in
+                        self?.currentImage = image
+                    }
+            }
 
             print("🔄 EditorViewModel: loadFile() 完成，正在获取图片...")
 
@@ -128,14 +152,21 @@ class EditorViewModel: ObservableObject {
     func detectSensitiveRegions() async {
         print("🎯 EditorViewModel: 开始检测敏感区域")
         isDetecting = true
+        detectProgress = nil
+        detectErrorMessage = nil
         defer {
             isDetecting = false
+            detectProgress = nil
             print("🎯 EditorViewModel: 检测结束，isDetecting=false")
         }
 
         do {
             print("🎯 EditorViewModel: 调用editor.detectSensitiveRegions()")
-            if let regions = try await editor?.detectSensitiveRegions() {
+            if let regions = try await editor?.detectSensitiveRegions(progress: { [weak self] value in
+                Task { @MainActor in
+                    self?.detectProgress = value
+                }
+            }) {
                 print("🎯 EditorViewModel: 收到 \(regions.count) 个检测区域")
                 detectedRegions = regions
                 print("🎯 EditorViewModel: detectedRegions已更新，当前数量: \(detectedRegions.count)")
@@ -144,14 +175,33 @@ class EditorViewModel: ObservableObject {
             }
         } catch {
             print("❌ EditorViewModel: 检测失败 - \(error)")
-            errorMessage = String(
+            let message = String(
                 format: NSLocalizedString("editor.detectFailed", comment: ""),
                 error.localizedDescription)
+            errorMessage = message
+            detectErrorMessage = message
         }
     }
 
     func applyRedaction(at region: CGRect) {
-        editor?.applyRedaction(at: region, effect: selectedEffect)
+        applyRedaction(at: region, effect: selectedEffect)
+    }
+
+    /// 应用脱敏（显式指定效果）
+    func applyRedaction(at region: CGRect, effect: RedactionEffect) {
+        editor?.applyRedaction(at: region, effect: effect)
+
+        // 更新显示的图片
+        if let image = editor?.getCurrentImage() {
+            currentImage = image
+        }
+
+        updateUndoRedoState()
+    }
+
+    /// 批量应用脱敏（单快照 + 单次渲染，涂抹等场景避免逐笔整图重绘）
+    func applyRedactions(at regions: [CGRect], effect: RedactionEffect) {
+        editor?.applyRedactions(at: regions, effect: effect)
 
         // 更新显示的图片
         if let image = editor?.getCurrentImage() {
@@ -242,6 +292,8 @@ class EditorViewModel: ObservableObject {
         isExporting = true
         defer { isExporting = false }
         exportWarning = nil
+        exportedFileURL = nil
+        exportProgress = nil
 
         if Task.isCancelled {
             print("⚠️ EditorViewModel: 导出已取消，跳过处理")
@@ -251,7 +303,11 @@ class EditorViewModel: ObservableObject {
         do {
             print("📦 开始导出文件，类型: \(file.fileType)")
 
-            if let data = try await editor?.exportRedactedFile() {
+            if let data = try await editor?.exportRedactedFile(progress: { [weak self] value in
+                Task { @MainActor in
+                    self?.exportProgress = value
+                }
+            }) {
                 print("📦 获取到打码数据，大小: \(data.count) bytes")
 
                 // 取消检查：确保取消后不写入磁盘
@@ -391,6 +447,10 @@ class EditorViewModel: ObservableObject {
                             error.localizedDescription)
                     }
                 }
+                if didSaveRecord {
+                    // 记录导出文件位置，供导出后分享 sheet 使用
+                    exportedFileURL = url
+                }
                 return didSaveRecord
             } else {
                 print("❌ 导出失败: editor?.exportRedactedFile() 返回 nil")
@@ -430,7 +490,7 @@ class EditorViewModel: ObservableObject {
         return detectedRegions.filter { $0.pageIndex != currentPDFPageIndex }.count
     }
 
-    /// 渲染PDF当前页为UIImage（包含annotations）
+    /// 渲染PDF当前页为UIImage（包含annotations，同步版本，加载/导出路径使用）
     func renderCurrentPDFPage() -> UIImage? {
         guard let pdfEditor = editor?.baseEditor as? PDFRedactionEditor,
             let document = pdfEditor.pdfDocument,
@@ -440,6 +500,11 @@ class EditorViewModel: ObservableObject {
             return nil
         }
 
+        return Self.renderPDFPage(page)
+    }
+
+    /// PDF 页渲染（纯函数：只读 page，可后台线程执行）
+    nonisolated private static func renderPDFPage(_ page: PDFPage) -> UIImage? {
         // 使用高分辨率渲染
         let pageRect = page.bounds(for: .mediaBox)
         let scale: CGFloat = 2.0  // 2x分辨率，平衡质量和性能
@@ -447,8 +512,12 @@ class EditorViewModel: ObservableObject {
             width: pageRect.width * scale,
             height: pageRect.height * scale)
 
-        // 关键：使用UIGraphicsImageRenderer手动渲染，这样会包含annotations
-        let renderer = UIGraphicsImageRenderer(size: size)
+        // 关键：format.scale 固定为 1，保证真实 2x；
+        // 否则会叠加屏幕倍率（3x 设备达 6x，大 PDF 内存压力大）
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
         let image = renderer.image { context in
             // 白色背景
             UIColor.white.setFill()
@@ -471,10 +540,37 @@ class EditorViewModel: ObservableObject {
             context.cgContext.restoreGState()
         }
 
-        print(
-            "📄 renderCurrentPDFPage: 渲染第\(currentPDFPageIndex + 1)页，尺寸: \(size)，包含\(page.annotations.count)个annotations"
-        )
         return image
+    }
+
+    /// 后台渲染 PDF 当前页（带代数校验，过期结果丢弃）
+    /// 编辑操作触发的重渲染走此路径，避免大页在主线程合成
+    func refreshPDFPageImage() {
+        guard isPDFFile,
+            let pdfEditor = editor?.baseEditor as? PDFRedactionEditor,
+            let document = pdfEditor.pdfDocument,
+            let page = document.page(at: currentPDFPageIndex)
+        else {
+            return
+        }
+
+        pdfRenderGeneration += 1
+        let generation = pdfRenderGeneration
+        let pageIndex = currentPDFPageIndex
+
+        Task { [weak self] in
+            let image = await Task.detached(priority: .userInitiated) {
+                EditorViewModel.renderPDFPage(page)
+            }.value
+
+            await MainActor.run {
+                guard let self,
+                    generation == self.pdfRenderGeneration,
+                    pageIndex == self.currentPDFPageIndex
+                else { return }
+                self.currentImage = image
+            }
+        }
     }
 
     /// 跳转到指定PDF页面
@@ -493,10 +589,8 @@ class EditorViewModel: ObservableObject {
         pdfEditor.goToPage(index)
         currentPDFPageIndex = index
 
-        // 更新显示的图片
-        if let renderedImage = renderCurrentPDFPage() {
-            currentImage = renderedImage
-        }
+        // 后台渲染新页
+        refreshPDFPageImage()
     }
 
     // MARK: - Annotation Drag Support (PDF)
@@ -544,10 +638,8 @@ class EditorViewModel: ObservableObject {
 
         pdfEditor.moveAnnotation(at: index, offset: offset)
 
-        // 刷新当前页面渲染
-        if let renderedImage = renderCurrentPDFPage() {
-            currentImage = renderedImage
-        }
+        // 后台刷新当前页面渲染
+        refreshPDFPageImage()
     }
 
     // MARK: - Redaction Region Drag Support (Image)
@@ -661,10 +753,8 @@ class EditorViewModel: ObservableObject {
         // 委托编辑器处理（记录快照、同步撤销跟踪）
         pdfEditor.removeAnnotation(at: index)
 
-        // 刷新当前页面渲染
-        if let renderedImage = renderCurrentPDFPage() {
-            currentImage = renderedImage
-        }
+        // 后台刷新当前页面渲染
+        refreshPDFPageImage()
 
         updateUndoRedoState()
     }
@@ -682,10 +772,8 @@ class EditorViewModel: ObservableObject {
 
         pdfEditor.scaleAnnotation(at: index, scale: scale)
 
-        // 刷新当前页面渲染
-        if let renderedImage = renderCurrentPDFPage() {
-            currentImage = renderedImage
-        }
+        // 后台刷新当前页面渲染
+        refreshPDFPageImage()
     }
 
     /// 统一的缩放脱敏区域方法（自动判断文件类型）
@@ -712,19 +800,22 @@ class EditorViewModel: ObservableObject {
         }
     }
 
-    /// 移动文件到指定分组
-    func moveToGroup(_ group: FileGroup) {
+    /// 移动文件到指定分组，返回是否成功
+    @discardableResult
+    func moveToGroup(_ group: FileGroup) -> Bool {
         guard let originalFile = file as? OriginalFile else {
             print("⚠️ 当前文件不是OriginalFile，无法移动分组")
-            return
+            return false
         }
 
         if GroupManager.shared.moveFile(originalFile, to: group) {
             currentGroup = group
             showGroupPicker = false
             print("✅ 文件已移动到分组: \(group.name ?? "未命名")")
+            return true
         } else {
             print("❌ 移动文件到分组失败")
+            return false
         }
     }
 }

@@ -40,13 +40,14 @@ class EditorFactory {
 /// 类型擦除的编辑器包装器（解决Protocol with associatedtype无法直接使用的问题）
 class AnyRedactionEditor {
     private let _loadFile: () async throws -> Void
-    private let _detectSensitiveRegions: () async throws -> [SensitiveRegion]
+    private let _detectSensitiveRegions: (((Double) -> Void)?) async throws -> [SensitiveRegion]
     private let _applyRedaction: (CGRect, RedactionEffect) -> Void
+    private let _applyRedactions: ([CGRect], RedactionEffect) -> Void
     private let _undo: () -> Void
     private let _redo: () -> Void
     private let _canUndo: () -> Bool
     private let _canRedo: () -> Bool
-    private let _exportRedactedFile: () async throws -> Data
+    private let _exportRedactedFile: (((Double) -> Void)?) async throws -> Data
 
     let fileType: FileType
     let baseEditor: Any  // 保存原始editor实例，用于访问特定编辑器的属性
@@ -90,8 +91,10 @@ class AnyRedactionEditor {
                 let scale: CGFloat = 2.0  // 2x分辨率
                 let size = CGSize(width: pageRect.width * scale, height: pageRect.height * scale)
 
-                // 使用UIGraphicsImageRenderer渲染，包含annotations
-                let renderer = UIGraphicsImageRenderer(size: size)
+                // 显式 2x：format.scale 固定为 1，避免叠加屏幕倍率（3x 设备曾达 6x）
+                let format = UIGraphicsImageRendererFormat()
+                format.scale = 1
+                let renderer = UIGraphicsImageRenderer(size: size, format: format)
                 return renderer.image { context in
                     UIColor.white.setFill()
                     context.fill(CGRect(origin: .zero, size: size))
@@ -109,13 +112,17 @@ class AnyRedactionEditor {
             return nil
         }
 
-        self._detectSensitiveRegions = { [weak editor] in
+        self._detectSensitiveRegions = { [weak editor] progress in
             guard let editor = editor else { return [] }
-            return try await editor.detectSensitiveRegions()
+            return try await editor.detectSensitiveRegions(progress: progress)
         }
 
         self._applyRedaction = { [weak editor] region, effect in
             editor?.applyRedaction(at: region, effect: effect)
+        }
+
+        self._applyRedactions = { [weak editor] regions, effect in
+            editor?.applyRedactions(at: regions, effect: effect)
         }
 
         self._undo = { [weak editor] in
@@ -144,11 +151,11 @@ class AnyRedactionEditor {
             return false
         }
 
-        self._exportRedactedFile = { [weak editor] in
+        self._exportRedactedFile = { [weak editor] progress in
             guard let editor = editor else {
                 throw EditorError.exportFailed
             }
-            return try await editor.exportRedactedFile()
+            return try await editor.exportRedactedFile(progress: progress)
         }
     }
 
@@ -156,12 +163,18 @@ class AnyRedactionEditor {
         try await _loadFile()
     }
 
-    func detectSensitiveRegions() async throws -> [SensitiveRegion] {
-        try await _detectSensitiveRegions()
+    func detectSensitiveRegions(progress: ((Double) -> Void)? = nil) async throws
+        -> [SensitiveRegion]
+    {
+        try await _detectSensitiveRegions(progress)
     }
 
     func applyRedaction(at region: CGRect, effect: RedactionEffect) {
         _applyRedaction(region, effect)
+    }
+
+    func applyRedactions(at regions: [CGRect], effect: RedactionEffect) {
+        _applyRedactions(regions, effect)
     }
 
     func undo() {
@@ -180,8 +193,8 @@ class AnyRedactionEditor {
         _canRedo()
     }
 
-    func exportRedactedFile() async throws -> Data {
-        try await _exportRedactedFile()
+    func exportRedactedFile(progress: ((Double) -> Void)? = nil) async throws -> Data {
+        try await _exportRedactedFile(progress)
     }
 
     func getCurrentImage() -> UIImage? {

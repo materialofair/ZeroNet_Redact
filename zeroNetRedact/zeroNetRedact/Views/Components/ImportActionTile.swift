@@ -67,20 +67,19 @@ struct ImportActionTile: View {
                     )
 
                 // 标题 + 可选副标题
+                // Dynamic Type:大字号下允许换行而非压缩(minimumScaleFactor 会缩小文字,移除)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(DesignSystem.Colors.textPrimary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .lineLimit(2)
 
                     if let caption, style == .regular {
                         Text(caption)
                             .font(.caption)
                             .foregroundColor(DesignSystem.Colors.textSecondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                            .lineLimit(2)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -104,13 +103,16 @@ struct ImportActionTile: View {
     }
 }
 
-/// 导入卡片按压反馈
+/// 导入卡片按压反馈（Reduce Motion 时禁用缩放动画）
 private struct ImportActionTileButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(configuration.isPressed ? 0.9 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .animation(
+                reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

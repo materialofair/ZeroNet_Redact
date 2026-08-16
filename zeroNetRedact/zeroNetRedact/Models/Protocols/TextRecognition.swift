@@ -13,13 +13,25 @@ protocol TextRecognition {
     /// - Parameters:
     ///   - data: 文件数据
     ///   - fileType: 文件类型
+    ///   - progress: 进度回调（0...1，分片/逐页/逐方向轮次上报；nil 表示不需要）
     /// - Returns: 识别到的文字列表
-    func recognizeText(in data: Data, fileType: FileType) async throws -> [RecognizedText]
+    func recognizeText(
+        in data: Data,
+        fileType: FileType,
+        progress: ((Double) -> Void)?
+    ) async throws -> [RecognizedText]
 
     /// 检测敏感信息
     /// - Parameter texts: 识别到的文字列表
     /// - Returns: 敏感区域列表
     func detectSensitiveInfo(in texts: [RecognizedText]) -> [SensitiveRegion]
+}
+
+extension TextRecognition {
+    /// 无进度回调的便捷版本
+    func recognizeText(in data: Data, fileType: FileType) async throws -> [RecognizedText] {
+        try await recognizeText(in: data, fileType: fileType, progress: nil)
+    }
 }
 
 /// 识别的文字结构

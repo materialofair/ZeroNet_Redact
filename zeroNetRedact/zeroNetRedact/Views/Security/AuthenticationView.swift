@@ -7,6 +7,7 @@ struct AuthenticationView: View {
     @State private var showShakeAnimation = false
     @FocusState private var isPasswordFieldFocused: Bool
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var wasBackgrounded = false
     @State private var lockoutTick = Date()
     @State private var showForgotPasswordStep1 = false
@@ -258,6 +259,9 @@ struct AuthenticationView: View {
             } label: {
                 Image(systemName: viewModel.showPassword ? "eye.fill" : "eye.slash.fill")
                     .foregroundColor(DesignSystem.Colors.textSecondary)
+                    // 44pt 触控目标（图标本身约 19pt）
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel(
                 viewModel.showPassword
@@ -379,8 +383,8 @@ struct AuthenticationView: View {
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)
 
-            // 晃动动画
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) {
+            // 晃动动画（Reduce Motion 时保留触觉反馈、去掉位移动画）
+            withAnimation(reduceMotion ? nil : .spring(response: 0.2, dampingFraction: 0.3)) {
                 showShakeAnimation = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

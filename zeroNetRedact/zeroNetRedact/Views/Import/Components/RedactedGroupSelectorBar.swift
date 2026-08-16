@@ -10,6 +10,7 @@ import SwiftUI
 /// 脱敏文件分组选择器（横向滚动）- iOS Tab样式
 struct RedactedGroupSelectorBar: View {
     @ObservedObject var viewModel: AlbumViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -22,7 +23,7 @@ struct RedactedGroupSelectorBar: View {
                         fileCount: GroupManager.shared.getRedactedFiles(in: defaultGroup).count
                     )
                     .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                             viewModel.selectGroup(defaultGroup)
                         }
                     }
@@ -36,7 +37,7 @@ struct RedactedGroupSelectorBar: View {
                         fileCount: GroupManager.shared.getRedactedFiles(in: group).count
                     )
                     .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                             viewModel.selectGroup(group)
                         }
                     }

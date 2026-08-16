@@ -250,6 +250,9 @@ struct PasswordSetupSheet: View {
                     } label: {
                         Image(systemName: viewModel.showPassword ? "eye.fill" : "eye.slash.fill")
                             .foregroundColor(DesignSystem.Colors.textSecondary)
+                            // 44pt 触控目标（图标本身约 19pt）
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel(
                         viewModel.showPassword
@@ -566,6 +569,9 @@ struct ChangePasswordSheet: View {
                 } label: {
                     Image(systemName: showOldPassword ? "eye.fill" : "eye.slash.fill")
                         .foregroundColor(DesignSystem.Colors.textSecondary)
+                        // 44pt 触控目标（图标本身约 19pt）
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel(
                     showOldPassword
@@ -620,6 +626,9 @@ struct ChangePasswordSheet: View {
                                 ? "eye.fill" : "eye.slash.fill"
                         )
                         .foregroundColor(DesignSystem.Colors.textSecondary)
+                        // 44pt 触控目标（图标本身约 19pt）
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     .accessibilityLabel(
                         viewModel.showPassword

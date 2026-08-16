@@ -109,7 +109,8 @@ struct VideoEditorView: View {
         .sensoryFeedback(.success, trigger: viewModel.phase == .completed)
         .task { viewModel.start() }
         .onDisappear {
-            viewModel.cleanup()
+            // 导出中不清理：后台任务保护导出继续完成（此前无条件 cleanup 会直接取消导出）
+            viewModel.viewDidDisappear()
             if let initialOrientation {
                 VideoOrientationController.request(initialOrientation) {}
             }
@@ -259,7 +260,8 @@ struct VideoEditorView: View {
                     }
                 }
 
-                if viewModel.phase == .ready {
+                // 完成态播放的仍是脱敏预览合成，徽标与播放器同条件显示（此前仅 .ready，完成后徽标消失）
+                if viewModel.phase == .ready || viewModel.phase == .completed {
                     Label(
                         NSLocalizedString("video.preview.redactionOn", comment: ""),
                         systemImage: "checkmark.shield.fill"
@@ -324,6 +326,24 @@ struct VideoEditorView: View {
 
             ProgressView(value: viewModel.progress)
                 .tint(DesignSystem.Colors.primaryBlue)
+
+            // 分析阶段显示剩余时间预估（按时长降采样 + 实测吞吐推算）
+            if viewModel.phase == .analyzing,
+                let remaining = viewModel.estimatedRemainingSeconds, remaining > 0
+            {
+                Text(
+                    String(
+                        format: NSLocalizedString("video.status.etaRemaining", comment: ""),
+                        Duration.seconds(remaining).formatted(
+                            .units(
+                                allowed: [.hours, .minutes, .seconds],
+                                width: .abbreviated,
+                                maximumUnitCount: 2))
+                    )
+                )
+                .font(.footnote)
+                .foregroundStyle(DesignSystem.Colors.textSecondary)
+            }
 
             HStack(alignment: .top, spacing: DesignSystem.Spacing.sm) {
                 Image(systemName: "lock.fill")
@@ -703,10 +723,21 @@ struct VideoEditorView: View {
             }
         case .cancelled:
             footerContainer {
-                Button(NSLocalizedString("common.close", comment: "")) { dismiss() }
+                HStack(spacing: DesignSystem.Spacing.md) {
+                    Button(NSLocalizedString("common.close", comment: "")) { dismiss() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                    Button {
+                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                            viewModel.retry()
+                        }
+                    } label: {
+                        Label(NSLocalizedString("video.action.retry", comment: ""), systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity)
+                    }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .frame(maxWidth: .infinity)
+                }
             }
         case .preparing, .analyzing, .exporting:
             EmptyView()

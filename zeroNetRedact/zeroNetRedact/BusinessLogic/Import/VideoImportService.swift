@@ -12,10 +12,16 @@ final class VideoImportService {
     private init() {}
 
     /// 导入视频。
-    /// - Parameter progress: 分阶段进度回调（0→1），在主线程调用
+    /// - Parameters:
+    ///   - allowDuplicate: true 时跳过 SHA256 查重（"仍然导入"路径）
+    ///   - preserveSourceOnDuplicate: true 且命中重复时保留临时源文件，
+    ///     供调用方复制到 pending 位置（否则 defer 清理会删掉源，用户点"仍然导入"时已无源可用）
+    ///   - progress: 分阶段进度回调（0→1），在主线程调用
     func importVideo(
         from sourceURL: URL,
         group: FileGroup?,
+        allowDuplicate: Bool = false,
+        preserveSourceOnDuplicate: Bool = false,
         progress: @escaping @MainActor (Double) -> Void = { _ in }
     ) async throws -> OriginalVideo {
         let workspace = try StorageManager.shared.createVideoWorkspace()
@@ -24,10 +30,12 @@ final class VideoImportService {
         let sourceExtension = sourceURL.pathExtension.isEmpty ? "mov" : sourceURL.pathExtension
         let localSource = workspace.appendingPathComponent("source").appendingPathExtension(sourceExtension)
         let accessed = sourceURL.startAccessingSecurityScopedResource()
+        var keepSource = false
         defer {
             if accessed { sourceURL.stopAccessingSecurityScopedResource() }
-            if sourceURL.deletingLastPathComponent().standardizedFileURL
-                == FileManager.default.temporaryDirectory.standardizedFileURL,
+            if !keepSource,
+                sourceURL.deletingLastPathComponent().standardizedFileURL
+                    == FileManager.default.temporaryDirectory.standardizedFileURL,
                 sourceURL.lastPathComponent.hasPrefix("video-import-")
             {
                 try? FileManager.default.removeItem(at: sourceURL)
@@ -69,7 +77,8 @@ final class VideoImportService {
         let duplicateRequest: NSFetchRequest<OriginalFile> = OriginalFile.fetchRequest()
         duplicateRequest.predicate = NSPredicate(format: "contentHash == %@", encryptionResult.sha256)
         duplicateRequest.fetchLimit = 1
-        if try context.count(for: duplicateRequest) > 0 {
+        if !allowDuplicate, try context.count(for: duplicateRequest) > 0 {
+            keepSource = preserveSourceOnDuplicate
             throw VideoProcessingError.duplicate
         }
 

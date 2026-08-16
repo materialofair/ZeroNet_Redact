@@ -149,6 +149,29 @@ final class StitchViewModelTests: XCTestCase {
         XCTAssertEqual(vm.plan?.items[1].seamConfidence, 1.0, "手动调整后视为已确认")
     }
 
+    /// 只调上部滑块(upperCropBottom)同样视为人工确认(P1-9:此前橙色低置信警告不消失)
+    func testUpdateSeamUpperCropAlsoMarksManualConfidence() async throws {
+        let vm = StitchViewModel()
+        await vm.setSources(try makeTwoSources())
+        vm.updateSeam(at: 1, upperCropBottom: 120)
+        XCTAssertEqual(vm.plan?.items[0].cropBottom, 120)
+        XCTAssertEqual(vm.plan?.items[1].seamConfidence, 1.0, "任一滑块移动都应视为人工确认")
+    }
+
+    /// 两侧裁剪互算:避免 cropTop + cropBottom 顶满导致 contentHeight <= 0(P1-9)
+    /// 语义:同一张图的顶部/底部裁剪相互限制(与 SeamAdjustView 滑杆范围口径一致)
+    func testUpdateSeamClampsAgainstOppositeCrop() async throws {
+        let vm = StitchViewModel()
+        await vm.setSources(try makeTwoSources())
+        let height = try XCTUnwrap(vm.plan?.items[1].pixelSize.height)
+        // 顶部压满:应被该图已有的底部裁剪(自动检测的固定页脚)限制
+        vm.updateSeam(at: 1, cropTop: height - 50)
+        let item = try XCTUnwrap(vm.plan?.items[1])
+        XCTAssertGreaterThanOrEqual(
+            item.contentHeight, 50, "两侧裁剪互算后内容高度不得低于 50(修复前可能 ≤0 导致渲染抛错)")
+        XCTAssertEqual(item.seamConfidence, 1.0)
+    }
+
     /// 回归:渲染进行中重入 generateAndImport 应直接返回(防双击并发渲染/重复扣配额)
     func testGenerateAndImportReentrancyGuard() async throws {
         let vm = StitchViewModel()

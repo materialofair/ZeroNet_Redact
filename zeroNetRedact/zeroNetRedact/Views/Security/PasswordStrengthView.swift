@@ -4,6 +4,7 @@ import SwiftUI
 struct PasswordStrengthView: View {
     let password: String
     let passwordManager = PasswordManager.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var strength: PasswordStrength {
         passwordManager.evaluateStrength(password)
@@ -36,7 +37,7 @@ struct PasswordStrengthView: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(strengthColor)
                         .frame(width: geometry.size.width * strengthPercentage)
-                        .animation(.easeInOut(duration: 0.3), value: strengthPercentage)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: strengthPercentage)
                 }
             }
             .frame(height: 4)

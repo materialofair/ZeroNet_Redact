@@ -183,6 +183,7 @@ struct ElevatedCardStyle: ViewModifier {
 /// 渐变按钮样式
 struct GradientButtonStyle: ButtonStyle {
     var gradient: LinearGradient = DesignSystem.Gradients.primary
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -193,13 +194,15 @@ struct GradientButtonStyle: ButtonStyle {
             .background(gradient)
             .cornerRadius(DesignSystem.CornerRadius.medium)
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
 /// 描边按钮样式
 struct OutlineButtonStyle: ButtonStyle {
     var color: Color = DesignSystem.Colors.primaryBlue
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -214,7 +217,8 @@ struct OutlineButtonStyle: ButtonStyle {
                     .stroke(color.opacity(0.3), lineWidth: 1)
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

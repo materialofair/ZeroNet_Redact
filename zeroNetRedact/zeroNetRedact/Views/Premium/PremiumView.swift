@@ -45,6 +45,9 @@ struct PremiumView: View {
                         Image(systemName: "xmark.circle.fill")
                             .font(.title2)
                             .foregroundStyle(DesignSystem.Colors.textTertiary)
+                            // 44pt 触控目标（图标本身约 22pt）
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel(NSLocalizedString("common.close", comment: ""))
                 }
@@ -210,8 +213,12 @@ struct PremiumView: View {
         } label: {
             Text(NSLocalizedString("premium.restore", comment: ""))
                 .font(.subheadline)
-                .foregroundColor(DesignSystem.Colors.textSecondary)
+                .foregroundColor(DesignSystem.Colors.primaryBlue)
                 .underline()
+                // 44pt 触控目标（此前仅一行 subheadline 文本高度）
+                .frame(minHeight: 44)
+                .padding(.horizontal, DesignSystem.Spacing.sm)
+                .contentShape(Rectangle())
         }
         .disabled(isPurchasing)
     }

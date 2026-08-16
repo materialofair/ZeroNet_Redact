@@ -3,6 +3,7 @@ import AVKit
 import Combine
 import CoreData
 import Foundation
+import UIKit
 
 @MainActor
 final class VideoEditorViewModel: ObservableObject {
@@ -21,6 +22,8 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var faceCount = 0
     @Published private(set) var errorMessage: String?
     @Published private(set) var exportedFile: RedactedFile?
+    /// 分析阶段剩余时间预估（秒）；nil 表示无预估（分析中会持续更新）
+    @Published private(set) var estimatedRemainingSeconds: TimeInterval?
 
     /// 免费用户每日配额（图片+视频合并）已用完
     @Published var showUsageLimitAlert = false
@@ -52,6 +55,10 @@ final class VideoEditorViewModel: ObservableObject {
     private var timeline = VideoFaceTimeline.empty
     private var workTask: Task<Void, Never>?
     private var previewTask: Task<Void, Never>?
+    /// 导出后台任务标识（导出期间退后台保护）
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    /// 视图是否仍在前台（onDisappear 后置 false；导出在视图离开后完成时需要自行清理）
+    private var isViewVisible = true
     /// 试听模式下用于预览的组合：画面脱敏 + 处理后的音轨（或静音无音轨）。
     private var previewAsset: AVAsset?
     private let context = PersistenceController.shared.container.viewContext
@@ -86,6 +93,15 @@ final class VideoEditorViewModel: ObservableObject {
         start()
     }
 
+    /// 视图离开：非导出状态立即清理；导出中保留任务继续完成，
+    /// 否则 onDisappear 路径会误杀正在后台受保护的导出
+    func viewDidDisappear() {
+        isViewVisible = false
+        if phase != .exporting {
+            cleanup()
+        }
+    }
+
     func export() {
         guard phase == .ready, let sourceURL, let workspace else { return }
         // 免费用户校验：大视频需会员 + 每日媒体配额（图片/视频合并）
@@ -111,7 +127,21 @@ final class VideoEditorViewModel: ObservableObject {
         phase = .exporting
         progress = 0
         errorMessage = nil
+        estimatedRemainingSeconds = nil
+        // 导出期间退后台保护：申请系统后台宽限期，避免进程被挂起后导出无声失败
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "videoExport") {
+            [weak self] in
+            // 宽限期到期：无法继续保证完成，主动取消收尾
+            self?.workTask?.cancel()
+        }
         workTask = Task {
+            defer {
+                // 导出结束（无论成败/取消）释放后台任务
+                if backgroundTaskID != .invalid {
+                    UIApplication.shared.endBackgroundTask(backgroundTaskID)
+                    backgroundTaskID = .invalid
+                }
+            }
             do {
                 let exportURL = workspace.appendingPathComponent("redacted-export.mp4")
                 switch voicePreset {
@@ -174,11 +204,24 @@ final class VideoEditorViewModel: ObservableObject {
                 phase = .completed
                 progress = 1
             } catch is CancellationError {
-                phase = .ready
+                // 导出取消统一落到 .cancelled（此前落 .ready，取消面板永远无法出现），
+                // 与准备/分析阶段取消的语义一致，.cancelled 面板提供重试入口。
+                phase = .cancelled
                 errorMessage = NSLocalizedString("video.status.cancelled", comment: "")
             } catch {
                 phase = .failed
                 errorMessage = error.localizedDescription
+            }
+            // 视图已离开且导出自行完成：清理明文工作副本（正常路径由 onDisappear→cleanup 处理）
+            if !isViewVisible {
+                player.pause()
+                player.replaceCurrentItem(with: nil)
+                releasePlaybackAudioSession()
+                StorageManager.shared.removeVideoWorkspace(workspace)
+                if self.workspace == workspace {
+                    self.workspace = nil
+                    self.sourceURL = nil
+                }
             }
             workTask = nil
         }
@@ -305,10 +348,18 @@ final class VideoEditorViewModel: ObservableObject {
             sourceURL = source
             phase = .analyzing
             progress = 0
-            timeline = try await VideoFaceAnalyzer().analyze(url: source) { [weak self] value in
-                Task { @MainActor in self?.progress = value }
-            }
+            estimatedRemainingSeconds = nil
+            timeline = try await VideoFaceAnalyzer().analyze(
+                url: source,
+                progress: { [weak self] value in
+                    Task { @MainActor in self?.progress = value }
+                },
+                eta: { [weak self] value in
+                    Task { @MainActor in self?.estimatedRemainingSeconds = value }
+                }
+            )
             try Task.checkCancellation()
+            estimatedRemainingSeconds = nil
             faceCount = timeline.totalUniqueFaces
             refreshPreview()
             phase = .ready

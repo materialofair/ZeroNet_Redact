@@ -21,6 +21,7 @@ extension UIImage: @retroactive Identifiable {
 
 struct AlbumView: View {
     @StateObject private var viewModel = AlbumViewModel()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedTab: Int
 
     @State private var previewFile: RedactedFile?
@@ -57,6 +58,15 @@ struct AlbumView: View {
                     RedactedGroupSelectorBar(viewModel: viewModel)
                         .padding(.vertical, 12)
 
+                    // 类型筛选 + 排序
+                    if !viewModel.redactedFiles.isEmpty {
+                        FileTypeFilterBar(
+                            filterType: $viewModel.filterType,
+                            sortOption: $viewModel.sortOption
+                        )
+                        .padding(.bottom, 8)
+                    }
+
                     // 主内容
                     Group {
                         if viewModel.redactedFiles.isEmpty {
@@ -89,7 +99,7 @@ struct AlbumView: View {
                 if !viewModel.redactedFiles.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button {
-                            withAnimation {
+                            withAnimation(reduceMotion ? nil : .default) {
                                 isSelectionMode.toggle()
                                 if !isSelectionMode {
                                     selectedFileIDs.removeAll()
@@ -168,6 +178,12 @@ struct AlbumView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) {
                 _ in
+                viewModel.loadFiles()
+            }
+            .onChange(of: viewModel.filterType) { _, _ in
+                viewModel.loadFiles()
+            }
+            .onChange(of: viewModel.sortOption) { _, _ in
                 viewModel.loadFiles()
             }
             .onDisappear {
@@ -284,7 +300,27 @@ struct AlbumView: View {
         }
 
         if file.fileType == .video {
+            // 校验可播放性：损坏/截断的视频 AVPlayer 只会静默黑屏，
+            // 在加载阶段拦截并走既有失败提示通道
+            let asset = AVURLAsset(url: file.fileURL)
+            var playable = false
+            do {
+                playable = try await asset.load(.isPlayable)
+            } catch is CancellationError {
+                return
+            } catch {
+                playable = false
+            }
             if Task.isCancelled { return }
+            if !playable {
+                print("❌ 视频不可播放: \(file.fullFilePath)")
+                await MainActor.run {
+                    previewFailedFile = file
+                    showPreviewFailedAlert = true
+                    isLoadingPreview = false
+                }
+                return
+            }
             await MainActor.run {
                 previewFile = file
                 previewVideo = VideoPreviewItem(url: file.fileURL)
@@ -367,6 +403,8 @@ struct RedactedFileGridItem: View {
     var isSelected: Bool = false
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
+    /// 缩略图加载失败（此前失败永远停留在通用占位图，无法与正常状态区分）
+    @State private var thumbnailLoadFailed = false
     @State private var showDeleteAlert = false
     @Environment(\.colorScheme) var colorScheme
 
@@ -426,11 +464,23 @@ struct RedactedFileGridItem: View {
                                         .contentShape(
                                             RoundedRectangle(
                                                 cornerRadius: DesignSystem.CornerRadius.medium - 2))
+                                } else if thumbnailLoadFailed {
+                                    // 失败态标识（与导入页 grid 一致），不再永远显示普通占位图
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.system(size: 24, weight: .medium))
+                                            .foregroundColor(DesignSystem.Colors.dangerRed)
+                                        Text(
+                                            NSLocalizedString(
+                                                "import.thumbnail.loadFailed", comment: ""))
+                                        .font(.caption2)
+                                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                                    }
                                 } else {
                                     VStack(spacing: 6) {
                                         Image(systemName: file.fileType.icon)
-                                        .font(.system(size: 28, weight: .medium))
-                                        .foregroundStyle(DesignSystem.Gradients.success)
+                                            .font(.system(size: 28, weight: .medium))
+                                            .foregroundStyle(DesignSystem.Gradients.success)
                                         Text(NSLocalizedString("album.redacted", comment: ""))
                                             .font(.caption2)
                                             .foregroundColor(DesignSystem.Colors.successGreen)
@@ -538,6 +588,10 @@ struct RedactedFileGridItem: View {
             }
 
             if file.fileType == .video {
+                // 视频无可用缩略图（文件缺失或损坏）：标记失败态而非静默占位
+                await MainActor.run {
+                    thumbnailLoadFailed = true
+                }
                 return
             }
 
@@ -580,9 +634,16 @@ struct RedactedFileGridItem: View {
                 await MainActor.run {
                     thumbnailImage = finalImage
                 }
+            } else {
+                await MainActor.run {
+                    thumbnailLoadFailed = true
+                }
             }
         } catch {
             print("❌ 加载脱敏文件缩略图失败: \(error)")
+            await MainActor.run {
+                thumbnailLoadFailed = true
+            }
         }
     }
 }
@@ -778,8 +839,10 @@ struct FilePreviewActionsMenu: View {
                 allGroups: viewModel.allGroups,
                 currentGroup: file.group,
                 onGroupSelected: { newGroup in
-                    viewModel.moveFileToGroup(file, group: newGroup)
-                    showGroupPicker = false
+                    // 成功才关闭选择器；失败保留弹窗并显示错误提示
+                    if viewModel.moveFileToGroup(file, group: newGroup) {
+                        showGroupPicker = false
+                    }
                 }
             )
         }

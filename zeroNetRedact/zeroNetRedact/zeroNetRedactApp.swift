@@ -12,6 +12,7 @@ import SwiftUI
 struct zeroNetRedactApp: App {
     @StateObject private var appState = AppState.shared
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isShowingLaunchScreen = true
     @State private var isObscured = false
 
@@ -60,6 +61,24 @@ struct zeroNetRedactApp: App {
                             .sheet(isPresented: $appState.isFirstLaunch) {
                                 PasswordSetupSheet()
                             }
+                    } else if !appState.hasSeenOnboarding {
+                        // 首启密码流程结束后（设置或跳过），展示新手引导；
+                        // 独立于 isFirstLaunch 的状态，避免与密码 sheet 同时弹出
+                        ContentView()
+                            .sheet(
+                                isPresented: Binding(
+                                    get: { !appState.hasSeenOnboarding },
+                                    set: { presented in
+                                        if !presented {
+                                            appState.hasSeenOnboarding = true
+                                        }
+                                    }
+                                )
+                            ) {
+                                OnboardingView(onFinish: {
+                                    appState.hasSeenOnboarding = true
+                                })
+                            }
                     } else {
                         ContentView()
                     }
@@ -73,9 +92,9 @@ struct zeroNetRedactApp: App {
                 }
             }
             .onAppear {
-                // 延迟隐藏启动页
+                // 延迟隐藏启动页（Reduce Motion 时无淡出动画）
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    withAnimation(.easeOut(duration: 0.5)) {
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5)) {
                         isShowingLaunchScreen = false
                     }
                 }
@@ -136,7 +155,8 @@ struct zeroNetRedactApp: App {
                 isObscured = true
             }
         } else {
-            withAnimation(.easeInOut(duration: 0.12)) {
+            // Reduce Motion 时不播放淡出动画
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.12)) {
                 isObscured = false
             }
         }

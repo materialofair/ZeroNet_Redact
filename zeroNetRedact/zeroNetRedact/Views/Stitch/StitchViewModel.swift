@@ -64,7 +64,15 @@ final class StitchViewModel: ObservableObject {
             showError = true
         }
         sources.append(contentsOf: loaded)
-        sources = Array(sources.prefix(maxSelectionCount))
+        // 超过张数上限时明确告知被丢弃的张数（此前 prefix 静默截断，用户不知丢了哪几张）
+        let dropped = sources.count - maxSelectionCount
+        if dropped > 0 {
+            sources = Array(sources.prefix(maxSelectionCount))
+            errorMessage = String(
+                format: NSLocalizedString("stitch.limit.dropped", comment: ""),
+                maxSelectionCount, dropped)
+            showError = true
+        }
         await recomputePlan()
         isDetecting = false
     }
@@ -89,13 +97,19 @@ final class StitchViewModel: ObservableObject {
     func updateSeam(at index: Int, cropTop: CGFloat? = nil, upperCropBottom: CGFloat? = nil) {
         guard var updated = plan, updated.items.indices.contains(index) else { return }
         if let cropTop {
-            updated.items[index].cropTop = min(
-                max(0, cropTop), updated.items[index].pixelSize.height - 50)
+            // 上限互算对侧裁剪:保证 contentHeight 至少 50,与滑杆范围口径一致
+            let maxTop = max(
+                0, updated.items[index].pixelSize.height - updated.items[index].cropBottom - 50)
+            updated.items[index].cropTop = min(max(0, cropTop), maxTop)
             updated.items[index].seamConfidence = 1.0  // 手动确认
         }
         if let upperCropBottom, index > 0 {
-            updated.items[index - 1].cropBottom = min(
-                max(0, upperCropBottom), updated.items[index - 1].pixelSize.height - 50)
+            let maxBottom = max(
+                0,
+                updated.items[index - 1].pixelSize.height - updated.items[index - 1].cropTop - 50)
+            updated.items[index - 1].cropBottom = min(max(0, upperCropBottom), maxBottom)
+            // 任一滑块移动都视为人工确认（此前只调上部滑块橙色低置信警告不消失）
+            updated.items[index].seamConfidence = 1.0  // 手动确认
         }
         plan = updated
     }

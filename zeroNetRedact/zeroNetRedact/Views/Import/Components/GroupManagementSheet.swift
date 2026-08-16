@@ -138,6 +138,8 @@ struct GroupEditRow: View {
 
     @State private var isEditing: Bool = false
     @State private var editedName: String = ""
+    @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
 
     // 可选图标
     private let availableIcons = [
@@ -159,6 +161,8 @@ struct GroupEditRow: View {
                         Button(action: {
                             if GroupManager.shared.updateGroupIcon(group, iconName: icon) {
                                 onUpdate()
+                            } else {
+                                showErrorMessage(NSLocalizedString("group.iconFailed", comment: ""))
                             }
                         }) {
                             Label(iconName(icon), systemImage: icon)
@@ -212,6 +216,11 @@ struct GroupEditRow: View {
             }
         }
         .padding(.vertical, 4)
+        .alert(NSLocalizedString("common.error", comment: ""), isPresented: $showError) {
+            Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if canDelete {
                 Button(role: .destructive) {
@@ -225,10 +234,23 @@ struct GroupEditRow: View {
 
     private func saveName() {
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedName.isEmpty && GroupManager.shared.renameGroup(group, newName: trimmedName) {
-            onUpdate()
+        // 空名字：明确提示并保留编辑态，不静默退出
+        guard !trimmedName.isEmpty else {
+            showErrorMessage(NSLocalizedString("group.nameEmpty", comment: ""))
+            return
         }
+        // 重命名失败：提示并保留编辑态
+        guard GroupManager.shared.renameGroup(group, newName: trimmedName) else {
+            showErrorMessage(NSLocalizedString("group.renameFailed", comment: ""))
+            return
+        }
+        onUpdate()
         isEditing = false
+    }
+
+    private func showErrorMessage(_ message: String) {
+        errorMessage = message
+        showError = true
     }
 
     private func iconName(_ systemName: String) -> String {

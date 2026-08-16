@@ -52,6 +52,9 @@ class AppState: ObservableObject {
     /// 是否首次启动
     @AppStorage("isFirstLaunch") var isFirstLaunch = true
 
+    /// 是否已看过新手引导（与 isFirstLaunch 独立：密码流程结束后才展示引导）
+    @AppStorage("hasSeenOnboarding") var hasSeenOnboarding = false
+
     /// 最后活跃时间
     @AppStorage("lastActiveTimestamp") private var lastActiveTimestamp: Double = 0
 
@@ -116,7 +119,8 @@ class AppState: ObservableObject {
     func lockApp() {
         guard passwordEnabled else { return }
 
-        withAnimation(.easeOut(duration: 0.25)) {
+        // 视图外无法读取 SwiftUI Environment，直接读系统 Reduce Motion 设置
+        withAnimation(UIAccessibility.isReduceMotionEnabled ? nil : .easeOut(duration: 0.25)) {
             isAuthenticated = false
             isLocked = true
         }
@@ -125,7 +129,7 @@ class AppState: ObservableObject {
 
     /// 解锁应用
     func unlockApp() {
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(UIAccessibility.isReduceMotionEnabled ? nil : .easeOut(duration: 0.25)) {
             isAuthenticated = true
             isLocked = false
         }
@@ -190,7 +194,7 @@ class AppState: ObservableObject {
         passwordEnabled = false
         biometricEnabled = true
         isFirstLaunch = true
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(UIAccessibility.isReduceMotionEnabled ? nil : .easeOut(duration: 0.25)) {
             isAuthenticated = true
             isLocked = false
         }

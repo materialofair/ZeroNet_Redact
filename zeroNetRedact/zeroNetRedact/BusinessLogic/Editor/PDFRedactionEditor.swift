@@ -82,7 +82,7 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         }
     }
 
-    func detectSensitiveRegions() async throws -> [SensitiveRegion] {
+    func detectSensitiveRegions(progress: ((Double) -> Void)?) async throws -> [SensitiveRegion] {
         guard let file = currentFile else {
             throw EditorError.noFileLoaded
         }
@@ -91,7 +91,7 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         defer { isProcessing = false }
 
         // 使用TextRecognizer识别敏感信息
-        let texts = try await recognizer.recognizeText(in: file)
+        let texts = try await recognizer.recognizeText(in: file, progress: progress)
         let regions = recognizer.detectSensitiveRegions(in: texts)
 
         await MainActor.run {
@@ -102,15 +102,18 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
     }
 
     func applyRedaction(at region: CGRect, effect: RedactionEffect) {
+        applyRedactions(at: [region], effect: effect)
+    }
+
+    /// 批量应用脱敏：单快照 + 一次添加全部注释
+    func applyRedactions(at regions: [CGRect], effect: RedactionEffect) {
+        guard !regions.isEmpty else { return }
         guard let document = pdfDocument,
             let page = document.page(at: currentPageIndex)
         else {
             print("⚠️ PDFRedactionEditor: 无法获取PDF页面")
             return
         }
-
-        // 创建注释（使用.square类型代替.redact）
-        let annotation = PDFAnnotation(bounds: region, forType: .square, withProperties: nil)
 
         // 根据效果设置样式
         var fillColor: UIColor
@@ -129,34 +132,40 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
             fillColor = UIColor.black
         }
 
-        // 关键设置：填充颜色和边框
-        annotation.interiorColor = fillColor  // 填充颜色
-        annotation.color = fillColor  // 边框颜色
-
-        // 重要：设置边框样式为实线，并设置边框宽度
-        annotation.border = PDFBorder()
-        annotation.border?.lineWidth = 0  // 无边框，只显示填充
-
-        // 设置annotation的显示属性
-        annotation.shouldDisplay = true
-        annotation.shouldPrint = true
-
-        print("📝 PDFRedactionEditor: 添加annotation at \(region), color=\(fillColor)")
-
-        // 标记为本 App 创建的遮盖注释
-        annotation.userName = Self.redactionAnnotationMarker
-
         // 记录快照（撤销可回到变更前状态）
         recordSnapshot()
 
-        // 添加到页面
-        page.addAnnotation(annotation)
+        var added: [PDFAnnotation] = []
+        for region in regions {
+            // 创建注释（使用.square类型代替.redact）
+            let annotation = PDFAnnotation(bounds: region, forType: .square, withProperties: nil)
+
+            // 关键设置：填充颜色和边框
+            annotation.interiorColor = fillColor  // 填充颜色
+            annotation.color = fillColor  // 边框颜色
+
+            // 重要：设置边框样式为实线，并设置边框宽度
+            annotation.border = PDFBorder()
+            annotation.border?.lineWidth = 0  // 无边框，只显示填充
+
+            // 设置annotation的显示属性
+            annotation.shouldDisplay = true
+            annotation.shouldPrint = true
+
+            // 标记为本 App 创建的遮盖注释
+            annotation.userName = Self.redactionAnnotationMarker
+
+            page.addAnnotation(annotation)
+            added.append(annotation)
+        }
+
+        print("📝 PDFRedactionEditor: 批量添加\(added.count)个annotation, color=\(fillColor)")
 
         // 记录注释（用于撤销）
         if redactionAnnotations[currentPageIndex] == nil {
             redactionAnnotations[currentPageIndex] = []
         }
-        redactionAnnotations[currentPageIndex]?.append(annotation)
+        redactionAnnotations[currentPageIndex]?.append(contentsOf: added)
 
         print("✅ PDFRedactionEditor: 当前页面共有\(page.annotations.count)个annotations")
     }
@@ -251,10 +260,12 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         syncTrackingFromPages()
     }
 
-    func exportRedactedFile() async throws -> Data {
+    func exportRedactedFile(progress: ((Double) -> Void)?) async throws -> Data {
         guard let document = pdfDocument else {
             throw EditorError.noPDFLoaded
         }
+
+        let pageCount = max(1, document.pageCount)
 
         // 1. 收集当前生效的遮盖区域（直接读取页面上的注释，尊重用户的删除操作）
         var regions: [PDFRedactionRegion] = []
@@ -268,6 +279,7 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
                 regions.append(PDFRedactionRegion(pageIndex: pageIndex, rect: bounds))
                 overlays.append((pageIndex: pageIndex, bounds: bounds, color: color))
             }
+            progress?(0.35 * Double(pageIndex + 1) / Double(pageCount))
         }
 
         // 2. 干净底稿：原始数据 + 元数据清理
@@ -281,6 +293,7 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         guard let cleanData = cleanDocument.dataRepresentation() else {
             throw EditorError.exportFailed
         }
+        progress?(0.4)
 
         // 3. 真删除：MuPDF 把遮盖区域内的文字从内容流中物理移除
         //   （坐标约定：PDFKit annotation.bounds 与 MuPDF set_annot_rect
@@ -299,14 +312,16 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
                 throw EditorError.exportFailed
             }
             usedFallbackExport = true
+            progress?(1.0)
             return fallbackData
         }
+        progress?(0.6)
 
         // 4. 重新叠加效果覆盖层：与编辑器所见保持一致（纯视觉填充，不含文字）
         guard let redactedDocument = PDFDocument(data: redactedData) else {
             throw EditorError.exportFailed
         }
-        for overlay in overlays {
+        for (overlayIndex, overlay) in overlays.enumerated() {
             guard let page = redactedDocument.page(at: overlay.pageIndex) else { continue }
             let annotation = PDFAnnotation(bounds: overlay.bounds, forType: .square, withProperties: nil)
             annotation.interiorColor = overlay.color
@@ -316,10 +331,12 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
             annotation.shouldDisplay = true
             annotation.shouldPrint = true
             page.addAnnotation(annotation)
+            progress?(0.6 + 0.35 * Double(overlayIndex + 1) / Double(max(1, overlays.count)))
         }
         guard let finalData = redactedDocument.dataRepresentation() else {
             throw EditorError.exportFailed
         }
+        progress?(1.0)
         return finalData
     }
 

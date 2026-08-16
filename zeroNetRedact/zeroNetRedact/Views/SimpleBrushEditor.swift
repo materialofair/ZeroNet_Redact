@@ -15,6 +15,7 @@ struct SimpleBrushEditor: View {
     @Environment(\.dismiss) private var dismiss
 
     // MARK: - Brush State
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var brushStrokes: [BrushStroke] = []
     @State private var currentStroke: [CGPoint] = []
     @State private var paintGestureStart: CGPoint = .zero
@@ -30,6 +31,12 @@ struct SimpleBrushEditor: View {
     @State private var currentDragOffset: CGSize = .zero
     @State private var isDraggingRegion: Bool = false
 
+    // MARK: - Detection Selection State
+    /// 多选中的检测区域 id（chip 与图上橙色框联动）
+    @State private var selectedDetectedIDs: Set<UUID> = []
+    /// 点击 chip 时闪烁高亮的区域 id（短暂放大描边定位）
+    @State private var flashRegionID: UUID? = nil
+
     // MARK: - Zoom & Pan State
     @State private var canvasScale: CGFloat = 1.0
     @State private var lastCanvasScale: CGFloat = 1.0
@@ -38,6 +45,7 @@ struct SimpleBrushEditor: View {
 
     // MARK: - Export State
     @State private var exportTask: Task<Void, Never>?
+    @State private var showShareSheet = false
 
     // MARK: - Toast State
     @State private var toastMessage: String? = nil
@@ -152,6 +160,14 @@ struct SimpleBrushEditor: View {
         ) {
             PremiumView()
         }
+        .sheet(isPresented: $showShareSheet, onDismiss: {
+            // 分享结束（保存/发送/取消）后关闭编辑器
+            dismiss()
+        }) {
+            if let url = viewModel.exportedFileURL {
+                ShareSheet(items: [url])
+            }
+        }
     }
 
     // MARK: - Editor Content
@@ -191,8 +207,8 @@ struct SimpleBrushEditor: View {
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.2), value: hasRedactionRegions)
-                .animation(.easeInOut(duration: 0.2), value: isScaleBarVisible)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: hasRedactionRegions)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isScaleBarVisible)
             } else {
                 EditorErrorView()
             }
@@ -204,7 +220,7 @@ struct SimpleBrushEditor: View {
             HStack {
                 Spacer()
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                         canvasScale = 1.0
                         lastCanvasScale = 1.0
                         canvasOffset = .zero
@@ -247,15 +263,21 @@ struct SimpleBrushEditor: View {
                 DetectionResultBar(
                     regions: viewModel.regionsForCurrentPage,
                     otherPagesCount: viewModel.otherPagesRegionCount,
+                    selectedIDs: selectedDetectedIDs,
                     onApply: applyDetectedRegion,
                     onIgnore: { region in
                         viewModel.detectedRegions.removeAll { $0.id == region.id }
+                        selectedDetectedIDs.remove(region.id)
                     },
                     onApplyAll: applyAllDetectedRegions,
                     onDismiss: {
                         let currentPageIDs = Set(viewModel.regionsForCurrentPage.map { $0.id })
                         viewModel.detectedRegions.removeAll { currentPageIDs.contains($0.id) }
-                    }
+                        selectedDetectedIDs.subtract(currentPageIDs)
+                    },
+                    onSelect: toggleDetectedSelection,
+                    onApplySelected: applySelectedDetectedRegions,
+                    onIgnoreSelected: ignoreSelectedDetectedRegions
                 )
                 Divider()
             }
@@ -269,9 +291,18 @@ struct SimpleBrushEditor: View {
                 isRotateDisabled: viewModel.currentImage == nil || viewModel.isPDFFile || viewModel.isExporting,
                 isBrushSizeDisabled: canvasMode != .brush,
                 hasRedactionRegions: hasRedactionRegions,
-                onDetect: { Task { await viewModel.detectSensitiveRegions() } },
+                onDetect: {
+                    Task {
+                        await viewModel.detectSensitiveRegions()
+                        // 检测失败此前静默（errorMessage 只被导出路径读取），此处统一 toast 提示
+                        if let message = viewModel.detectErrorMessage {
+                            showToast(message: message, isSuccess: false)
+                        }
+                    }
+                },
                 isDetecting: viewModel.isDetecting,
-                isDetectDisabled: viewModel.isDetecting || viewModel.currentImage == nil || viewModel.isExporting
+                isDetectDisabled: viewModel.isDetecting || viewModel.currentImage == nil || viewModel.isExporting,
+                detectProgress: viewModel.detectProgress
             )
 
             Divider()
@@ -302,7 +333,7 @@ struct SimpleBrushEditor: View {
                     viewModel.redo()
                 }
                 .disabled(!viewModel.canRedo || viewModel.isExporting)
-                .accessibilityLabel(NSLocalizedString("action.undoRedaction", comment: ""))
+                .accessibilityLabel(NSLocalizedString("action.redoStroke", comment: ""))
             }
 
             Spacer()
@@ -321,17 +352,35 @@ struct SimpleBrushEditor: View {
 
                 ToolbarButton(
                     icon: viewModel.isExporting ? nil : "square.and.arrow.up",
-                    title: NSLocalizedString("editor.done", comment: ""),
+                    title: exportButtonTitle,
                     tintColor: .blue,
                     isLoading: viewModel.isExporting
                 ) {
                     performExport()
                 }
                 .disabled(viewModel.isExporting)
+
+                // 导出中提供显式取消（此前取消只能通过"放弃编辑"间接触发）
+                if viewModel.isExporting {
+                    ToolbarIconButton(icon: "xmark", tintColor: .red) {
+                        exportTask?.cancel()
+                    }
+                    .accessibilityLabel(NSLocalizedString("common.cancel", comment: ""))
+                }
             }
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 10)
+    }
+
+    /// 导出按钮标题：导出中显示百分比进度
+    private var exportButtonTitle: String {
+        if viewModel.isExporting, let progress = viewModel.exportProgress {
+            return String(
+                format: NSLocalizedString("export.progress.title", comment: ""),
+                Int((progress * 100).rounded()))
+        }
+        return NSLocalizedString("editor.done", comment: "")
     }
 
     private var canvasModeMenu: some View {
@@ -380,7 +429,11 @@ struct SimpleBrushEditor: View {
         Menu {
             ForEach(viewModel.allGroups, id: \.id) { group in
                 Button {
-                    viewModel.moveToGroup(group)
+                    if !viewModel.moveToGroup(group) {
+                        showToast(
+                            message: NSLocalizedString("import.move.failed", comment: ""),
+                            isSuccess: false)
+                    }
                 } label: {
                     Label {
                         Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
@@ -417,7 +470,7 @@ struct SimpleBrushEditor: View {
             ToastView(message: message, isSuccess: toastIsSuccess)
                 .padding(.top, 60)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.easeInOut(duration: 0.3), value: toastMessage)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: toastMessage)
         }
     }
 
@@ -489,8 +542,15 @@ struct SimpleBrushEditor: View {
         for region in viewModel.regionsForCurrentPage {
             guard let rect = converter.regionScreenRect(for: region) else { continue }
             let path = Path(roundedRect: rect, cornerRadius: 4)
-            context.fill(path, with: .color(.orange.opacity(0.18)))
-            context.stroke(path, with: .color(.orange), lineWidth: 2)
+
+            // 选中或闪烁中的区域：蓝色加粗描边，与 chip 选中态对应
+            if selectedDetectedIDs.contains(region.id) || flashRegionID == region.id {
+                context.fill(path, with: .color(.blue.opacity(0.22)))
+                context.stroke(path, with: .color(.blue), lineWidth: 4)
+            } else {
+                context.fill(path, with: .color(.orange.opacity(0.18)))
+                context.stroke(path, with: .color(.orange), lineWidth: 2)
+            }
         }
     }
 
@@ -790,6 +850,9 @@ struct SimpleBrushEditor: View {
         let effect = selectedEffect.redactionEffect
         let padding: CGFloat = brushWidth / 2
 
+        var rects: [CGRect] = []
+        rects.reserveCapacity(brushStrokes.count)
+
         for stroke in brushStrokes {
             guard !stroke.points.isEmpty else { continue }
 
@@ -812,17 +875,17 @@ struct SimpleBrushEditor: View {
                     height: (maxY - minY + padding * 2) * scaleY
                 )
             }
-
-            viewModel.selectedEffect = effect
-            viewModel.applyRedaction(at: rect)
+            rects.append(rect)
         }
+
+        // 批量应用：单快照 + 单次合成渲染（逐笔整图重绘曾致大图卡顿数秒）
+        viewModel.selectedEffect = effect
+        viewModel.applyRedactions(at: rects, effect: effect)
 
         brushStrokes.removeAll()
 
         if viewModel.isPDFFile {
-            if let renderedImage = viewModel.renderCurrentPDFPage() {
-                viewModel.currentImage = renderedImage
-            }
+            viewModel.refreshPDFPageImage()
         }
     }
 
@@ -863,11 +926,12 @@ struct SimpleBrushEditor: View {
         guard let rect = coordinateConverter.regionRect(for: region) else { return }
 
         viewModel.selectedEffect = selectedEffect.redactionEffect
-        viewModel.applyRedaction(at: rect)
+        viewModel.applyRedaction(at: rect, effect: selectedEffect.redactionEffect)
         viewModel.detectedRegions.removeAll { $0.id == region.id }
+        selectedDetectedIDs.remove(region.id)
 
-        if viewModel.isPDFFile, let renderedImage = viewModel.renderCurrentPDFPage() {
-            viewModel.currentImage = renderedImage
+        if viewModel.isPDFFile {
+            viewModel.refreshPDFPageImage()
         }
     }
 
@@ -876,18 +940,62 @@ struct SimpleBrushEditor: View {
         let regions = viewModel.regionsForCurrentPage
         let effect = selectedEffect.redactionEffect
 
-        for region in regions {
-            guard let rect = coordinateConverter.regionRect(for: region) else { continue }
-            viewModel.selectedEffect = effect
-            viewModel.applyRedaction(at: rect)
-        }
+        // 批量应用：单快照 + 单次渲染
+        let rects: [CGRect] = regions.compactMap { coordinateConverter.regionRect(for: $0) }
+        viewModel.selectedEffect = effect
+        viewModel.applyRedactions(at: rects, effect: effect)
 
         let appliedIDs = Set(regions.map { $0.id })
         viewModel.detectedRegions.removeAll { appliedIDs.contains($0.id) }
+        selectedDetectedIDs.subtract(appliedIDs)
 
-        if viewModel.isPDFFile, let renderedImage = viewModel.renderCurrentPDFPage() {
-            viewModel.currentImage = renderedImage
+        if viewModel.isPDFFile {
+            viewModel.refreshPDFPageImage()
         }
+    }
+
+    /// 点 chip 切换选中并闪烁对应框（图上定位）
+    private func toggleDetectedSelection(_ region: SensitiveRegion) {
+        if selectedDetectedIDs.contains(region.id) {
+            selectedDetectedIDs.remove(region.id)
+        } else {
+            selectedDetectedIDs.insert(region.id)
+        }
+        // 短暂高亮定位：2 秒后恢复普通橙色框
+        flashRegionID = region.id
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            await MainActor.run {
+                if flashRegionID == region.id {
+                    flashRegionID = nil
+                }
+            }
+        }
+    }
+
+    /// 应用所选区域（批量：单快照 + 单次渲染）
+    private func applySelectedDetectedRegions() {
+        let regions = viewModel.regionsForCurrentPage.filter { selectedDetectedIDs.contains($0.id) }
+        guard !regions.isEmpty else { return }
+
+        let effect = selectedEffect.redactionEffect
+        let rects: [CGRect] = regions.compactMap { coordinateConverter.regionRect(for: $0) }
+        viewModel.selectedEffect = effect
+        viewModel.applyRedactions(at: rects, effect: effect)
+
+        let appliedIDs = Set(regions.map { $0.id })
+        viewModel.detectedRegions.removeAll { appliedIDs.contains($0.id) }
+        selectedDetectedIDs.subtract(appliedIDs)
+
+        if viewModel.isPDFFile {
+            viewModel.refreshPDFPageImage()
+        }
+    }
+
+    /// 忽略所选区域
+    private func ignoreSelectedDetectedRegions() {
+        viewModel.detectedRegions.removeAll { selectedDetectedIDs.contains($0.id) }
+        selectedDetectedIDs.removeAll()
     }
 
     // MARK: - Export
@@ -925,9 +1033,11 @@ struct SimpleBrushEditor: View {
             }
 
             if success {
+                // 成功后短暂展示提示，再弹出系统分享 sheet（存储/发送），
+                // 分享 sheet 收起后关闭编辑器
                 try? await Task.sleep(nanoseconds: toastDisplayDurationNanoseconds)
                 await MainActor.run {
-                    dismiss()
+                    showShareSheet = true
                 }
             }
         }

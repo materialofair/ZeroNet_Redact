@@ -13,6 +13,7 @@ struct GroupChip: View {
     let group: FileGroup
     let isSelected: Bool
     let fileCount: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 6) {
@@ -30,7 +31,7 @@ struct GroupChip: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isSelected)
     }
 }
 

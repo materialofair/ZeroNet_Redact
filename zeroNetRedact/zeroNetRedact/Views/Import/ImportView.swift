@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 struct ImportView: View {
     @StateObject private var viewModel = ImportViewModel()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedOriginalFile: OriginalFile?
     @State private var pendingRedactFile: OriginalFile?
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
@@ -12,6 +13,7 @@ struct ImportView: View {
     @State private var selectedVideo: OriginalVideo?
     @State private var showVideoSourceDialog = false
     @State private var showVideoFileImporter = false
+    @State private var showOnboarding = false
 
     var body: some View {
         NavigationStack {
@@ -24,6 +26,15 @@ struct ImportView: View {
                     // 分组选择器
                     GroupSelectorBar(viewModel: viewModel)
                         .padding(.vertical, 12)
+
+                    // 类型筛选 + 排序
+                    if !viewModel.originalFiles.isEmpty {
+                        FileTypeFilterBar(
+                            filterType: $viewModel.filterType,
+                            sortOption: $viewModel.sortOption
+                        )
+                        .padding(.bottom, 8)
+                    }
 
                     // 主内容区
                     Group {
@@ -64,7 +75,7 @@ struct ImportView: View {
                         Spacer()
                     }
                     .transition(.move(edge: .top).combined(with: .opacity))
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.showSuccessToast)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.showSuccessToast)
                 }
             }
             .navigationTitle(NSLocalizedString("import.title", comment: ""))
@@ -72,7 +83,7 @@ struct ImportView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
-                        withAnimation {
+                        withAnimation(reduceMotion ? nil : .default) {
                             viewModel.toggleSelectionMode()
                         }
                     }) {
@@ -86,15 +97,33 @@ struct ImportView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        viewModel.showManageGroups = true
-                    }) {
-                        Image(systemName: "folder.badge.gearshape")
-                            .foregroundColor(DesignSystem.Colors.primaryBlue)
+                    HStack(spacing: 4) {
+                        // 回看新手引导
+                        Button {
+                            showOnboarding = true
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .foregroundColor(DesignSystem.Colors.primaryBlue)
+                                // 44pt 触控目标
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel(
+                            NSLocalizedString("onboarding.revisit", comment: ""))
+
+                        Button(action: {
+                            viewModel.showManageGroups = true
+                        }) {
+                            Image(systemName: "folder.badge.gearshape")
+                                .foregroundColor(DesignSystem.Colors.primaryBlue)
+                        }
+                        .accessibilityLabel(
+                            NSLocalizedString("import.accessibility.manageGroups", comment: ""))
                     }
-                    .accessibilityLabel(
-                        NSLocalizedString("import.accessibility.manageGroups", comment: ""))
                 }
+            }
+            .sheet(isPresented: $showOnboarding) {
+                OnboardingView()
             }
             .photosPicker(
                 isPresented: $viewModel.showPhotosPicker,
@@ -199,7 +228,9 @@ struct ImportView: View {
                 NSLocalizedString("import.result.title", comment: ""),
                 isPresented: $viewModel.showImportResultAlert
             ) {
-                if viewModel.pendingDuplicateSources.isEmpty {
+                let duplicateCount =
+                    viewModel.pendingDuplicateSources.count + viewModel.pendingDuplicateVideos.count
+                if duplicateCount == 0 {
                     Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
                 } else {
                     Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {
@@ -209,11 +240,9 @@ struct ImportView: View {
                         String(
                             format: NSLocalizedString(
                                 "import.duplicate.import_anyway_count", comment: ""),
-                            viewModel.pendingDuplicateSources.count)
+                            duplicateCount)
                     ) {
-                        Task {
-                            await viewModel.forceImportPendingDuplicates()
-                        }
+                        viewModel.forceImportPendingDuplicates()
                     }
                 }
             } message: {
@@ -226,6 +255,12 @@ struct ImportView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) {
                 _ in
+                viewModel.loadOriginalFiles()
+            }
+            .onChange(of: viewModel.filterType) { _, _ in
+                viewModel.loadOriginalFiles()
+            }
+            .onChange(of: viewModel.sortOption) { _, _ in
                 viewModel.loadOriginalFiles()
             }
         }

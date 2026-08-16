@@ -113,6 +113,8 @@ struct EffectSelectorView: View {
     let onDetect: () -> Void
     let isDetecting: Bool
     let isDetectDisabled: Bool
+    /// 检测进度（0...1；nil 表示无进度信息）
+    var detectProgress: Double? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -145,7 +147,8 @@ struct EffectSelectorView: View {
                         .disabled(isRotateDisabled)
 
                     // AI自动识别按钮
-                    DetectButton(isDetecting: isDetecting, action: onDetect)
+                    DetectButton(
+                        isDetecting: isDetecting, progress: detectProgress, action: onDetect)
                         .disabled(isDetectDisabled)
 
                     // 缩放控制条切换按钮（有脱敏区域时显示）
@@ -204,6 +207,8 @@ struct BrushSizeMenuButton: View {
 /// AI自动识别按钮
 struct DetectButton: View {
     let isDetecting: Bool
+    /// 检测进度（0...1；nil 时检测中只显示转圈）
+    var progress: Double? = nil
     let action: () -> Void
 
     var body: some View {
@@ -224,24 +229,31 @@ struct DetectButton: View {
                     }
                 }
 
-                Text(NSLocalizedString("editor.aiDetect", comment: ""))
-                    .font(.system(size: 10))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
+                // 检测中显示百分比进度（此前全程只有不确定 spinner）
+                Text(
+                    isDetecting && progress != nil
+                        ? "\(Int(((progress ?? 0) * 100).rounded()))%"
+                        : NSLocalizedString("editor.aiDetect", comment: "")
+                )
+                .font(.system(size: 10))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
             }
             .frame(width: 46)
         }
+        .accessibilityLabel(NSLocalizedString("editor.aiDetect", comment: ""))
     }
 }
 
 /// 缩放控制条显示/隐藏切换按钮
 struct ScaleBarToggleButton: View {
     @Binding var isVisible: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                 isVisible.toggle()
             }
         } label: {
@@ -432,10 +444,18 @@ struct DetectionResultBar: View {
     let regions: [SensitiveRegion]
     /// 其他页面尚未处理的检测区域数量（图片文件恒为0）
     var otherPagesCount: Int = 0
+    /// 多选中的区域 id 集合
+    let selectedIDs: Set<UUID>
     let onApply: (SensitiveRegion) -> Void
     let onIgnore: (SensitiveRegion) -> Void
     let onApplyAll: () -> Void
     let onDismiss: () -> Void
+    /// 点 chip 选中/取消选中（图上对应框同步高亮）
+    let onSelect: (SensitiveRegion) -> Void
+    /// 应用所选
+    let onApplySelected: () -> Void
+    /// 忽略所选
+    let onIgnoreSelected: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -480,12 +500,52 @@ struct DetectionResultBar: View {
             }
             .padding(.horizontal, 8)
 
+            // 多选操作行：点 chip 选中后出现（此前只能单个应用或全部应用）
+            if !selectedIDs.isEmpty {
+                HStack(spacing: 8) {
+                    Text(
+                        String(
+                            format: NSLocalizedString("editor.detect.selectedCount", comment: ""),
+                            selectedIDs.count)
+                    )
+                    .font(.caption)
+                    .foregroundColor(.blue)
+
+                    Spacer()
+
+                    Button(
+                        String(
+                            format: NSLocalizedString("editor.detect.applySelected", comment: ""),
+                            selectedIDs.count)
+                    ) {
+                        onApplySelected()
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.green)
+                    .frame(minHeight: 44)
+
+                    Button(
+                        String(
+                            format: NSLocalizedString("editor.detect.ignoreSelected", comment: ""),
+                            selectedIDs.count)
+                    ) {
+                        onIgnoreSelected()
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.red)
+                    .frame(minHeight: 44)
+                }
+                .padding(.horizontal, 8)
+            }
+
             if !regions.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(regions) { region in
                             DetectionChip(
                                 region: region,
+                                isSelected: selectedIDs.contains(region.id),
+                                onTap: { onSelect(region) },
                                 onApply: { onApply(region) },
                                 onIgnore: { onIgnore(region) }
                             )
@@ -503,11 +563,19 @@ struct DetectionResultBar: View {
 /// 单个检测结果卡片
 struct DetectionChip: View {
     let region: SensitiveRegion
+    let isSelected: Bool
+    /// 点卡片主体选中/取消（与图上框联动）
+    let onTap: () -> Void
     let onApply: () -> Void
     let onIgnore: () -> Void
 
     var body: some View {
         HStack(spacing: 4) {
+            // 选中标记（点卡片主体切换）
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 14))
+                .foregroundColor(isSelected ? .blue : .secondary)
+
             Text(region.type.displayName)
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
@@ -518,6 +586,7 @@ struct DetectionChip: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(NSLocalizedString("editor.detect.applyOne", comment: ""))
 
             Button(action: onIgnore) {
                 Image(systemName: "xmark.circle.fill")
@@ -525,12 +594,21 @@ struct DetectionChip: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(NSLocalizedString("editor.detect.ignoreOne", comment: ""))
         }
-        .padding(.leading, 10)
+        .padding(.leading, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(.systemGray6))
+                .fill(isSelected ? Color.blue.opacity(0.12) : Color(.systemGray6))
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1.5)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityHint(NSLocalizedString("editor.detect.chipHint", comment: ""))
     }
 }
 

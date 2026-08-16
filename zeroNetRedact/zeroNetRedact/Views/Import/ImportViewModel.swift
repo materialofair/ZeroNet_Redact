@@ -31,6 +31,8 @@ class ImportViewModel: ObservableObject {
     // 原始文件列表
     @Published var originalFiles: [OriginalFile] = []
     @Published var filterType: FileType? = nil
+    /// 列表排序（此前硬编码 createdAt 降序）
+    @Published var sortOption: FileSortOption = .newest
 
     // 分组管理
     @Published var allGroups: [FileGroup] = []
@@ -83,7 +85,14 @@ class ImportViewModel: ObservableObject {
 
     func loadOriginalFiles() {
         let request: NSFetchRequest<OriginalFile> = OriginalFile.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        switch sortOption {
+        case .newest:
+            request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        case .oldest:
+            request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: true)]
+        case .largest:
+            request.sortDescriptors = [NSSortDescriptor(key: "fileSize", ascending: false)]
+        }
 
         // 构建谓词
         var predicates: [NSPredicate] = []
@@ -118,6 +127,9 @@ class ImportViewModel: ObservableObject {
 
     /// 当前是否为视频导入（用于进度遮罩展示确定进度条）
     @Published var isImportingVideo = false
+
+    /// 命中重复的视频的保源副本（"仍然导入"路径，图片/PDF 走 pendingDuplicateSources）
+    @Published private(set) var pendingDuplicateVideos: [URL] = []
 
     /// 进行中的视频导入任务（供取消）
     private var videoImportTask: Task<Void, Never>?
@@ -155,7 +167,8 @@ class ImportViewModel: ObservableObject {
             do {
                 _ = try await VideoImportService.shared.importVideo(
                     from: url,
-                    group: selectedGroup
+                    group: selectedGroup,
+                    preserveSourceOnDuplicate: true
                 ) { [weak self] fraction in
                     self?.importProgress = fraction
                 }
@@ -166,11 +179,54 @@ class ImportViewModel: ObservableObject {
                 )
             } catch is CancellationError {
                 print("⚠️ ImportViewModel: 视频导入已取消")
+            } catch VideoProcessingError.duplicate {
+                // 重复视频并入 pending 机制：保源后走"仍然导入"路径
+                // （此前直接进通用错误弹窗，且服务 defer 已清理源导致无重试可能）
+                if let preserved = preserveDuplicateVideoSource(url) {
+                    pendingDuplicateVideos.append(preserved)
+                    importResultMessage = NSLocalizedString("import.duplicate.single", comment: "")
+                    showImportResultAlert = true
+                } else {
+                    errorMessage = NSLocalizedString("import.duplicate.single", comment: "")
+                    showError = true
+                }
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true
             }
         }
+    }
+
+    /// 把重复视频的源拷贝到稳定位置（服务 defer 已清理临时源；
+    /// Photos 路径的临时文件被 preserveSourceOnDuplicate 保留，复制后即清理）
+    private func preserveDuplicateVideoSource(_ url: URL) -> URL? {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+
+        let directory = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        )[0].appendingPathComponent("PendingVideoImports", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let ext = url.pathExtension.isEmpty ? "mov" : url.pathExtension
+        let destination = directory.appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+
+        do {
+            try FileManager.default.copyItem(at: url, to: destination)
+        } catch {
+            print("❌ ImportViewModel: 保留重复视频源失败: \(error)")
+            return nil
+        }
+
+        // 清理被服务保留的临时源（复制已完成）
+        if url.deletingLastPathComponent().standardizedFileURL
+            == FileManager.default.temporaryDirectory.standardizedFileURL,
+            url.lastPathComponent.hasPrefix("video-import-")
+        {
+            try? FileManager.default.removeItem(at: url)
+        }
+        return destination
     }
 
     func importDocuments(_ urls: [URL]) async {
@@ -186,19 +242,32 @@ class ImportViewModel: ObservableObject {
     }
 
     /// 用户在结果提示中选择"仍然导入"被跳过的重复文件
-    func forceImportPendingDuplicates() async {
+    /// 包在 videoImportTask 内执行：视频部分依赖 Task 取消语义
+    /// （cancelImport() → videoImportTask?.cancel() → 服务内 shouldCancel 桥接）
+    func forceImportPendingDuplicates() {
+        videoImportTask?.cancel()
+        videoImportTask = Task {
+            await performForceImport()
+        }
+    }
+
+    private func performForceImport() async {
         let sources = pendingDuplicateSources
+        let videos = pendingDuplicateVideos
         pendingDuplicateSources = []
-        guard !sources.isEmpty else { return }
+        pendingDuplicateVideos = []
+        guard !sources.isEmpty || !videos.isEmpty else { return }
 
         isImporting = true
         importCancelled = false
         importCompletedCount = 0
-        importTotalCount = sources.count
+        importTotalCount = sources.count + videos.count
         defer {
             isImporting = false
+            isImportingVideo = false
             importCompletedCount = 0
             importTotalCount = 0
+            importProgress = 0
         }
 
         var successCount = 0
@@ -218,6 +287,36 @@ class ImportViewModel: ObservableObject {
             importCompletedCount = index + 1
         }
 
+        // 视频部分：allowDuplicate 跳过查重；取消经 Task 检查打断加密
+        if !videos.isEmpty {
+            isImportingVideo = true
+            importProgress = 0
+            for (offset, url) in videos.enumerated() {
+                if importCancelled { break }
+                do {
+                    try Task.checkCancellation()
+                    _ = try await VideoImportService.shared.importVideo(
+                        from: url,
+                        group: selectedGroup,
+                        allowDuplicate: true
+                    ) { [weak self] fraction in
+                        self?.importProgress = fraction
+                    }
+                    successCount += 1
+                } catch is CancellationError {
+                    break
+                } catch {
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+                importCompletedCount = sources.count + offset + 1
+            }
+            // 清理保留下来的 pending 源（导入完成或取消后不再需要）
+            for url in videos {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+
         loadOriginalFiles()
 
         if successCount > 0 {
@@ -229,12 +328,20 @@ class ImportViewModel: ObservableObject {
     /// 用户在结果提示中选择保留跳过状态（放弃导入重复文件）
     func dismissPendingDuplicates() {
         pendingDuplicateSources = []
+        for url in pendingDuplicateVideos {
+            try? FileManager.default.removeItem(at: url)
+        }
+        pendingDuplicateVideos = []
     }
 
     private func attachToSelectedGroup(_ file: RedactableFile) {
         let targetGroup = selectedGroup ?? defaultGroup
         if let group = targetGroup, let originalFile = file as? OriginalFile {
-            _ = groupManager.moveFile(originalFile, to: group)
+            if !groupManager.moveFile(originalFile, to: group) {
+                // 挂分组失败不再静默：文件已导入但可能不在当前分组下可见
+                errorMessage = NSLocalizedString("import.move.failed", comment: "")
+                showError = true
+            }
         }
     }
 
@@ -383,19 +490,35 @@ class ImportViewModel: ObservableObject {
 
     // MARK: - 文件移动
 
-    func moveFile(_ file: OriginalFile, to group: FileGroup) {
+    /// 移动单个文件到分组，返回是否成功（失败时弹出错误提示）
+    @discardableResult
+    func moveFile(_ file: OriginalFile, to group: FileGroup) -> Bool {
         if groupManager.moveFile(file, to: group) {
             loadOriginalFiles()
             loadGroups()
             print("✅ 文件已移动到分组: \(group.name ?? "未命名")")
+            return true
+        } else {
+            errorMessage = NSLocalizedString("import.move.failed", comment: "")
+            showError = true
+            print("❌ 移动文件到分组失败")
+            return false
         }
     }
 
-    func moveFiles(_ files: [OriginalFile], to group: FileGroup) {
+    /// 批量移动文件到分组，返回是否成功（失败时弹出错误提示）
+    @discardableResult
+    func moveFiles(_ files: [OriginalFile], to group: FileGroup) -> Bool {
         if groupManager.moveFiles(files, to: group) {
             loadOriginalFiles()
             loadGroups()
             print("✅ \(files.count)个文件已移动到分组: \(group.name ?? "未命名")")
+            return true
+        } else {
+            errorMessage = NSLocalizedString("import.move.failed", comment: "")
+            showError = true
+            print("❌ 批量移动文件到分组失败")
+            return false
         }
     }
 
