@@ -2,53 +2,24 @@
 //  ImportActionTile.swift
 //  ZeroNet Redact
 //
-//  首页导入操作卡片（空状态 + 底部操作栏共用，保证两处样式一致）
+//  首页导入操作卡片（空状态 2x2 导入引导）
 //
 
 import SwiftUI
 
 /// 等尺寸导入操作卡片：左侧彩色图标 + 右侧标题（可选副标题）
 struct ImportActionTile: View {
-    enum Style {
-        /// 空状态 2x2 大卡片
-        case regular
-        /// 底部操作栏紧凑卡片
-        case compact
-
-        var iconSize: CGFloat {
-            switch self {
-            case .regular: return 44
-            case .compact: return 34
-            }
-        }
-
-        var iconFontSize: CGFloat {
-            switch self {
-            case .regular: return 20
-            case .compact: return 16
-            }
-        }
-
-        var iconCornerRadius: CGFloat {
-            switch self {
-            case .regular: return DesignSystem.CornerRadius.medium
-            case .compact: return 10
-            }
-        }
-
-        var minHeight: CGFloat {
-            switch self {
-            case .regular: return 84
-            case .compact: return 52
-            }
-        }
+    private enum Metrics {
+        static let iconSize: CGFloat = 44
+        static let iconFontSize: CGFloat = 20
+        static let iconCornerRadius: CGFloat = DesignSystem.CornerRadius.medium
+        static let minHeight: CGFloat = 84
     }
 
     let icon: String
     let title: String
     var caption: String?
     let iconColor: Color
-    var style: Style = .regular
     let action: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -58,11 +29,11 @@ struct ImportActionTile: View {
             HStack(spacing: 10) {
                 // 图标圆角底色
                 Image(systemName: icon)
-                    .font(.system(size: style.iconFontSize, weight: .semibold))
+                    .font(.system(size: Metrics.iconFontSize, weight: .semibold))
                     .foregroundColor(iconColor)
-                    .frame(width: style.iconSize, height: style.iconSize)
+                    .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                     .background(
-                        RoundedRectangle(cornerRadius: style.iconCornerRadius, style: .continuous)
+                        RoundedRectangle(cornerRadius: Metrics.iconCornerRadius, style: .continuous)
                             .fill(iconColor.opacity(colorScheme == .dark ? 0.24 : 0.12))
                     )
 
@@ -75,7 +46,7 @@ struct ImportActionTile: View {
                         .foregroundColor(DesignSystem.Colors.textPrimary)
                         .lineLimit(2)
 
-                    if let caption, style == .regular {
+                    if let caption {
                         Text(caption)
                             .font(.caption)
                             .foregroundColor(DesignSystem.Colors.textSecondary)
@@ -84,8 +55,8 @@ struct ImportActionTile: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, style == .regular ? DesignSystem.Spacing.md : 10)
-            .frame(maxWidth: .infinity, minHeight: style.minHeight, alignment: .leading)
+            .padding(.horizontal, DesignSystem.Spacing.md)
+            .frame(maxWidth: .infinity, minHeight: Metrics.minHeight, alignment: .leading)
             .background(DesignSystem.Colors.backgroundCard)
             .cornerRadius(DesignSystem.CornerRadius.large)
             .overlay(
@@ -118,7 +89,7 @@ private struct ImportActionTileButtonStyle: ButtonStyle {
 
 // MARK: - 预览
 
-#Preview("Regular") {
+#Preview {
     VStack(spacing: 12) {
         ImportActionTile(
             icon: "photo.on.rectangle.angled",
@@ -131,7 +102,6 @@ private struct ImportActionTileButtonStyle: ButtonStyle {
             icon: "video.fill",
             title: NSLocalizedString("import.selectVideo", comment: ""),
             iconColor: DesignSystem.Colors.successGreen,
-            style: .compact,
             action: {}
         )
     }

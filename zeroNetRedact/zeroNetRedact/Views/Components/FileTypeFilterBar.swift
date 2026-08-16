@@ -39,7 +39,7 @@ struct FileTypeFilterBar: View {
     @Binding var sortOption: FileSortOption
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             ForEach([nil, FileType.image, .pdf, .video], id: \.self) { type in
                 Button {
                     filterType = type
@@ -48,17 +48,15 @@ struct FileTypeFilterBar: View {
                         type?.displayName
                             ?? NSLocalizedString("list.filter.all", comment: "")
                     )
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
+                    .font(.subheadline.weight(filterType == type ? .semibold : .regular))
+                    .padding(.horizontal, 8)
+                    // 44pt 触控目标
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                    .foregroundColor(
                         filterType == type
                             ? DesignSystem.Colors.primaryBlue
-                            : DesignSystem.Colors.backgroundSecondary,
-                        in: Capsule()
-                    )
-                    .foregroundColor(
-                        filterType == type ? .white : DesignSystem.Colors.textSecondary)
+                            : DesignSystem.Colors.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(filterType == type ? .isSelected : [])
@@ -82,7 +80,7 @@ struct FileTypeFilterBar: View {
                 Image(systemName: "arrow.up.arrow.down")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(DesignSystem.Colors.textSecondary)
-                    .frame(width: 44, height: 32)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .accessibilityLabel(NSLocalizedString("list.sort.label", comment: ""))
