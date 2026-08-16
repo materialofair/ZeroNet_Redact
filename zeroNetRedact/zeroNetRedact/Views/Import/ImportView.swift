@@ -121,7 +121,7 @@ struct ImportView: View {
                     defer { selectedVideoItem = nil }
                     do {
                         if let imported = try await newItem.loadTransferable(type: ImportedVideo.self) {
-                            await viewModel.importVideo(from: imported.url)
+                            viewModel.importVideo(from: imported.url)
                         }
                     } catch {
                         viewModel.errorMessage = error.localizedDescription
@@ -153,7 +153,7 @@ struct ImportView: View {
                     }
                     return
                 }
-                Task { await viewModel.importVideo(from: url) }
+                Task { viewModel.importVideo(from: url) }
             }
             .sheet(isPresented: $viewModel.showDocumentPicker) {
                 DocumentPickerView(viewModel: viewModel)
@@ -311,11 +311,23 @@ struct ImportView: View {
                 viewModel.deleteSelectedFiles()
             }
         } message: {
-            Text(
-                String(
-                    format: NSLocalizedString("import.delete.selected.message", comment: ""),
-                    viewModel.selectedFileIDs.count)
-            )
+            let selectedFiles = viewModel.originalFiles.filter {
+                viewModel.selectedFileIDs.contains($0.id)
+            }
+            let redactedTotal = selectedFiles.reduce(0) { $0 + $1.redactedVersionsArray.count }
+            if redactedTotal > 0 {
+                Text(
+                    String(
+                        format: NSLocalizedString(
+                            "import.delete.selected.messageWithRedacted", comment: ""),
+                        viewModel.selectedFileIDs.count, redactedTotal))
+            } else {
+                Text(
+                    String(
+                        format: NSLocalizedString("import.delete.selected.message", comment: ""),
+                        viewModel.selectedFileIDs.count)
+                )
+            }
         }
     }
 
@@ -327,7 +339,20 @@ struct ImportView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
-                if viewModel.importTotalCount > 0 {
+                if viewModel.isImportingVideo {
+                    ProgressView(value: viewModel.importProgress)
+                        .progressViewStyle(.linear)
+                        .tint(.white)
+                        .frame(width: 160)
+
+                    Text(
+                        String(
+                            format: NSLocalizedString("import.videoProgress", comment: ""),
+                            Int(viewModel.importProgress * 100))
+                    )
+                    .font(.headline)
+                    .foregroundColor(.white)
+                } else if viewModel.importTotalCount > 0 {
                     ProgressView(
                         value: Double(viewModel.importCompletedCount),
                         total: Double(viewModel.importTotalCount)

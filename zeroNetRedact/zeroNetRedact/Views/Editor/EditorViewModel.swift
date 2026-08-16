@@ -653,17 +653,13 @@ class EditorViewModel: ObservableObject {
     /// - Parameter index: 注释索引
     func removePDFAnnotation(at index: Int) {
         guard isPDFFile,
-            let pdfEditor = editor?.baseEditor as? PDFRedactionEditor,
-            let document = pdfEditor.pdfDocument,
-            let page = document.page(at: pdfEditor.currentPageIndex)
+            let pdfEditor = editor?.baseEditor as? PDFRedactionEditor
         else {
             return
         }
 
-        guard index >= 0 && index < page.annotations.count else { return }
-
-        let annotation = page.annotations[index]
-        page.removeAnnotation(annotation)
+        // 委托编辑器处理（记录快照、同步撤销跟踪）
+        pdfEditor.removeAnnotation(at: index)
 
         // 刷新当前页面渲染
         if let renderedImage = renderCurrentPDFPage() {

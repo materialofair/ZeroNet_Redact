@@ -265,6 +265,10 @@ struct PremiumView: View {
 
         if storeManager.isPremium {
             showSuccessAlert = true
+        } else if let storeError = storeManager.errorMessage, !storeError.isEmpty {
+            // 恢复过程本身出错（网络、App Store 不可达等），显示真实错误而非"未找到购买记录"
+            errorMessage = storeError
+            showError = true
         } else {
             errorMessage = NSLocalizedString("premium.restore.notFound", comment: "")
             showError = true

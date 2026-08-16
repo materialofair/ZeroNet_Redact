@@ -46,6 +46,7 @@ struct SimpleBrushEditor: View {
     // MARK: - UI State
     @State private var isScaleBarVisible: Bool = true
     @State private var showDiscardConfirm: Bool = false
+    @State private var showRotateConfirm: Bool = false
 
     // MARK: - Constants
     private let scaleStep: CGFloat = 1.1
@@ -126,6 +127,19 @@ struct SimpleBrushEditor: View {
             Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
         } message: {
             Text(NSLocalizedString("usage.limit.message", comment: ""))
+        }
+        .alert(
+            NSLocalizedString("editor.rotateConfirm.title", comment: ""),
+            isPresented: $showRotateConfirm
+        ) {
+            Button(NSLocalizedString("editor.rotateConfirm.rotateAnyway", comment: ""), role: .destructive) {
+                if let image = viewModel.currentImage {
+                    performRotate(image)
+                }
+            }
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("editor.rotateConfirm.message", comment: ""))
         }
         .sheet(
             isPresented: $viewModel.showPremiumView,
@@ -749,6 +763,15 @@ struct SimpleBrushEditor: View {
     private func rotateImage() {
         guard let currentImage = viewModel.currentImage else { return }
 
+        // 已有脱敏记录时旋转会清空全部遮盖（坐标系变化、无法撤销），先确认
+        if viewModel.canUndo {
+            showRotateConfirm = true
+            return
+        }
+        performRotate(currentImage)
+    }
+
+    private func performRotate(_ currentImage: UIImage) {
         autoApplyPendingStrokesIfNeeded()
         currentStroke.removeAll()
 

@@ -6,14 +6,28 @@ import SwiftUI
 class SettingsViewModel: ObservableObject {
     @Published var usedStorageText = NSLocalizedString("common.calculating", comment: "")
     @Published var fileCount = 0
-    @Published var autoLock = false
-    @Published var lockTimeout = 300
+    /// 自动锁定：持久化于 AppState（@AppStorage），此处保持 @Published 供 UI 绑定
+    @Published var autoLock = false {
+        didSet {
+            guard autoLock != AppState.shared.autoLockEnabled else { return }
+            AppState.shared.autoLockEnabled = autoLock
+        }
+    }
+    /// 自动锁定超时（秒），0 表示立即
+    @Published var lockTimeout = 60 {
+        didSet {
+            guard lockTimeout != AppState.shared.autoLockTimeout else { return }
+            AppState.shared.autoLockTimeout = lockTimeout
+        }
+    }
 
     // MARK: - 密码保护相关
     @Published var passwordProtectionEnabled = false
     @Published var showPasswordSetup = false
     @Published var showChangePassword = false
     @Published var showDisablePasswordAlert = false
+    @Published var showDisablePasswordError = false
+    @Published var disablePasswordErrorMessage: String?
     @Published var biometricEnabled = true
     @Published var isBiometricAvailable = false
     @Published var biometricTypeText = ""
@@ -46,6 +60,8 @@ class SettingsViewModel: ObservableObject {
         // 从 AppState 加载设置
         passwordProtectionEnabled = AppState.shared.passwordEnabled
         biometricEnabled = AppState.shared.biometricEnabled
+        autoLock = AppState.shared.autoLockEnabled
+        lockTimeout = AppState.shared.autoLockTimeout
     }
 
     private func checkBiometricAvailability() {
@@ -63,6 +79,10 @@ class SettingsViewModel: ObservableObject {
             passwordProtectionEnabled = false
         } catch {
             print("禁用密码保护失败: \(error)")
+            // 回滚 UI 状态：密码仍启用，开关恢复打开，避免"显示关闭、实际仍锁屏"的不一致
+            passwordProtectionEnabled = true
+            disablePasswordErrorMessage = error.localizedDescription
+            showDisablePasswordError = true
         }
     }
 

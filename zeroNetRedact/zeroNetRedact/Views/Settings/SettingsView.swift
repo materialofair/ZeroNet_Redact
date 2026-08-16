@@ -59,6 +59,16 @@ struct SettingsView: View {
             } message: {
                 Text(NSLocalizedString("settings.disablePassword.message", comment: ""))
             }
+            .alert(
+                NSLocalizedString("settings.disablePassword.errorTitle", comment: ""),
+                isPresented: $viewModel.showDisablePasswordError
+            ) {
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) {}
+            } message: {
+                Text(
+                    viewModel.disablePasswordErrorMessage
+                        ?? NSLocalizedString("settings.disablePassword.errorMessage", comment: ""))
+            }
             .sheet(isPresented: $viewModel.showPasswordSetup) {
                 PasswordSetupSheet()
                     .onDisappear {

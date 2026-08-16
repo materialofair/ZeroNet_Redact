@@ -113,6 +113,15 @@ class ImportViewModel: ObservableObject {
 
     // MARK: - 导入功能
 
+    /// 单个视频导入的进度（0→1）
+    @Published var importProgress: Double = 0
+
+    /// 当前是否为视频导入（用于进度遮罩展示确定进度条）
+    @Published var isImportingVideo = false
+
+    /// 进行中的视频导入任务（供取消）
+    private var videoImportTask: Task<Void, Never>?
+
     func importPhotos(_ items: [PhotosPickerItem]) async {
         var sources: [ImportSource] = []
         var loadFailedCount = 0
@@ -126,25 +135,41 @@ class ImportViewModel: ObservableObject {
         await performBatchImport(sources, loadFailedCount: loadFailedCount)
     }
 
-    func importVideo(from url: URL) async {
-        isImporting = true
-        importCompletedCount = 0
-        importTotalCount = 1
-        defer {
-            isImporting = false
+    /// 导入单个视频：分阶段进度（0→1），可取消
+    func importVideo(from url: URL) {
+        videoImportTask?.cancel()
+        videoImportTask = Task {
+            isImporting = true
+            isImportingVideo = true
+            importCancelled = false
             importCompletedCount = 0
-            importTotalCount = 0
-        }
-        do {
-            _ = try await VideoImportService.shared.importVideo(from: url, group: selectedGroup)
-            importCompletedCount = 1
-            loadOriginalFiles()
-            presentSuccessToast(
-                String(format: NSLocalizedString("import.success.toast", comment: ""), 1)
-            )
-        } catch {
-            errorMessage = error.localizedDescription
-            showError = true
+            importTotalCount = 1
+            importProgress = 0
+            defer {
+                isImporting = false
+                isImportingVideo = false
+                importCompletedCount = 0
+                importTotalCount = 0
+                importProgress = 0
+            }
+            do {
+                _ = try await VideoImportService.shared.importVideo(
+                    from: url,
+                    group: selectedGroup
+                ) { [weak self] fraction in
+                    self?.importProgress = fraction
+                }
+                importCompletedCount = 1
+                loadOriginalFiles()
+                presentSuccessToast(
+                    String(format: NSLocalizedString("import.success.toast", comment: ""), 1)
+                )
+            } catch is CancellationError {
+                print("⚠️ ImportViewModel: 视频导入已取消")
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
         }
     }
 
@@ -153,9 +178,11 @@ class ImportViewModel: ObservableObject {
         await performBatchImport(sources)
     }
 
-    /// 取消正在进行的批量导入：已完成的文件保留，剩余文件停止处理
+    /// 取消正在进行的批量导入：已完成的文件保留，剩余文件停止处理；
+    /// 视频导入则整体取消（workspace 与部分写入的文件由服务自行清理）
     func cancelImport() {
         importCancelled = true
+        videoImportTask?.cancel()
     }
 
     /// 用户在结果提示中选择"仍然导入"被跳过的重复文件

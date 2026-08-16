@@ -152,6 +152,8 @@
 "settings.disablePassword.title" = "Disable Password Protection";
 "settings.disablePassword.confirm" = "Disable";
 "settings.disablePassword.message" = "After disabling password protection, the app will no longer require a password to unlock.";
+"settings.disablePassword.errorTitle" = "Disable Password Protection Failed";
+"settings.disablePassword.errorMessage" = "The password could not be removed from the Keychain. Password protection remains enabled.";
 
 /* Settings - Premium */
 "settings.premium" = "Premium";
@@ -306,6 +308,7 @@
 "import.maxSelection" = "Select up to 10";
 "import.delete.title" = "Delete File";
 "import.delete.message" = "Are you sure you want to delete this file? This action cannot be undone.";
+"import.delete.messageWithRedacted" = "Are you sure you want to delete this file? Its %d exported redacted files will also be deleted. This action cannot be undone.";
 
 /* PDF */
 "pdf.preview" = "PDF Preview (%d pages)";
@@ -452,6 +455,7 @@
 "import.result.title" = "Import Complete";
 "import.select" = "Select";
 "import.progress" = "Importing %d of %d";
+"import.videoProgress" = "Importing video… %d%%";
 "import.success.toast" = "Imported %d files";
 "import.duplicate.import_anyway_count" = "Import Anyway (%d Files)";
 "import.cancelled.remaining" = "%d files not processed (cancelled)";
@@ -459,6 +463,7 @@
 "import.deleteSelectedCount" = "Delete (%d)";
 "import.delete.selected.title" = "Delete Selected Files";
 "import.delete.selected.message" = "Are you sure you want to delete these %d files? This action cannot be undone.";
+"import.delete.selected.messageWithRedacted" = "Are you sure you want to delete these %d files? Their %d exported redacted files will also be deleted. This action cannot be undone.";
 "import.thumbnail.loadFailed" = "Unable to load";
 "import.accessibility.manageGroups" = "Manage Groups";
 "import.accessibility.newGroup" = "New Group";
@@ -494,6 +499,9 @@
 "editor.discardConfirm.title" = "Discard current redaction?";
 "editor.discardConfirm.discard" = "Discard";
 "editor.discardConfirm.keepEditing" = "Keep Editing";
+"editor.rotateConfirm.title" = "Rotate Image";
+"editor.rotateConfirm.message" = "Rotating clears all applied redactions and cannot be undone. Continue?";
+"editor.rotateConfirm.rotateAnyway" = "Rotate Anyway";
 "editor.autoApplied" = "Unapplied strokes were applied automatically";
 "editor.detect.applyAll" = "Apply All";
 "export.success.detail" = "Saved to Redacted Files";

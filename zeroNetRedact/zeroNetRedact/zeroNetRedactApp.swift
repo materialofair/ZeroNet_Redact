@@ -93,9 +93,14 @@ struct zeroNetRedactApp: App {
     private func handleScenePhaseChange(from oldPhase: ScenePhase, to newPhase: ScenePhase) {
         switch newPhase {
         case .background:
-            // 进入后台，立即锁定（如果启用了密码保护）
             if appState.passwordEnabled {
-                appState.lockApp()
+                if appState.autoLockEnabled {
+                    // 自动锁定：记录进入后台的时间，回到前台超时后再锁
+                    appState.lastActiveTime = Date()
+                } else {
+                    // 未开启自动锁定：进入后台立即锁定
+                    appState.lockApp()
+                }
             }
             setObscured(true)
 
@@ -106,8 +111,14 @@ struct zeroNetRedactApp: App {
 
         case .active:
             // 恢复到前台，移除隐私遮罩
-            // 如果需要认证，AuthenticationView 会自动显示
             setObscured(false)
+            // 自动锁定：后台时间超过设定阈值则锁定，否则保持解锁
+            if appState.passwordEnabled && appState.autoLockEnabled {
+                let elapsed = Date().timeIntervalSince(appState.lastActiveTime)
+                if elapsed >= TimeInterval(appState.autoLockTimeout) {
+                    appState.lockApp()
+                }
+            }
 
         @unknown default:
             break

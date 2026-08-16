@@ -152,6 +152,8 @@
 "settings.disablePassword.title" = "关闭密码保护";
 "settings.disablePassword.confirm" = "确认关闭";
 "settings.disablePassword.message" = "关闭密码保护后，应用将不再需要密码解锁";
+"settings.disablePassword.errorTitle" = "关闭密码保护失败";
+"settings.disablePassword.errorMessage" = "无法从钥匙串移除密码，密码保护仍处于开启状态。";
 
 /* Settings - Premium */
 "settings.premium" = "高级版";
@@ -306,6 +308,7 @@
 "import.maxSelection" = "最多选择10张";
 "import.delete.title" = "删除文件";
 "import.delete.message" = "确定要删除这个文件吗？此操作无法撤销。";
+"import.delete.messageWithRedacted" = "确定要删除这个文件吗？其 %d 个已导出的脱敏文件也会一并删除，此操作无法撤销。";
 
 /* PDF */
 "pdf.preview" = "PDF预览 (%d页)";
@@ -452,6 +455,7 @@
 "import.result.title" = "导入完成";
 "import.select" = "选择";
 "import.progress" = "正在导入 %d / %d";
+"import.videoProgress" = "正在导入视频… %d%%";
 "import.success.toast" = "已导入 %d 个文件";
 "import.duplicate.import_anyway_count" = "仍然导入这 %d 个文件";
 "import.cancelled.remaining" = "还有 %d 个文件未处理（已取消）";
@@ -459,6 +463,7 @@
 "import.deleteSelectedCount" = "删除 (%d)";
 "import.delete.selected.title" = "删除所选文件";
 "import.delete.selected.message" = "确定要删除这 %d 个文件吗？此操作无法撤销。";
+"import.delete.selected.messageWithRedacted" = "确定要删除这 %d 个文件吗？其 %d 个已导出的脱敏文件也会一并删除，此操作无法撤销。";
 "import.thumbnail.loadFailed" = "无法加载";
 "import.accessibility.manageGroups" = "管理分组";
 "import.accessibility.newGroup" = "新建分组";
@@ -494,6 +499,9 @@
 "editor.discardConfirm.title" = "放弃当前脱敏？";
 "editor.discardConfirm.discard" = "放弃";
 "editor.discardConfirm.keepEditing" = "继续编辑";
+"editor.rotateConfirm.title" = "旋转图片";
+"editor.rotateConfirm.message" = "旋转会清除所有已应用的遮盖，且无法撤销。确定继续吗？";
+"editor.rotateConfirm.rotateAnyway" = "继续旋转";
 "editor.autoApplied" = "已自动应用未完成的涂抹";
 "editor.detect.applyAll" = "全部应用";
 "export.success.detail" = "已保存到「脱敏文件」";

@@ -43,8 +43,16 @@ class ImportManager {
             importedFiles.append(file)
         }
 
-        // 保存Core Data上下文
-        try context.save()
+        // 保存Core Data上下文；失败则回滚并清理本批已写入的磁盘文件
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            for file in importedFiles {
+                try? storage.deleteOriginal(id: file.id, type: file.fileType)
+            }
+            throw error
+        }
 
         return importedFiles
     }
@@ -54,7 +62,13 @@ class ImportManager {
     /// - Returns: 导入的文件
     func importFile(from source: ImportSource) async throws -> RedactableFile {
         let file = try await processImport(source)
-        try context.save()
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            try? storage.deleteOriginal(id: file.id, type: file.fileType)
+            throw error
+        }
         return file
     }
 
@@ -65,8 +79,14 @@ class ImportManager {
         -> ImportDuplicateResult
     {
         let result = try await processImportWithDuplicateCheck(source)
-        if case .success = result {
-            try context.save()
+        if case .success(let file) = result {
+            do {
+                try context.save()
+            } catch {
+                context.rollback()
+                try? storage.deleteOriginal(id: file.id, type: file.fileType)
+                throw error
+            }
         }
         return result
     }
@@ -74,7 +94,7 @@ class ImportManager {
     // MARK: - 内部处理逻辑
 
     /// 计算数据的SHA256哈希值
-    private func calculateHash(for data: Data) -> String {
+    static func hash(of data: Data) -> String {
         let hash = SHA256.hash(data: data)
         return hash.compactMap { String(format: "%02x", $0) }.joined()
     }
@@ -112,27 +132,37 @@ class ImportManager {
             throw ImportError.unsupportedSource
         }
 
-        // 3. 加载原始数据
-        let data = try await processor.loadData(from: source)
+        // 3-6. 加载数据、哈希、元数据、缩略图：全部后台执行（大文件读取与解码不阻塞主线程）
+        let prepared: (data: Data, contentHash: String, metadata: [String: Any], thumbnailData: Data) =
+            try await Task.detached(priority: .userInitiated) {
+                let data = try await processor.loadData(from: source)
+                let contentHash = ImportManager.hash(of: data)
+                let metadata = processor.extractMetadata(from: data)
+                let thumbnailData = try await processor.generateThumbnail(from: data)
+                return (data, contentHash, metadata, thumbnailData)
+            }.value
+        let data = prepared.data
+        let contentHash = prepared.contentHash
+        let metadata = prepared.metadata
+        let thumbnailData = prepared.thumbnailData
 
-        // 4. 计算哈希值并检查重复
-        let contentHash = calculateHash(for: data)
+        // 检查重复（主线程 Core Data）
         if let existingFile = checkDuplicate(hash: contentHash) {
             print("⚠️ ImportManager: 检测到重复文件，哈希值=\(contentHash)")
             return .duplicate(existingFile: existingFile)
         }
 
-        // 5. 提取元数据
-        let metadata = processor.extractMetadata(from: data)
+        // 7. 加密（后台，CPU 密集）
+        let encrypted: (original: Data, thumbnail: Data) =
+            try await Task.detached(priority: .userInitiated) {
+                let encryptedData = try CryptoEngine.shared.encrypt(data: data)
+                let encryptedThumbnail = try CryptoEngine.shared.encrypt(data: thumbnailData)
+                return (encryptedData, encryptedThumbnail)
+            }.value
+        let encryptedData = encrypted.original
+        let encryptedThumbnail = encrypted.thumbnail
 
-        // 6. 生成缩略图
-        let thumbnailData = try await processor.generateThumbnail(from: data)
-
-        // 7. 加密数据
-        let encryptedData = try crypto.encrypt(data: data)
-        let encryptedThumbnail = try crypto.encrypt(data: thumbnailData)
-
-        // 8. 保存到文件系统
+        // 8. 保存到文件系统（任一步失败都清理已写入的文件，避免孤儿加密文件）
         let fileId = UUID()
         print("💾 ImportManager: 保存文件 ID=\(fileId)")
 
@@ -143,25 +173,35 @@ class ImportManager {
         )
         print("✅ 原文件已保存: \(dataURL.path)")
 
-        let thumbnailURL = try storage.saveEncryptedThumbnail(
-            data: encryptedThumbnail,
-            id: fileId,
-            type: fileType
-        )
-        print("✅ 缩略图已保存: \(thumbnailURL.path)")
+        let thumbnailURL: URL
+        do {
+            thumbnailURL = try storage.saveEncryptedThumbnail(
+                data: encryptedThumbnail,
+                id: fileId,
+                type: fileType
+            )
+            print("✅ 缩略图已保存: \(thumbnailURL.path)")
+        } catch {
+            try? storage.deleteOriginal(id: fileId, type: fileType)
+            throw error
+        }
 
-        // 9. 创建Core Data实体
-        let file = try createFileEntity(
-            id: fileId,
-            type: fileType,
-            dataPath: dataURL.path,
-            thumbnailPath: thumbnailURL.path,
-            fileSize: Int64(data.count),
-            metadata: metadata,
-            contentHash: contentHash
-        )
-
-        return .success(file)
+        // 9. 创建Core Data实体（失败则清理磁盘文件）
+        do {
+            return .success(
+                try createFileEntity(
+                    id: fileId,
+                    type: fileType,
+                    dataPath: dataURL.path,
+                    thumbnailPath: thumbnailURL.path,
+                    fileSize: Int64(data.count),
+                    metadata: metadata,
+                    contentHash: contentHash
+                ))
+        } catch {
+            try? storage.deleteOriginal(id: fileId, type: fileType)
+            throw error
+        }
     }
 
     private func processImport(_ source: ImportSource) async throws -> RedactableFile {
@@ -179,20 +219,29 @@ class ImportManager {
             throw ImportError.unsupportedSource
         }
 
-        // 3. 加载原始数据
-        let data = try await processor.loadData(from: source)
+        // 3-6. 加载数据、元数据、缩略图：全部后台执行（大文件读取与解码不阻塞主线程）
+        let prepared: (data: Data, metadata: [String: Any], thumbnailData: Data) =
+            try await Task.detached(priority: .userInitiated) {
+                let data = try await processor.loadData(from: source)
+                let metadata = processor.extractMetadata(from: data)
+                let thumbnailData = try await processor.generateThumbnail(from: data)
+                return (data, metadata, thumbnailData)
+            }.value
+        let data = prepared.data
+        let metadata = prepared.metadata
+        let thumbnailData = prepared.thumbnailData
 
-        // 4. 提取元数据
-        let metadata = processor.extractMetadata(from: data)
+        // 6. 加密（后台，CPU 密集）
+        let encrypted: (original: Data, thumbnail: Data) =
+            try await Task.detached(priority: .userInitiated) {
+                let encryptedData = try CryptoEngine.shared.encrypt(data: data)
+                let encryptedThumbnail = try CryptoEngine.shared.encrypt(data: thumbnailData)
+                return (encryptedData, encryptedThumbnail)
+            }.value
+        let encryptedData = encrypted.original
+        let encryptedThumbnail = encrypted.thumbnail
 
-        // 5. 生成缩略图
-        let thumbnailData = try await processor.generateThumbnail(from: data)
-
-        // 6. 加密数据
-        let encryptedData = try crypto.encrypt(data: data)
-        let encryptedThumbnail = try crypto.encrypt(data: thumbnailData)
-
-        // 7. 保存到文件系统
+        // 7. 保存到文件系统（任一步失败都清理已写入的文件，避免孤儿加密文件）
         let fileId = UUID()
         print("💾 ImportManager: 保存文件 ID=\(fileId)")
 
@@ -203,24 +252,33 @@ class ImportManager {
         )
         print("✅ 原文件已保存: \(dataURL.path)")
 
-        let thumbnailURL = try storage.saveEncryptedThumbnail(
-            data: encryptedThumbnail,
-            id: fileId,
-            type: fileType
-        )
-        print("✅ 缩略图已保存: \(thumbnailURL.path)")
+        let thumbnailURL: URL
+        do {
+            thumbnailURL = try storage.saveEncryptedThumbnail(
+                data: encryptedThumbnail,
+                id: fileId,
+                type: fileType
+            )
+            print("✅ 缩略图已保存: \(thumbnailURL.path)")
+        } catch {
+            try? storage.deleteOriginal(id: fileId, type: fileType)
+            throw error
+        }
 
-        // 8. 创建Core Data实体
-        let file = try createFileEntity(
-            id: fileId,
-            type: fileType,
-            dataPath: dataURL.path,
-            thumbnailPath: thumbnailURL.path,
-            fileSize: Int64(data.count),
-            metadata: metadata
-        )
-
-        return file
+        // 8. 创建Core Data实体（失败则清理磁盘文件）
+        do {
+            return try createFileEntity(
+                id: fileId,
+                type: fileType,
+                dataPath: dataURL.path,
+                thumbnailPath: thumbnailURL.path,
+                fileSize: Int64(data.count),
+                metadata: metadata
+            )
+        } catch {
+            try? storage.deleteOriginal(id: fileId, type: fileType)
+            throw error
+        }
     }
 
     // MARK: - 文件类型检测
@@ -319,8 +377,16 @@ class ImportManager {
                 files[index] = file
             }
 
-            // 保存Core Data
-            try self.context.save()
+            // 保存Core Data；失败则回滚并清理本批已写入的磁盘文件
+            do {
+                try self.context.save()
+            } catch {
+                self.context.rollback()
+                for file in files.compactMap({ $0 }) {
+                    try? self.storage.deleteOriginal(id: file.id, type: file.fileType)
+                }
+                throw error
+            }
 
             return files.compactMap { $0 }
         }

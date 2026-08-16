@@ -55,6 +55,12 @@ class AppState: ObservableObject {
     /// 最后活跃时间
     @AppStorage("lastActiveTimestamp") private var lastActiveTimestamp: Double = 0
 
+    /// 是否启用自动锁定（开启后按超时锁定；关闭则退后台立即锁定）
+    @AppStorage("autoLockEnabled") var autoLockEnabled = false
+
+    /// 自动锁定超时（秒）：0 立即、60 一分钟、300 五分钟、900 十五分钟
+    @AppStorage("autoLockTimeout") var autoLockTimeout = 60
+
     /// 审核模式是否已激活（持久化）
     @AppStorage("reviewModeActivated") private var reviewModeActivated: Bool = false
 

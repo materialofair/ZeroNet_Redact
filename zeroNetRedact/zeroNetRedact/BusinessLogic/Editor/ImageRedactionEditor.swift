@@ -18,7 +18,8 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
 
     @Published var currentImage: UIImage?
     @Published var editHistory: [EditOperation] = []
-    @Published var redoStack: [EditOperation] = []
+    /// 重做栈：撤销前的编辑状态快照（UI 通过 canRedo 访问）
+    @Published var redoStack: [[EditOperation]] = []
     @Published var detectedRegions: [SensitiveRegion] = []
     @Published var isProcessing: Bool = false
 
@@ -26,6 +27,8 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
 
     private(set) var currentFile: OriginalImage?
     private var originalImage: UIImage?
+    /// 撤销栈：每次变更前的编辑状态快照（快照式撤销，覆盖新增/移动/缩放/删除）
+    private var undoStack: [[EditOperation]] = []
     private let crypto = CryptoEngine.shared
     private let storage = StorageManager.shared
     private let recognizer = TextRecognizer.shared
@@ -137,18 +140,11 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
     func applyRedaction(at region: CGRect, effect: RedactionEffect) {
         guard let image = currentImage else { return }
 
+        // 记录快照（撤销可回到变更前状态）
+        recordSnapshot()
+
         // 应用脱敏效果
-        let redactedImage: UIImage
-        switch effect {
-        case .mosaic(let pixelSize):
-            redactedImage = applyMosaic(to: image, at: region, pixelSize: pixelSize)
-        case .blur(let radius):
-            redactedImage = applyBlur(to: image, at: region, radius: radius)
-        case .rectangle(let color, let opacity):
-            redactedImage = applyRectangle(to: image, at: region, color: color, opacity: opacity)
-        case .solidBlack:
-            redactedImage = applyRectangle(to: image, at: region, color: .black, opacity: 1.0)
-        }
+        let redactedImage = applyEffect(effect, to: image, at: region)
 
         // 更新当前图片
         currentImage = redactedImage
@@ -156,22 +152,23 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         // 记录操作（用于撤销/重做）
         let operation = EditOperation(region: region, effect: effect)
         editHistory.append(operation)
-        redoStack.removeAll()
     }
 
     func undo() {
-        guard let lastOperation = editHistory.popLast() else { return }
+        guard let previous = undoStack.popLast() else { return }
 
-        redoStack.append(lastOperation)
-
-        // 重新应用所有操作（除了最后一个）
-        reapplyHistory()
+        // 当前状态入重做栈，恢复上一快照
+        redoStack.append(editHistory)
+        editHistory = previous
+        render(operations: previous)
     }
 
     func redo() {
-        guard let operation = redoStack.popLast() else { return }
+        guard let next = redoStack.popLast() else { return }
 
-        applyRedaction(at: operation.region, effect: operation.effect)
+        undoStack.append(editHistory)
+        editHistory = next
+        render(operations: next)
     }
 
     /// 替换原始图片（用于旋转等操作）
@@ -180,6 +177,7 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         currentImage = newImage
         // 清空编辑历史（因为坐标系已改变）
         editHistory.removeAll()
+        undoStack.removeAll()
         redoStack.removeAll()
     }
 
@@ -196,6 +194,38 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
     }
 
     // MARK: - Private Methods - 脱敏效果实现
+
+    /// 应用脱敏效果（无快照记录，供渲染/重放使用）
+    private func applyEffect(_ effect: RedactionEffect, to image: UIImage, at region: CGRect)
+        -> UIImage
+    {
+        switch effect {
+        case .mosaic(let pixelSize):
+            return applyMosaic(to: image, at: region, pixelSize: pixelSize)
+        case .blur(let radius):
+            return applyBlur(to: image, at: region, radius: radius)
+        case .rectangle(let color, let opacity):
+            return applyRectangle(to: image, at: region, color: color, opacity: opacity)
+        case .solidBlack:
+            return applyRectangle(to: image, at: region, color: .black, opacity: 1.0)
+        }
+    }
+
+    /// 记录当前编辑状态快照（每次变更前调用），并清空重做栈
+    private func recordSnapshot() {
+        undoStack.append(editHistory)
+        redoStack.removeAll()
+    }
+
+    /// 从原始图片重放操作序列（撤销/重做恢复用，不记录快照）
+    private func render(operations: [EditOperation]) {
+        guard let original = originalImage else { return }
+        var image = original
+        for operation in operations {
+            image = applyEffect(operation.effect, to: image, at: operation.region)
+        }
+        currentImage = image
+    }
 
     /// 应用马赛克效果
     private func applyMosaic(to image: UIImage, at region: CGRect, pixelSize: Int) -> UIImage {
@@ -290,18 +320,9 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         }
     }
 
-    /// 重新应用历史操作
+    /// 重新应用历史操作（纯渲染，不再改历史）
     private func reapplyHistory() {
-        guard let original = originalImage else { return }
-
-        currentImage = original
-
-        let operations = editHistory
-        editHistory.removeAll()
-
-        for operation in operations {
-            applyRedaction(at: operation.region, effect: operation.effect)
-        }
+        render(operations: editHistory)
     }
 
     // MARK: - Public Helper Methods
@@ -310,12 +331,13 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
     func clearAll() {
         currentImage = originalImage
         editHistory.removeAll()
+        undoStack.removeAll()
         redoStack.removeAll()
     }
 
     /// 获取当前编辑状态
     var canUndo: Bool {
-        !editHistory.isEmpty
+        !undoStack.isEmpty
     }
 
     var canRedo: Bool {
@@ -355,6 +377,8 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
             return
         }
 
+        recordSnapshot()
+
         // 获取原有操作
         let oldOperation = editHistory[index]
 
@@ -392,6 +416,8 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
             return
         }
 
+        recordSnapshot()
+
         // 移除操作
         let removed = editHistory.remove(at: index)
         print("🗑️ removeRedactionRegion: 删除区域\(index)，位置: \(removed.region)")
@@ -409,6 +435,8 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
             print("⚠️ scaleRedactionRegion: 索引越界 \(index)/\(editHistory.count)")
             return
         }
+
+        recordSnapshot()
 
         // 获取原有操作
         let oldOperation = editHistory[index]

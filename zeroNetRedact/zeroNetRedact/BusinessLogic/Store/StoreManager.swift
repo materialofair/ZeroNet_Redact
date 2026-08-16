@@ -148,6 +148,7 @@ class StoreManager: ObservableObject {
         print("🔄 StoreManager: 开始恢复购买")
         isLoading = true
         defer { isLoading = false }
+        errorMessage = nil
 
         do {
             // 同步App Store的购买记录

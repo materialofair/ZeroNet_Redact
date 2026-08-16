@@ -11,7 +11,13 @@ final class VideoImportService {
 
     private init() {}
 
-    func importVideo(from sourceURL: URL, group: FileGroup?) async throws -> OriginalVideo {
+    /// 导入视频。
+    /// - Parameter progress: 分阶段进度回调（0→1），在主线程调用
+    func importVideo(
+        from sourceURL: URL,
+        group: FileGroup?,
+        progress: @escaping @MainActor (Double) -> Void = { _ in }
+    ) async throws -> OriginalVideo {
         let workspace = try StorageManager.shared.createVideoWorkspace()
         defer { StorageManager.shared.removeVideoWorkspace(workspace) }
 
@@ -32,18 +38,33 @@ final class VideoImportService {
             [.protectionKey: FileProtectionType.complete],
             ofItemAtPath: localSource.path
         )
+        await progress(0.05)
 
         let metadata = try await Self.loadMetadata(from: localSource)
+        await progress(0.1)
+
         let thumbnailData = try VideoThumbnailGenerator.jpegData(from: localSource)
+        await progress(0.15)
+
         let encryptedStagingURL = workspace.appendingPathComponent("original.enc")
 
-        let encryptionResult = try await Task.detached(priority: .userInitiated) {
+        // 加密在后台线程执行；取消桥接：外层任务取消 → 取消 detached 加密任务
+        let encryptionTask = Task.detached(priority: .userInitiated) {
             try ChunkedFileCipher.shared.encrypt(
                 sourceURL: localSource,
                 destinationURL: encryptedStagingURL,
-                shouldCancel: { Task.isCancelled }
+                shouldCancel: { Task.isCancelled },
+                progress: { fraction in
+                    Task { @MainActor in progress(0.15 + fraction * 0.75) }
+                }
             )
-        }.value
+        }
+        let encryptionResult = try await withTaskCancellationHandler {
+            try await encryptionTask.value
+        } onCancel: {
+            encryptionTask.cancel()
+        }
+        await progress(0.9)
 
         let duplicateRequest: NSFetchRequest<OriginalFile> = OriginalFile.fetchRequest()
         duplicateRequest.predicate = NSPredicate(format: "contentHash == %@", encryptionResult.sha256)
@@ -85,6 +106,7 @@ final class VideoImportService {
             insertedVideo = video
             video.group = group ?? GroupManager.shared.getDefaultGroup()
             try context.save()
+            await progress(1.0)
             return video
         } catch {
             if let insertedVideo, insertedVideo.managedObjectContext != nil {

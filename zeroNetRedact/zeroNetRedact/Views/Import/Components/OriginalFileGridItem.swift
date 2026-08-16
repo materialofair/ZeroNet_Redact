@@ -120,7 +120,15 @@ struct OriginalFileGridItem: View {
                 viewModel.deleteFile(file)
             }
         } message: {
-            Text(NSLocalizedString("import.delete.message", comment: ""))
+            let redactedCount = file.redactedVersionsArray.count
+            if redactedCount > 0 {
+                Text(
+                    String(
+                        format: NSLocalizedString("import.delete.messageWithRedacted", comment: ""),
+                        redactedCount))
+            } else {
+                Text(NSLocalizedString("import.delete.message", comment: ""))
+            }
         }
         .task {
             await loadThumbnail()

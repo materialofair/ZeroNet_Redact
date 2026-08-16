@@ -18,6 +18,8 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
     @Published var pdfDocument: PDFDocument?
     @Published var currentPageIndex: Int = 0
     @Published var redactionAnnotations: [Int: [PDFAnnotation]] = [:]  // 页码 -> 注释列表
+    /// 重做栈：撤销前的注释状态快照
+    @Published var redoStack: [[PDFAnnotationSnapshot]] = []
     @Published var detectedRegions: [SensitiveRegion] = []
     @Published var isProcessing: Bool = false
 
@@ -26,6 +28,8 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
     private(set) var currentFile: OriginalPDF?
     private var originalDocument: PDFDocument?
     private var originalPDFData: Data?
+    /// 撤销栈：每次变更前的注释状态快照（快照式撤销，覆盖新增/移动/缩放/删除）
+    private var undoStack: [[PDFAnnotationSnapshot]] = []
     private let crypto = CryptoEngine.shared
     private let storage = StorageManager.shared
     private let recognizer = TextRecognizer.shared
@@ -35,6 +39,13 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
 
     /// 真删除失败时退回视觉遮盖导出（EditorViewModel 据此提示用户）
     private(set) var usedFallbackExport = false
+
+    /// 注释状态快照：标记注释对象 + 当前 bounds
+    struct PDFAnnotationSnapshot {
+        let pageIndex: Int
+        let annotation: PDFAnnotation
+        let bounds: CGRect
+    }
 
     init(file: OriginalPDF) {
         self.currentFile = file
@@ -135,6 +146,9 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         // 标记为本 App 创建的遮盖注释
         annotation.userName = Self.redactionAnnotationMarker
 
+        // 记录快照（撤销可回到变更前状态）
+        recordSnapshot()
+
         // 添加到页面
         page.addAnnotation(annotation)
 
@@ -148,21 +162,93 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
     }
 
     func undo() {
-        guard let document = pdfDocument,
-            let page = document.page(at: currentPageIndex),
-            var annotations = redactionAnnotations[currentPageIndex],
-            let lastAnnotation = annotations.popLast()
-        else {
-            return
-        }
+        guard let snapshot = undoStack.popLast() else { return }
 
-        page.removeAnnotation(lastAnnotation)
-        redactionAnnotations[currentPageIndex] = annotations
+        // 当前状态入重做栈，恢复上一快照
+        redoStack.append(captureSnapshot())
+        restore(snapshot)
     }
 
     func redo() {
-        // PDF编辑器的重做逻辑（可选实现）
-        // 由于PDFKit不支持简单的重做，这里暂时留空
+        guard let snapshot = redoStack.popLast() else { return }
+
+        undoStack.append(captureSnapshot())
+        restore(snapshot)
+    }
+
+    /// 记录当前注释状态快照（每次变更前调用），并清空重做栈
+    private func recordSnapshot() {
+        undoStack.append(captureSnapshot())
+        redoStack.removeAll()
+    }
+
+    /// 捕获全部页面上标记注释的当前状态
+    private func captureSnapshot() -> [PDFAnnotationSnapshot] {
+        guard let document = pdfDocument else { return [] }
+        var snapshot: [PDFAnnotationSnapshot] = []
+        for pageIndex in 0..<document.pageCount {
+            guard let page = document.page(at: pageIndex) else { continue }
+            for annotation in page.annotations
+            where annotation.userName == Self.redactionAnnotationMarker {
+                snapshot.append(
+                    PDFAnnotationSnapshot(
+                        pageIndex: pageIndex, annotation: annotation, bounds: annotation.bounds))
+            }
+        }
+        return snapshot
+    }
+
+    /// 恢复快照：移除当前标记注释，按快照重建 bounds 与页面归属
+    private func restore(_ snapshot: [PDFAnnotationSnapshot]) {
+        guard let document = pdfDocument else { return }
+
+        for pageIndex in 0..<document.pageCount {
+            guard let page = document.page(at: pageIndex) else { continue }
+            for annotation in page.annotations
+            where annotation.userName == Self.redactionAnnotationMarker {
+                page.removeAnnotation(annotation)
+            }
+        }
+
+        for entry in snapshot {
+            guard let page = document.page(at: entry.pageIndex) else { continue }
+            entry.annotation.bounds = entry.bounds
+            page.addAnnotation(entry.annotation)
+        }
+
+        syncTrackingFromPages()
+    }
+
+    /// 从页面注释重建跟踪数组（保证与页面实际状态一致）
+    private func syncTrackingFromPages() {
+        guard let document = pdfDocument else { return }
+        var tracking: [Int: [PDFAnnotation]] = [:]
+        for pageIndex in 0..<document.pageCount {
+            guard let page = document.page(at: pageIndex) else { continue }
+            let marked = page.annotations.filter {
+                $0.userName == Self.redactionAnnotationMarker
+            }
+            if !marked.isEmpty {
+                tracking[pageIndex] = marked
+            }
+        }
+        redactionAnnotations = tracking
+    }
+
+    /// 删除当前页指定索引的标记注释（记录快照，可撤销）
+    func removeAnnotation(at index: Int) {
+        guard let document = pdfDocument,
+            let page = document.page(at: currentPageIndex)
+        else {
+            return
+        }
+        guard index >= 0 && index < page.annotations.count else { return }
+        let annotation = page.annotations[index]
+        guard annotation.userName == Self.redactionAnnotationMarker else { return }
+
+        recordSnapshot()
+        page.removeAnnotation(annotation)
+        syncTrackingFromPages()
     }
 
     func exportRedactedFile() async throws -> Data {
@@ -300,10 +386,12 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
 
         pdfDocument = original.copy() as? PDFDocument
         redactionAnnotations.removeAll()
+        undoStack.removeAll()
+        redoStack.removeAll()
         currentPageIndex = 0
     }
 
-    /// 清除当前页的所有脱敏
+    /// 清除当前页的所有脱敏（批量破坏性操作，重置撤销历史）
     func clearCurrentPage() {
         guard let document = pdfDocument,
             let page = document.page(at: currentPageIndex),
@@ -317,6 +405,8 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         }
 
         redactionAnnotations[currentPageIndex] = nil
+        undoStack.removeAll()
+        redoStack.removeAll()
     }
 
     /// 获取当前页的脱敏数量
@@ -331,12 +421,12 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
 
     /// 检查是否可以撤销
     var canUndo: Bool {
-        currentPageRedactionCount > 0
+        !undoStack.isEmpty
     }
 
     /// 检查是否可以重做
     var canRedo: Bool {
-        false  // PDF编辑器暂不支持重做
+        !redoStack.isEmpty
     }
 
     // MARK: - Annotation Scaling
@@ -357,6 +447,8 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
             print("⚠️ scaleAnnotation: 索引越界 \(index)/\(page.annotations.count)")
             return
         }
+
+        recordSnapshot()
 
         let annotation = page.annotations[index]
         let oldBounds = annotation.bounds
@@ -435,6 +527,8 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
             print("⚠️ moveAnnotation: 索引越界 \(index)/\(page.annotations.count)")
             return
         }
+
+        recordSnapshot()
 
         let annotation = page.annotations[index]
 
