@@ -22,7 +22,7 @@
 ### 1.2 本项目现状(与新功能相关)
 
 - **接入点极干净**:拼好的长图编码为 `Data` → `ImportManager.shared.importFile(from: .imageData(data))` 即自动走 SHA256 去重、AES 加密落盘、生成 `OriginalImage` 记录,用户点击即可用现有 `SimpleBrushEditor` 脱敏。编辑器接口无需改动。
-- **入口位置**:`Views/Import/Components/ImportButtonBar.swift` 目前两个按钮(选图片/选 PDF),加第三个"拼长图"最自然;`ImportEmptyStateView` 同步加引导。
+- **入口位置**:`Views/Import/Components/ImportButtonBar.swift` 目前两个按钮(选图片/选 PDF),加第三个"拼长图"最自然;`ImportEmptyStateView` 同步加引导。(注:本计划已执行;`ImportButtonBar.swift` 已在后续重构中被删除,导入入口改为 `ImportView` 的悬浮「+」菜单,与空状态卡片共用 `ImportAction` 数据源。)
 - **付费体系**:StoreKit 2,单一非消耗型买断 `com.zeronet.redact.premium`($3.99,"无限制脱敏");免费用户每日 3 次图片导出 + 3 次文档导出(`UsageTracker`);判定统一走 `AppState.hasUnlimitedAccess`(含审核模式);配额触顶弹 `PremiumView`。
 - **最大技术风险 —— 现有编辑器对超大图会 OOM**(以 1170×30000 长图为例,单份 RGBA 位图 ≈ 140MB):
   1. `ImageRedactionEditor` 同时持有 `originalImage` + `currentImage`,`EditorViewModel` 再持一份(3 份整图);
@@ -145,7 +145,7 @@ PhotosPicker 多选(2–20 张)
 
 | 文件 | 改动 |
 |------|------|
-| `ImportButtonBar.swift` / `ImportView.swift` / `ImportEmptyStateView.swift` | 加"拼长图"入口按钮 + sheet 接线 |
+| `ImportButtonBar.swift` / `ImportView.swift` / `ImportEmptyStateView.swift` | 加"拼长图"入口按钮 + sheet 接线(已执行;`ImportButtonBar.swift` 已被 `ImportView` 悬浮「+」菜单取代) |
 | `TextRecognizer.swift`(`ImageOCRRecognizer`) | 新增大图分块 OCR 路径(高 ≤8192px 走原路径,行为不变) |
 | `FileImportProcessor.swift` | 缩略图/元数据改 ImageIO 降采样(行为等价) |
 | `Localizable.strings` ×2 | 新增 `stitch.*` 键 |

@@ -150,3 +150,47 @@ IN-APP PURCHASE: One non-consumable item, com.zeronet.redact.premium (unlocks un
 - [ ] 内购项 `com.zeronet.redact.premium` 已在 App Store Connect 配置并随版本提交
 - [ ] 审核备注中的访问码入口有效期至 **2026-08-01**（`AppState.reviewModeExpiryDate`），下次提审前如已过期需先延期
 - [ ] 提审前真机回归：导入含手机号的截图 → AI 检测 → 高亮位置准确 → 应用打码 → 导出；多页 PDF 同流程再走一遍
+
+---
+
+## 7. 版本更新日志（What's New in This Version，1.3）
+
+**中文**
+
+```
+【新功能】
+• PDF 脱敏全面升级：打码区域下方的文字会被真正移除，无法被选中、复制或提取；页面其余文字保持清晰、可选中
+• 导入页与脱敏文件页新增类型筛选（全部/图片/PDF/视频）与排序（最新/最旧/最大）
+
+【体验改进】
+• 大图打码性能大幅提升：连续涂抹与批量应用不再卡顿，撤销/重做更快
+• 图片与 PDF 导出显示进度、支持取消，完成后可直接分享或保存到系统相册
+• 新增首次使用引导，快速了解脱敏流程
+
+【问题修复】
+• 拼接长图：超出张数上限时明确提示被移除的图片，修正接缝置信度判定
+• 修复不同 PDF 页面相同位置的检测结果被误删的问题
+• 视频导出切换应用后仍会继续完成，导出取消后可重试
+• 修复移动/重命名失败无提示、重复导入视频无法"仍然导入"等问题
+• 改进 VoiceOver 无障碍、大字号显示与减少动态效果支持
+```
+
+**English**
+
+```
+NEW
+• True PDF redaction: text under redacted areas is physically removed — it can't be selected, copied, or extracted
+• Filter by type (All / Photos / PDF / Videos) and sort (Newest / Oldest / Largest) on both the Import and Redacted Files tabs
+
+IMPROVEMENTS
+• Much faster redaction on large photos: continuous drawing and batch apply no longer lag, and undo/redo is quicker
+• Photo and PDF exports now show progress, can be canceled, and can be shared or saved to Photos when done
+• New first-run onboarding explains the redaction flow
+
+FIXES
+• Long-image stitching: images dropped beyond the limit are now called out, and seam-confidence handling was fixed
+• Fixed detection results on different PDF pages at the same position being incorrectly dropped
+• Video exports now keep running when you switch apps, and can be retried after canceling
+• Fixed silent failures when moving/renaming files, and added the missing "Import Anyway" option for duplicate videos
+• Better VoiceOver support, Dynamic Type, and Reduce Motion
+```

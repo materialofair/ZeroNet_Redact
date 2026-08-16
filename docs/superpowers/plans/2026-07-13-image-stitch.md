@@ -2210,6 +2210,8 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ### Task 10: 入口接线(ImportView / ButtonBar / EmptyState)+ 手动验收
 
+> 注:已执行。`ImportButtonBar.swift` 已在后续重构中被删除,导入入口改为 `ImportView` 的悬浮「+」菜单,与空状态卡片共用 `ImportAction` 数据源。
+
 **Files:**
 - Modify: `zeroNetRedact/zeroNetRedact/Views/Import/Components/ImportButtonBar.swift`
 - Modify: `zeroNetRedact/zeroNetRedact/Views/Import/Components/ImportEmptyStateView.swift`
