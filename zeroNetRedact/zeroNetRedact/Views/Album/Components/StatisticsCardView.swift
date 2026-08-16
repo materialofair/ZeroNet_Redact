@@ -1,13 +1,13 @@
 import SwiftUI
 
 /// 相册统计卡片视图
-/// 显示脱敏文件的总数和类型分布统计
+/// 显示脱敏文件的总数和类型分布统计（单行紧凑版）
 struct StatisticsCardView: View {
     let files: [RedactedFile]
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        HStack(spacing: DesignSystem.Spacing.lg) {
+        HStack(spacing: DesignSystem.Spacing.md) {
             // 盾牌图标
             shieldIcon
 
@@ -16,10 +16,11 @@ struct StatisticsCardView: View {
 
             Spacer()
 
-            // 类型分布
+            // 类型分布（横向紧凑胶囊，不再竖向占三行）
             typeDistribution
         }
-        .padding(DesignSystem.Spacing.lg)
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.vertical, 12)
         .background(cardBackground)
     }
 
@@ -29,67 +30,63 @@ struct StatisticsCardView: View {
         ZStack {
             Circle()
                 .fill(DesignSystem.Gradients.success)
-                .frame(width: 44, height: 44)
+                .frame(width: 32, height: 32)
 
             Image(systemName: "checkmark.shield.fill")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white)
         }
-        .shadow(color: DesignSystem.Colors.successGreen.opacity(0.3), radius: 6, x: 0, y: 3)
     }
 
     private var statisticsInfo: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(NSLocalizedString("album.secured", comment: ""))
-                .font(.subheadline)
-                .foregroundColor(DesignSystem.Colors.textSecondary)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(DesignSystem.Colors.textPrimary)
 
             HStack(spacing: 4) {
                 Text("\(files.count)")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(DesignSystem.Colors.textPrimary)
                 Text(NSLocalizedString("album.files", comment: ""))
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
             }
         }
     }
 
     private var typeDistribution: some View {
-        VStack(alignment: .trailing, spacing: 4) {
+        HStack(spacing: 6) {
             let imageCount = files.filter { $0.fileType == .image }.count
             let pdfCount = files.filter { $0.fileType == .pdf }.count
             let videoCount = files.filter { $0.fileType == .video }.count
 
             if imageCount > 0 {
-                typeCountRow(
-                    icon: "photo.fill", count: imageCount, color: DesignSystem.Colors.primaryBlue)
+                typeChip(icon: "photo.fill", count: imageCount, color: DesignSystem.Colors.primaryBlue)
             }
 
             if pdfCount > 0 {
-                typeCountRow(
-                    icon: "doc.fill", count: pdfCount, color: DesignSystem.Colors.warningOrange)
+                typeChip(icon: "doc.fill", count: pdfCount, color: DesignSystem.Colors.warningOrange)
             }
 
             if videoCount > 0 {
-                typeCountRow(
-                    icon: "video.fill", count: videoCount,
-                    color: DesignSystem.Colors.successGreen)
+                typeChip(icon: "video.fill", count: videoCount, color: DesignSystem.Colors.successGreen)
             }
         }
     }
 
-    private func typeCountRow(icon: String, count: Int, color: Color) -> some View {
-        HStack(spacing: 4) {
+    private func typeChip(icon: String, count: Int, color: Color) -> some View {
+        HStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(.system(size: 10, weight: .medium))
                 .foregroundColor(color)
             Text("\(count)")
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.caption2.weight(.medium))
                 .foregroundColor(DesignSystem.Colors.textSecondary)
         }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(DesignSystem.Colors.backgroundSecondary, in: Capsule())
     }
 
     private var cardBackground: some View {
@@ -97,11 +94,7 @@ struct StatisticsCardView: View {
             .fill(DesignSystem.Colors.backgroundCard)
             .shadow(
                 color: DesignSystem.Shadow.cardShadow(for: colorScheme),
-                radius: 12, x: 0, y: 4
-            )
-            .shadow(
-                color: DesignSystem.Shadow.cardShadowSecondary(for: colorScheme),
-                radius: 1, x: 0, y: 1
+                radius: 6, x: 0, y: 2
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)

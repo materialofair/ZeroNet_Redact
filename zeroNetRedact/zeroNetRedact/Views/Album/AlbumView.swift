@@ -218,11 +218,11 @@ struct AlbumView: View {
         ScrollView {
             LazyVGrid(
                 columns: [
-                    GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 10),
+                    GridItem(.flexible(), spacing: 10),
+                    GridItem(.flexible(), spacing: 10),
                 ],
-                spacing: 16
+                spacing: 14
             ) {
                 // 用 objectID 做标识：对象删除后 \.id 键路径取非可选 UUID 会崩溃，objectID 永远有效
                 ForEach(viewModel.redactedFiles, id: \.objectID) { file in
@@ -419,110 +419,94 @@ struct RedactedFileGridItem: View {
     }
 
     private var mainContent: some View {
-        VStack(spacing: 8) {
-            // 缩略图卡片
-            ZStack {
-                // 卡片背景
-                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                    .fill(DesignSystem.Colors.backgroundCard)
-                    .shadow(
-                        color: DesignSystem.Shadow.cardShadow(for: colorScheme), radius: 8, x: 0,
-                        y: 3
-                    )
-                    .shadow(
-                        color: DesignSystem.Shadow.cardShadowSecondary(for: colorScheme), radius: 1,
-                        x: 0, y: 1
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                            .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
-                    )
+        // 单层紧凑卡片：缩略图满铺 + 底部渐变日期条 + 右上角徽章。
+        // 此前为内嵌灰板 + 双层阴影 + 卡片下方整行文字，整体偏大偏重。
+        ZStack {
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                .fill(DesignSystem.Colors.backgroundCard)
 
-                // 内容区域
-                GeometryReader { geometry in
-                    let innerSize = geometry.size.width - 12  // 6pt padding on each side
-
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 2)
-                        .fill(Color.gray.opacity(0.08))
-                        .frame(width: innerSize, height: innerSize)
-                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-                        .overlay {
-                            Group {
-                                if isLoading {
-                                    ProgressView()
-                                        .tint(DesignSystem.Colors.successGreen)
-                                } else if let thumbnail = thumbnailImage {
-                                    Image(uiImage: thumbnail)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: innerSize, height: innerSize)
-                                        .clipShape(
-                                            RoundedRectangle(
-                                                cornerRadius: DesignSystem.CornerRadius.medium - 2))
-                                        // clipShape只裁剪显示不裁剪命中区域:长图缩略图的
-                                        // 溢出部分会偷走相邻卡片的点击,必须显式约束命中范围
-                                        .contentShape(
-                                            RoundedRectangle(
-                                                cornerRadius: DesignSystem.CornerRadius.medium - 2))
-                                } else if thumbnailLoadFailed {
-                                    // 失败态标识（与导入页 grid 一致），不再永远显示普通占位图
-                                    VStack(spacing: 6) {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .font(.system(size: 24, weight: .medium))
-                                            .foregroundColor(DesignSystem.Colors.dangerRed)
-                                        Text(
-                                            NSLocalizedString(
-                                                "import.thumbnail.loadFailed", comment: ""))
-                                        .font(.caption2)
-                                        .foregroundColor(DesignSystem.Colors.textTertiary)
-                                    }
-                                } else {
-                                    VStack(spacing: 6) {
-                                        Image(systemName: file.fileType.icon)
-                                            .font(.system(size: 28, weight: .medium))
-                                            .foregroundStyle(DesignSystem.Gradients.success)
-                                        Text(NSLocalizedString("album.redacted", comment: ""))
-                                            .font(.caption2)
-                                            .foregroundColor(DesignSystem.Colors.successGreen)
-                                    }
-                                }
-                            }
-                        }
-                        // 脱敏徽章
-                        .overlay(alignment: .topTrailing) {
-                            RedactedBadge(size: 26)
-                                .padding(4)
-                        }
+            // 内容区域（满铺）
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .tint(DesignSystem.Colors.successGreen)
+                } else if let thumbnail = thumbnailImage {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipShape(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
+                        // clipShape只裁剪显示不裁剪命中区域:长图缩略图的
+                        // 溢出部分会偷走相邻卡片的点击,必须显式约束命中范围
+                        .contentShape(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
+                } else if thumbnailLoadFailed {
+                    VStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(DesignSystem.Colors.dangerRed)
+                        Text(
+                            NSLocalizedString("import.thumbnail.loadFailed", comment: ""))
+                        .font(.caption2)
+                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                    }
+                } else {
+                    Image(systemName: file.fileType.icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(DesignSystem.Gradients.success)
                 }
-                .aspectRatio(1, contentMode: .fit)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
+
+            // 底部渐变日期条（信息叠在图上，不再单独占一行）
+            VStack {
+                Spacer()
+                LinearGradient(
+                    gradient: Gradient(colors: [.clear, .black.opacity(0.42)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 32)
+                .overlay(alignment: .bottomLeading) {
+                    Text(file.exportedAt, style: .date)
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, 6)
+                }
+            }
+            .allowsHitTesting(false)
+
+            // 脱敏徽章（缩小并贴近角落）
+            RedactedBadge(size: 20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .padding(6)
-            }
-            .overlay(alignment: .topLeading) {
-                if isSelectionMode {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : .white)
-                        .background(
-                            Circle()
-                                .fill(isSelected ? Color.white : Color.black.opacity(0.35))
-                                .padding(-3)
-                        )
-                        .padding(8)
-                }
-            }
 
-            // 文件信息
-            VStack(spacing: 2) {
-                Text(NSLocalizedString("album.redacted", comment: ""))
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignSystem.Colors.successGreen)
-
-                Text(file.exportedAt, style: .date)
-                    .font(.caption2)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
+            // 多选标记
+            if isSelectionMode {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : .white)
+                    .background(
+                        Circle()
+                            .fill(isSelected ? Color.white : Color.black.opacity(0.35))
+                            .padding(-3)
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(8)
             }
         }
+        .aspectRatio(1, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium))
+        // 阴影与描边加在裁剪之后，避免阴影被裁掉
+        .shadow(color: DesignSystem.Shadow.cardShadow(for: colorScheme), radius: 6, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
+        )
         .contextMenu {
             Button(role: .destructive) {
                 showDeleteAlert = true

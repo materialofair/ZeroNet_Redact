@@ -132,103 +132,90 @@ struct SettingsView: View {
     // MARK: - 品牌卡片
 
     private var brandCard: some View {
-        VStack(spacing: DesignSystem.Spacing.lg) {
-            // App 图标和名称
-            HStack(spacing: DesignSystem.Spacing.md) {
-                // App 图标 - 使用真实的 App Icon (点击7次触发审核模式)
-                Image("AppIconImage")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 60, height: 60)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .shadow(
-                        color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4
-                    )
-                    .onTapGesture {
-                        iconTapCount += 1
-                        if iconTapCount >= 7 {
+        // 单行紧凑版：图标 + 名称/版本居左，存储统计右对齐，
+        // 去掉分隔线和整行存储区（此前约 150pt 高）
+        HStack(spacing: DesignSystem.Spacing.md) {
+            // App 图标 - 使用真实的 App Icon (点击7次触发审核模式)
+            Image("AppIconImage")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .onTapGesture {
+                    iconTapCount += 1
+                    if iconTapCount >= 7 {
+                        iconTapCount = 0
+                        showReviewCodeInput = true
+                    }
+                    // 2秒后重置计数
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        if iconTapCount < 7 {
                             iconTapCount = 0
-                            showReviewCodeInput = true
-                        }
-                        // 2秒后重置计数
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            if iconTapCount < 7 {
-                                iconTapCount = 0
-                            }
                         }
                     }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Text("ZeroNet Redact")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(DesignSystem.Colors.textPrimary)
-
-                        // 已购买或审核模式徽章
-                        if appState.isPremium {
-                            Text("Pro")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(DesignSystem.Gradients.primary)
-                                .cornerRadius(4)
-                        } else if appState.isReviewModeActive {
-                            Text(NSLocalizedString("settings.badge.active", comment: ""))
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(DesignSystem.Colors.warningOrange)
-                                .cornerRadius(4)
-                        }
-                    }
-
-                    Text("v\(Bundle.main.appVersion)")
-                        .font(.subheadline)
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
 
-                Spacer()
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("ZeroNet Redact")
+                        .font(.headline)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                    // 已购买或审核模式徽章
+                    if appState.isPremium {
+                        Text("Pro")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(DesignSystem.Gradients.primary)
+                            .cornerRadius(4)
+                    } else if appState.isReviewModeActive {
+                        Text(NSLocalizedString("settings.badge.active", comment: ""))
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(DesignSystem.Colors.warningOrange)
+                            .cornerRadius(4)
+                    }
+                }
+
+                Text("v\(Bundle.main.appVersion)")
+                    .font(.caption2)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
             }
 
-            Divider()
-                .padding(.vertical, DesignSystem.Spacing.xs)
+            Spacer()
 
-            // 存储统计
-            VStack(spacing: DesignSystem.Spacing.sm) {
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: "doc.fill")
-                            .font(.caption)
-                            .foregroundColor(DesignSystem.Colors.primaryBlue)
-                        Text(
-                            String(
-                                format: NSLocalizedString("settings.fileCount", comment: ""),
-                                viewModel.fileCount)
-                        )
-                        .font(.subheadline)
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
-                    }
+            // 存储统计（右对齐紧凑两行）
+            VStack(alignment: .trailing, spacing: 3) {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.fill")
+                        .font(.caption2)
+                        .foregroundColor(DesignSystem.Colors.primaryBlue)
+                    Text(
+                        String(
+                            format: NSLocalizedString("settings.fileCount", comment: ""),
+                            viewModel.fileCount)
+                    )
+                    .font(.caption2)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                }
 
-                    Spacer()
-
-                    HStack(spacing: 6) {
-                        Image(systemName: "internaldrive.fill")
-                            .font(.caption)
-                            .foregroundColor(DesignSystem.Colors.primaryPurple)
-                        Text(viewModel.usedStorageText)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(DesignSystem.Colors.textPrimary)
-                    }
+                HStack(spacing: 4) {
+                    Image(systemName: "internaldrive.fill")
+                        .font(.caption2)
+                        .foregroundColor(DesignSystem.Colors.primaryPurple)
+                    Text(viewModel.usedStorageText)
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
                 }
             }
         }
-        .cardStyle()
+        .modifier(CardStyle(padding: 12))
         .padding(.top, DesignSystem.Spacing.lg)
     }
 
