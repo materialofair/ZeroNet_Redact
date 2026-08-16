@@ -40,12 +40,7 @@ struct ImportView: View {
                     Group {
                         if viewModel.originalFiles.isEmpty {
                             // 空状态 - 显示导入引导
-                            ImportEmptyStateView(
-                                onPhotosImport: { viewModel.showPhotosPicker = true },
-                                onVideoImport: { showVideoSourceDialog = true },
-                                onDocumentImport: { viewModel.showDocumentPicker = true },
-                                onStitch: { viewModel.showStitchSheet = true }
-                            )
+                            ImportEmptyStateView(onAction: triggerImport)
                         } else {
                             // 文件网格
                             originalFilesGridView
@@ -53,18 +48,19 @@ struct ImportView: View {
                     }
                 }
 
-                // 底部固定操作栏
-                if !viewModel.originalFiles.isEmpty {
-                    if viewModel.isSelectionMode {
-                        selectionActionBar
-                    } else {
-                        ImportButtonBar(
-                            onPhotosImport: { viewModel.showPhotosPicker = true },
-                            onVideoImport: { showVideoSourceDialog = true },
-                            onDocumentImport: { viewModel.showDocumentPicker = true },
-                            onStitch: { viewModel.showStitchSheet = true }
-                        )
+                // 底部操作栏（仅多选模式）
+                if !viewModel.originalFiles.isEmpty && viewModel.isSelectionMode {
+                    selectionActionBar
+                }
+
+                // 悬浮导入按钮：非多选模式且有文件时显示
+                if !viewModel.originalFiles.isEmpty && !viewModel.isSelectionMode {
+                    HStack {
+                        Spacer()
+                        importFabMenu
                     }
+                    .padding(.trailing, DesignSystem.Spacing.xl)
+                    .padding(.bottom, 24)
                 }
 
                 // 成功 Toast
@@ -97,29 +93,33 @@ struct ImportView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 4) {
+                    Menu {
                         // 回看新手引导
                         Button {
                             showOnboarding = true
                         } label: {
-                            Image(systemName: "questionmark.circle")
-                                .foregroundColor(DesignSystem.Colors.primaryBlue)
-                                // 44pt 触控目标
-                                .frame(minWidth: 44, minHeight: 44)
-                                .contentShape(Rectangle())
+                            Label(
+                                NSLocalizedString("onboarding.revisit", comment: ""),
+                                systemImage: "questionmark.circle"
+                            )
                         }
-                        .accessibilityLabel(
-                            NSLocalizedString("onboarding.revisit", comment: ""))
 
-                        Button(action: {
+                        Button {
                             viewModel.showManageGroups = true
-                        }) {
-                            Image(systemName: "folder.badge.gearshape")
-                                .foregroundColor(DesignSystem.Colors.primaryBlue)
+                        } label: {
+                            Label(
+                                NSLocalizedString("import.accessibility.manageGroups", comment: ""),
+                                systemImage: "folder.badge.gearshape"
+                            )
                         }
-                        .accessibilityLabel(
-                            NSLocalizedString("import.accessibility.manageGroups", comment: ""))
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(DesignSystem.Colors.primaryBlue)
+                            // 44pt 触控目标
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
+                    .accessibilityLabel(NSLocalizedString("common.more", comment: ""))
                 }
             }
             .sheet(isPresented: $showOnboarding) {
@@ -301,8 +301,44 @@ struct ImportView: View {
             }
             .padding(.horizontal, DesignSystem.Spacing.lg)
             .padding(.top, DesignSystem.Spacing.md)
-            .padding(.bottom, Layout.bottomPadding)  // 为底部按钮栏留出空间
+            .padding(.bottom, Layout.bottomPadding)  // 为悬浮导入按钮留出空间
         }
+    }
+
+    // MARK: - 悬浮导入按钮
+
+    /// 触发导入动作（空状态卡片与悬浮「+」菜单共用，动作定义见 ImportAction）
+    private func triggerImport(_ action: ImportAction) {
+        switch action {
+        case .photos: viewModel.showPhotosPicker = true
+        case .video: showVideoSourceDialog = true
+        case .pdf: viewModel.showDocumentPicker = true
+        case .stitch: viewModel.showStitchSheet = true
+        }
+    }
+
+    /// 单一「+」悬浮按钮，点开为原生菜单；取代此前常驻底部的 2x2 导入卡片
+    private var importFabMenu: some View {
+        Menu {
+            ForEach(ImportAction.availableActions) { action in
+                Button {
+                    triggerImport(action)
+                } label: {
+                    Label(action.displayName, systemImage: action.icon)
+                }
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(DesignSystem.Gradients.primary)
+                .clipShape(Circle())
+                .shadow(
+                    color: DesignSystem.Colors.primaryBlue.opacity(0.35), radius: 12, x: 0, y: 6
+                )
+        }
+        .accessibilityLabel(NSLocalizedString("import.addFile", comment: ""))
     }
 
     // MARK: - 多选删除操作栏
@@ -435,7 +471,8 @@ struct ImportView: View {
 private enum Layout {
     static let gridColumns = 3
     static let gridSpacing: CGFloat = 12
-    static let bottomPadding: CGFloat = 160
+    /// 网格底部留白：为悬浮导入按钮腾出空间（56pt 按钮 + 24pt 边距 + 16pt 呼吸空间）
+    static let bottomPadding: CGFloat = 96
     static let maxPhotoSelection = 10
 }
 

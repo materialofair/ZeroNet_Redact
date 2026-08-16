@@ -8,10 +8,7 @@
 import SwiftUI
 
 struct ImportEmptyStateView: View {
-    let onPhotosImport: () -> Void
-    let onVideoImport: () -> Void
-    let onDocumentImport: () -> Void
-    let onStitch: () -> Void
+    let onAction: (ImportAction) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -80,7 +77,7 @@ struct ImportEmptyStateView: View {
         }
     }
 
-    /// 导入按钮组视图 - 2x2 等尺寸网格
+    /// 导入按钮组视图 - 2x2 等尺寸网格（动作定义见 ImportAction）
     private var importButtonsView: some View {
         LazyVGrid(
             columns: [
@@ -89,38 +86,13 @@ struct ImportEmptyStateView: View {
             ],
             spacing: DesignSystem.Spacing.md
         ) {
-            // 从相册导入图片 —— 单次选择上限提示只跟图片按钮关联（该上限不适用于 PDF）
-            ImportActionTile(
-                icon: "photo.on.rectangle.angled",
-                title: NSLocalizedString("import.selectPhotos", comment: ""),
-                caption: NSLocalizedString("import.maxSelection", comment: ""),
-                iconColor: DesignSystem.Colors.primaryBlue,
-                action: onPhotosImport
-            )
-
-            // 导入视频
-            ImportActionTile(
-                icon: "video.fill",
-                title: NSLocalizedString("import.selectVideo", comment: ""),
-                iconColor: DesignSystem.Colors.successGreen,
-                action: onVideoImport
-            )
-
-            // 导入PDF文件
-            ImportActionTile(
-                icon: "doc.text.fill",
-                title: NSLocalizedString("import.selectPDF", comment: ""),
-                iconColor: DesignSystem.Colors.warningOrange,
-                action: onDocumentImport
-            )
-
-            // 拼接长图(暂缓发布,由功能开关控制)
-            if FeatureFlags.stitchEnabled {
+            ForEach(ImportAction.availableActions) { action in
                 ImportActionTile(
-                    icon: "rectangle.stack.badge.plus",
-                    title: NSLocalizedString("stitch.button", comment: ""),
-                    iconColor: DesignSystem.Colors.primaryPurple,
-                    action: onStitch
+                    icon: action.icon,
+                    title: action.displayName,
+                    caption: action.caption,
+                    iconColor: action.iconColor,
+                    action: { onAction(action) }
                 )
             }
         }

@@ -49,6 +49,7 @@
 
 /* Common */
 "common.cancel" = "取消";
+"common.more" = "更多";
 "common.close" = "关闭";
 "common.confirm" = "确认";
 
@@ -320,6 +321,7 @@
 "import.selectPhotos" = "选择图片";
 "import.selectPDF" = "选择 PDF";
 "import.maxSelection" = "最多选择10张";
+"import.addFile" = "添加文件";
 "import.delete.title" = "删除文件";
 "import.delete.message" = "确定要删除这个文件吗？此操作无法撤销。";
 "import.delete.messageWithRedacted" = "确定要删除这个文件吗？其 %d 个已导出的脱敏文件也会一并删除，此操作无法撤销。";
