@@ -9,6 +9,15 @@ enum VideoRedactionSticker: String, CaseIterable, Identifiable, Sendable {
     case sunglasses
     case panda
     case alien
+    case heartEyes
+    case robot
+    case clown
+    case lion
+
+    enum Artwork: Equatable, Sendable {
+        case systemImage(String)
+        case asset(String)
+    }
 
     var id: String { rawValue }
 
@@ -19,16 +28,134 @@ enum VideoRedactionSticker: String, CaseIterable, Identifiable, Sendable {
         case .sunglasses: return NSLocalizedString("video.sticker.sunglasses", comment: "")
         case .panda: return NSLocalizedString("video.sticker.panda", comment: "")
         case .alien: return NSLocalizedString("video.sticker.alien", comment: "")
+        case .heartEyes: return NSLocalizedString("video.sticker.heartEyes", comment: "")
+        case .robot: return NSLocalizedString("video.sticker.robot", comment: "")
+        case .clown: return NSLocalizedString("video.sticker.clown", comment: "")
+        case .lion: return NSLocalizedString("video.sticker.lion", comment: "")
         }
     }
 
-    var icon: String {
+    var description: String {
         switch self {
-        case .orangeSmiley: return "face.smiling.inverse"
-        case .blueSmiley: return "face.smiling"
-        case .sunglasses: return "sunglasses.fill"
-        case .panda: return "pawprint.fill"
-        case .alien: return "face.dashed"
+        case .orangeSmiley:
+            return NSLocalizedString("video.sticker.description.orangeSmiley", comment: "")
+        case .blueSmiley:
+            return NSLocalizedString("video.sticker.description.blueSmiley", comment: "")
+        case .sunglasses:
+            return NSLocalizedString("video.sticker.description.sunglasses", comment: "")
+        case .panda:
+            return NSLocalizedString("video.sticker.description.panda", comment: "")
+        case .alien:
+            return NSLocalizedString("video.sticker.description.alien", comment: "")
+        case .heartEyes:
+            return NSLocalizedString("video.sticker.description.heartEyes", comment: "")
+        case .robot:
+            return NSLocalizedString("video.sticker.description.robot", comment: "")
+        case .clown:
+            return NSLocalizedString("video.sticker.description.clown", comment: "")
+        case .lion:
+            return NSLocalizedString("video.sticker.description.lion", comment: "")
+        }
+    }
+
+    var artwork: Artwork {
+        switch self {
+        case .orangeSmiley: return .systemImage("face.smiling.inverse")
+        case .blueSmiley: return .systemImage("face.smiling")
+        case .sunglasses: return .asset("StickerSunglasses")
+        case .panda: return .asset("StickerPanda")
+        case .alien: return .asset("StickerAlien")
+        case .heartEyes: return .asset("StickerHeartEyes")
+        case .robot: return .asset("StickerRobot")
+        case .clown: return .asset("StickerClown")
+        case .lion: return .asset("StickerLion")
+        }
+    }
+
+    var requiresPremium: Bool {
+        self != .orangeSmiley && self != .blueSmiley
+    }
+
+    func isLocked(hasUnlimitedAccess: Bool) -> Bool {
+        requiresPremium && !hasUnlimitedAccess
+    }
+
+    func accessibilityValue(hasUnlimitedAccess: Bool) -> String {
+        isLocked(hasUnlimitedAccess: hasUnlimitedAccess)
+            ? NSLocalizedString("video.sticker.accessibility.premium", comment: "")
+            : NSLocalizedString("video.sticker.accessibility.available", comment: "")
+    }
+}
+
+struct VideoStickerSelectionState: Equatable, Sendable {
+    private(set) var selected: VideoRedactionSticker = .orangeSmiley
+    private(set) var pendingPremiumSticker: VideoRedactionSticker?
+
+    @discardableResult
+    mutating func request(
+        _ sticker: VideoRedactionSticker,
+        hasUnlimitedAccess: Bool
+    ) -> Bool {
+        guard !sticker.isLocked(hasUnlimitedAccess: hasUnlimitedAccess) else {
+            pendingPremiumSticker = sticker
+            return false
+        }
+        selected = sticker
+        pendingPremiumSticker = nil
+        return true
+    }
+
+    mutating func resolvePremiumRequest(hasUnlimitedAccess: Bool) -> VideoRedactionSticker? {
+        defer { pendingPremiumSticker = nil }
+        guard hasUnlimitedAccess, let pendingPremiumSticker else { return nil }
+        selected = pendingPremiumSticker
+        return selected
+    }
+
+    mutating func cancelPremiumRequest() {
+        pendingPremiumSticker = nil
+    }
+}
+
+enum VideoPremiumIntent: Equatable, Sendable {
+    case sticker(VideoRedactionSticker)
+    case export
+}
+
+enum VideoPremiumDismissalAction: Equatable, Sendable {
+    case none
+    case applySticker(VideoRedactionSticker)
+    case retryExport
+}
+
+struct VideoPremiumIntentState: Equatable, Sendable {
+    private(set) var current: VideoPremiumIntent?
+
+    mutating func present(_ intent: VideoPremiumIntent) {
+        current = intent
+    }
+
+    mutating func consume() -> VideoPremiumIntent? {
+        defer { current = nil }
+        return current
+    }
+
+    mutating func resolveDismissal(
+        hasUnlimitedAccess: Bool,
+        selection: inout VideoStickerSelectionState
+    ) -> VideoPremiumDismissalAction {
+        switch consume() {
+        case .sticker:
+            guard let sticker = selection.resolvePremiumRequest(
+                hasUnlimitedAccess: hasUnlimitedAccess
+            ) else { return .none }
+            return .applySticker(sticker)
+        case .export:
+            selection.cancelPremiumRequest()
+            return hasUnlimitedAccess ? .retryExport : .none
+        case nil:
+            selection.cancelPremiumRequest()
+            return .none
         }
     }
 }

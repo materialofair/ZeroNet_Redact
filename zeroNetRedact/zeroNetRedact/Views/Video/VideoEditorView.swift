@@ -4,6 +4,7 @@ import UIKit
 
 struct VideoEditorView: View {
     @StateObject private var viewModel: VideoEditorViewModel
+    @ObservedObject private var appState = AppState.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -77,7 +78,7 @@ struct VideoEditorView: View {
             isPresented: $viewModel.showUsageLimitAlert
         ) {
             Button(NSLocalizedString("usage.limit.upgrade", comment: "")) {
-                viewModel.showPremiumView = true
+                viewModel.presentPremiumForExport()
             }
             Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
         } message: {
@@ -89,7 +90,7 @@ struct VideoEditorView: View {
             isPresented: $viewModel.showPremiumSizeAlert
         ) {
             Button(NSLocalizedString("usage.limit.upgrade", comment: "")) {
-                viewModel.showPremiumView = true
+                viewModel.presentPremiumForExport()
             }
             Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
         } message: {
@@ -99,9 +100,7 @@ struct VideoEditorView: View {
         .sheet(
             isPresented: $viewModel.showPremiumView,
             onDismiss: {
-                if AppState.shared.hasUnlimitedAccess {
-                    viewModel.export()
-                }
+                viewModel.premiumViewDidDismiss()
             }
         ) {
             PremiumView()
@@ -481,19 +480,23 @@ struct VideoEditorView: View {
     /// 大字号辅助功能下名称可以换行而不裁切。
     private func effectOption(_ sticker: VideoRedactionSticker) -> some View {
         let isSelected = viewModel.sticker == sticker
+        let isLocked = sticker.isLocked(hasUnlimitedAccess: appState.hasUnlimitedAccess)
         return Button {
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                viewModel.sticker = sticker
+                viewModel.requestStickerSelection(sticker)
             }
         } label: {
             VStack(spacing: DesignSystem.Spacing.xs) {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: sticker.icon)
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : DesignSystem.Colors.textSecondary)
-                        .frame(width: 38, height: 38)
+                    stickerArtwork(sticker)
 
-                    if isSelected {
+                    if isLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 18, height: 18)
+                            .background(Circle().fill(DesignSystem.Colors.warningOrange))
+                    } else if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 15))
                             .foregroundStyle(DesignSystem.Colors.primaryBlue)
@@ -526,8 +529,36 @@ struct VideoEditorView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(sticker.displayName)
+        .accessibilityValue(sticker.accessibilityValue(hasUnlimitedAccess: appState.hasUnlimitedAccess))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityHint(NSLocalizedString("video.accessibility.effectHint", comment: ""))
+        .accessibilityHint(
+            NSLocalizedString(
+                isLocked
+                    ? "video.sticker.accessibility.premiumHint"
+                    : "video.accessibility.effectHint",
+                comment: ""
+            )
+        )
+    }
+
+    @ViewBuilder
+    private func stickerArtwork(_ sticker: VideoRedactionSticker) -> some View {
+        switch sticker.artwork {
+        case .systemImage(let name):
+            Image(systemName: name)
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(
+                    sticker == .orangeSmiley
+                        ? DesignSystem.Colors.warningOrange
+                        : DesignSystem.Colors.primaryBlue
+                )
+                .frame(width: 38, height: 38)
+        case .asset(let name):
+            Image(name)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 38, height: 38)
+        }
     }
 
     private var voiceSection: some View {
@@ -852,23 +883,6 @@ private enum VideoOrientationController {
         )
         windowScene.requestGeometryUpdate(preferences) { _ in
             Task { @MainActor in onDenial() }
-        }
-    }
-}
-
-private extension VideoRedactionSticker {
-    var description: String {
-        switch self {
-        case .orangeSmiley:
-            return NSLocalizedString("video.sticker.description.orangeSmiley", comment: "")
-        case .blueSmiley:
-            return NSLocalizedString("video.sticker.description.blueSmiley", comment: "")
-        case .sunglasses:
-            return NSLocalizedString("video.sticker.description.sunglasses", comment: "")
-        case .panda:
-            return NSLocalizedString("video.sticker.description.panda", comment: "")
-        case .alien:
-            return NSLocalizedString("video.sticker.description.alien", comment: "")
         }
     }
 }

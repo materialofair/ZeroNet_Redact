@@ -159,10 +159,57 @@ struct AboutView: View {
                 )
             }
             .buttonStyle(.plain)
+
+            Divider()
+                .padding(.leading, 52)
+
+            NavigationLink {
+                TwemojiAttributionView()
+            } label: {
+                LinkRow(
+                    icon: "paintpalette.fill",
+                    iconColor: DesignSystem.Colors.warningOrange,
+                    title: NSLocalizedString("about.attributions", comment: ""),
+                    subtitle: NSLocalizedString("about.attributions.desc", comment: ""),
+                    showChevron: true
+                )
+            }
+            .buttonStyle(.plain)
         }
         .background(DesignSystem.Colors.backgroundCard)
         .cornerRadius(DesignSystem.CornerRadius.large)
         .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
+    }
+}
+
+private struct TwemojiAttributionView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                Text(NSLocalizedString("about.attributions.twemoji.title", comment: ""))
+                    .font(.title2.bold())
+                    .foregroundStyle(DesignSystem.Colors.textPrimary)
+
+                Text(NSLocalizedString("about.attributions.twemoji.body", comment: ""))
+                    .font(.body)
+                    .foregroundStyle(DesignSystem.Colors.textSecondary)
+                    .lineSpacing(4)
+
+                Link(
+                    NSLocalizedString("about.attributions.source", comment: ""),
+                    destination: URL(string: "https://github.com/jdecked/twemoji/tree/v17.0.1")!
+                )
+                Link(
+                    NSLocalizedString("about.attributions.license", comment: ""),
+                    destination: URL(string: "https://creativecommons.org/licenses/by/4.0/")!
+                )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DesignSystem.Spacing.lg)
+        }
+        .background(DesignSystem.Colors.backgroundPrimary.ignoresSafeArea())
+        .navigationTitle(NSLocalizedString("about.attributions", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

@@ -117,6 +117,13 @@ struct PremiumView: View {
             )
 
             FeatureRow(
+                icon: "face.smiling.inverse",
+                iconColor: DesignSystem.Colors.primaryPurple,
+                title: NSLocalizedString("premium.feature.stickers", comment: ""),
+                subtitle: NSLocalizedString("premium.feature.stickers.desc", comment: "")
+            )
+
+            FeatureRow(
                 icon: "infinity",
                 iconColor: DesignSystem.Colors.successGreen,
                 title: NSLocalizedString("premium.feature.lifetime", comment: ""),

@@ -129,6 +129,12 @@
 "about.feedback.desc" = "Report issues, suggestions";
 "about.privacy" = "Privacy Policy";
 "about.privacy.desc" = "How we protect your data";
+"about.attributions" = "Open-Source Attributions";
+"about.attributions.desc" = "Licenses for bundled artwork";
+"about.attributions.twemoji.title" = "Twemoji Graphics";
+"about.attributions.twemoji.body" = "Sticker artwork by the jdecked/Twemoji contributors, licensed under CC BY 4.0. Pinned to v17.0.1 (196eef6). ZeroNet Redact places the transparent artwork on opaque backgrounds for privacy coverage.";
+"about.attributions.source" = "View Twemoji Source";
+"about.attributions.license" = "View CC BY 4.0 License";
 
 /* Privacy Policy */
 "privacy.title" = "Privacy Policy";
@@ -181,6 +187,8 @@
 "premium.feature.unlimitedImages.desc" = "No daily limits on photos or videos, any size";
 "premium.feature.unlimitedDocs" = "Unlimited Document Redaction";
 "premium.feature.unlimitedDocs.desc" = "No daily limit on PDFs";
+"premium.feature.stickers" = "Premium Video Stickers";
+"premium.feature.stickers.desc" = "Unlock every bundled face-cover sticker";
 "premium.feature.lifetime" = "Lifetime Access";
 "premium.feature.lifetime.desc" = "One-time purchase, forever yours";
 "premium.feature.support" = "Support Development";
@@ -604,11 +612,22 @@
 "video.sticker.sunglasses" = "Sunglasses";
 "video.sticker.panda" = "Panda";
 "video.sticker.alien" = "Alien";
+"video.sticker.heartEyes" = "Heart Eyes";
+"video.sticker.robot" = "Robot";
+"video.sticker.clown" = "Clown";
+"video.sticker.lion" = "Lion";
 "video.sticker.description.orangeSmiley" = "An opaque orange smiley sticker covers each face.";
 "video.sticker.description.blueSmiley" = "An opaque blue smiley sticker covers each face.";
 "video.sticker.description.sunglasses" = "A sunglasses sticker fully covers the face area.";
 "video.sticker.description.panda" = "A panda sticker covers each face.";
 "video.sticker.description.alien" = "An alien sticker covers each face.";
+"video.sticker.description.heartEyes" = "A heart-eyes sticker covers each face.";
+"video.sticker.description.robot" = "A robot sticker covers each face.";
+"video.sticker.description.clown" = "A colorful clown sticker covers each face.";
+"video.sticker.description.lion" = "A lion sticker covers each face.";
+"video.sticker.accessibility.premium" = "Premium sticker, locked";
+"video.sticker.accessibility.available" = "Available sticker";
+"video.sticker.accessibility.premiumHint" = "Opens Premium to unlock this sticker.";
 "video.premium.required.title" = "Video Exceeds Free Limit";
 "video.premium.required.message" = "The free tier supports videos up to 300MB. Upgrade to redact videos of any size.";
 "video.preview.protectedWorkspace" = "Private on-device workspace";

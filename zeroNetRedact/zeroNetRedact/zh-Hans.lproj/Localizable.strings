@@ -129,6 +129,12 @@
 "about.feedback.desc" = "报告问题、提出建议";
 "about.privacy" = "隐私政策";
 "about.privacy.desc" = "了解我们如何保护您的数据";
+"about.attributions" = "开源素材署名";
+"about.attributions.desc" = "应用内置素材的许可证";
+"about.attributions.twemoji.title" = "Twemoji 图形";
+"about.attributions.twemoji.body" = "贴纸图形由 jdecked/Twemoji 贡献者创作，采用 CC BY 4.0 许可，固定使用 v17.0.1（196eef6）。ZeroNet Redact 为透明图形添加不透明背景，以确保完整遮挡隐私。";
+"about.attributions.source" = "查看 Twemoji 源码";
+"about.attributions.license" = "查看 CC BY 4.0 许可证";
 
 /* Privacy Policy */
 "privacy.title" = "隐私政策";
@@ -181,6 +187,8 @@
 "premium.feature.unlimitedImages.desc" = "图片与视频导出不限次数，支持任意大小视频";
 "premium.feature.unlimitedDocs" = "无限文档脱敏";
 "premium.feature.unlimitedDocs.desc" = "PDF 导出不限次数";
+"premium.feature.stickers" = "高级视频贴纸";
+"premium.feature.stickers.desc" = "解锁全部内置人脸遮挡贴纸";
 "premium.feature.lifetime" = "永久使用";
 "premium.feature.lifetime.desc" = "一次购买，终身有效";
 "premium.feature.support" = "支持开发";
@@ -604,11 +612,22 @@
 "video.sticker.sunglasses" = "墨镜";
 "video.sticker.panda" = "熊猫";
 "video.sticker.alien" = "外星人";
+"video.sticker.heartEyes" = "爱心眼";
+"video.sticker.robot" = "机器人";
+"video.sticker.clown" = "小丑";
+"video.sticker.lion" = "狮子";
 "video.sticker.description.orangeSmiley" = "橙色不透明笑脸贴纸，完整盖住人脸。";
 "video.sticker.description.blueSmiley" = "蓝色不透明笑脸贴纸，完整盖住人脸。";
 "video.sticker.description.sunglasses" = "墨镜贴纸完整遮住面部区域。";
 "video.sticker.description.panda" = "熊猫贴纸完整盖住每张脸。";
 "video.sticker.description.alien" = "外星人贴纸完整盖住每张脸。";
+"video.sticker.description.heartEyes" = "爱心眼贴纸完整盖住每张脸。";
+"video.sticker.description.robot" = "机器人贴纸完整盖住每张脸。";
+"video.sticker.description.clown" = "彩色小丑贴纸完整盖住每张脸。";
+"video.sticker.description.lion" = "狮子贴纸完整盖住每张脸。";
+"video.sticker.accessibility.premium" = "高级版贴纸，尚未解锁";
+"video.sticker.accessibility.available" = "可用贴纸";
+"video.sticker.accessibility.premiumHint" = "打开高级版页面解锁此贴纸。";
 "video.premium.required.title" = "视频超过免费限制";
 "video.premium.required.message" = "免费版支持 ≤300MB 的视频，开通高级版可脱敏任意大小视频。";
 "video.preview.protectedWorkspace" = "设备端私有工作区";

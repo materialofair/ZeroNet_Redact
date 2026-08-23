@@ -31,9 +31,7 @@ final class VideoEditorViewModel: ObservableObject {
     @Published var showPremiumSizeAlert = false
     /// 高级版购买页
     @Published var showPremiumView = false
-    @Published var sticker: VideoRedactionSticker = .orangeSmiley {
-        didSet { refreshPreview() }
-    }
+    @Published private(set) var sticker: VideoRedactionSticker = .orangeSmiley
     @Published var voicePreset: VoicePreset = .original {
         didSet {
             guard oldValue != voicePreset else { return }
@@ -53,6 +51,8 @@ final class VideoEditorViewModel: ObservableObject {
     private var workspace: URL?
     private var sourceURL: URL?
     private var timeline = VideoFaceTimeline.empty
+    private var stickerSelection = VideoStickerSelectionState()
+    private var premiumIntent = VideoPremiumIntentState()
     private var workTask: Task<Void, Never>?
     private var previewTask: Task<Void, Never>?
     /// 导出后台任务标识（导出期间退后台保护）
@@ -104,9 +104,52 @@ final class VideoEditorViewModel: ObservableObject {
 
     func export() {
         guard phase == .ready, let sourceURL, let workspace else { return }
+        guard !sticker.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess) else {
+            requestStickerSelection(sticker)
+            return
+        }
         // 免费用户校验：大视频需会员 + 每日媒体配额（图片/视频合并）
         guard AppState.shared.hasUnlimitedAccess || canExportForFreeUser() else { return }
         beginExport(sourceURL: sourceURL, workspace: workspace)
+    }
+
+    func requestStickerSelection(_ requestedSticker: VideoRedactionSticker) {
+        if stickerSelection.request(
+            requestedSticker,
+            hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess
+        ) {
+            applySelectedSticker(stickerSelection.selected)
+        } else {
+            premiumIntent.present(.sticker(requestedSticker))
+            showPremiumView = true
+        }
+    }
+
+    func presentPremiumForExport() {
+        stickerSelection.cancelPremiumRequest()
+        premiumIntent.present(.export)
+        showPremiumView = true
+    }
+
+    func premiumViewDidDismiss() {
+        let action = premiumIntent.resolveDismissal(
+            hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess,
+            selection: &stickerSelection
+        )
+        switch action {
+        case .applySticker(let selected):
+            applySelectedSticker(selected)
+        case .retryExport:
+            export()
+        case .none:
+            break
+        }
+    }
+
+    private func applySelectedSticker(_ selected: VideoRedactionSticker) {
+        guard sticker != selected else { return }
+        sticker = selected
+        refreshPreview()
     }
 
     /// 免费用户导出校验；通过则返回 true。
