@@ -628,6 +628,24 @@
 "video.sticker.accessibility.premium" = "高级版贴纸，尚未解锁";
 "video.sticker.accessibility.available" = "可用贴纸";
 "video.sticker.accessibility.premiumHint" = "打开高级版页面解锁此贴纸。";
+
+/* 图片一键人脸脱敏 */
+"image.face.action" = "一键人脸";
+"image.face.action.hint" = "在设备本地检测图片中的全部人脸。";
+"image.face.review.title" = "确认人脸遮挡";
+"image.face.review.count" = "已选择 %d/%d 张脸";
+"image.face.review.selectAll" = "全选";
+"image.face.review.selectNone" = "全不选";
+"image.face.review.apply" = "应用 %d 张脸";
+"image.face.review.warning" = "自动检测可能遗漏，请在导出前检查整张图片。";
+"image.face.noFaces" = "未检测到人脸，请检查图片或使用画笔手动脱敏。";
+"image.face.alreadyProtected" = "检测到的人脸已被贴纸遮挡。";
+"image.face.detectFailed" = "人脸检测失败：%@";
+"image.face.error.invalidImage" = "图片无效，无法检测人脸。";
+"image.face.candidate.accessibility" = "人脸 %d";
+"image.face.candidate.selected" = "已选择，将应用遮挡";
+"image.face.candidate.excluded" = "已排除，不会应用遮挡";
+"image.face.candidate.hint" = "轻点切换是否遮挡这张脸。";
 "video.premium.required.title" = "视频超过免费限制";
 "video.premium.required.message" = "免费版支持 ≤300MB 的视频，开通高级版可脱敏任意大小视频。";
 "video.preview.protectedWorkspace" = "设备端私有工作区";

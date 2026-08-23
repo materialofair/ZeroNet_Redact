@@ -3,6 +3,12 @@ import CoreData
 import PDFKit
 import SwiftUI
 
+enum ImageFacePhase: Equatable {
+    case idle
+    case detecting
+    case reviewing
+}
+
 @MainActor
 class EditorViewModel: ObservableObject {
     let file: RedactableFile
@@ -17,6 +23,12 @@ class EditorViewModel: ObservableObject {
     @Published var detectProgress: Double?
     /// 检测失败原因（UI 据此展示错误提示，与导出错误分开存放避免串扰）
     @Published var detectErrorMessage: String?
+
+    @Published private(set) var facePhase: ImageFacePhase = .idle
+    @Published private(set) var faceCandidates: [ImageFaceCandidate] = []
+    @Published private(set) var selectedFaceCandidateIDs: Set<UUID> = []
+    @Published private(set) var faceSticker: FaceRedactionSticker = .orangeSmiley
+    @Published private(set) var faceDetectionMessage: String?
 
     @Published var selectedEffect: RedactionEffect = .solidBlack
     @Published var detectedRegions: [SensitiveRegion] = []
@@ -55,6 +67,10 @@ class EditorViewModel: ObservableObject {
     private var imageSubscription: AnyCancellable?
     /// PDF 页渲染代数：连续渲染时以代数丢弃过期结果
     private var pdfRenderGeneration: UInt64 = 0
+    private var faceDetectionTask: Task<Void, Never>?
+    private var faceReviewState = ImageFaceReviewState()
+    private var faceStickerSelection = FaceStickerSelectionState()
+    private var premiumIntent = ImageEditorPremiumIntentState()
 
     // MARK: - 辅助处理器
 
@@ -70,6 +86,10 @@ class EditorViewModel: ObservableObject {
         self.file = file
         loadGroups()
     }
+
+    var isDetectingFaces: Bool { facePhase == .detecting }
+    var isReviewingFaces: Bool { facePhase == .reviewing }
+    var selectedFaceCount: Int { selectedFaceCandidateIDs.count }
 
     func loadFile() async {
         await MainActor.run {
@@ -181,6 +201,125 @@ class EditorViewModel: ObservableObject {
             errorMessage = message
             detectErrorMessage = message
         }
+    }
+
+    // MARK: - Image Face Detection
+
+    func startFaceDetection() {
+        guard isImageFile, !isLoading, !isExporting,
+            let imageEditor = editor?.baseEditor as? ImageRedactionEditor,
+            let image = imageEditor.imageForFaceAnalysis
+        else { return }
+
+        cancelFaceDetection()
+        faceDetectionMessage = nil
+        facePhase = .detecting
+        let existingRects = imageEditor.getFaceStickerRegions()
+        faceDetectionTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let rects = try await ImageFaceAnalyzer().analyze(image: image)
+                try Task.checkCancellation()
+                let candidates = ImageFaceReviewState.excludingAlreadyProtected(
+                    rects.map { ImageFaceCandidate(rect: $0) },
+                    existingRects: existingRects
+                )
+                guard !candidates.isEmpty else {
+                    facePhase = .idle
+                    faceDetectionMessage = NSLocalizedString(
+                        rects.isEmpty ? "image.face.noFaces" : "image.face.alreadyProtected",
+                        comment: ""
+                    )
+                    faceDetectionTask = nil
+                    return
+                }
+                setFaceReviewState(ImageFaceReviewState(candidates: candidates))
+                facePhase = .reviewing
+            } catch is CancellationError {
+                facePhase = .idle
+            } catch {
+                facePhase = .idle
+                faceDetectionMessage = String(
+                    format: NSLocalizedString("image.face.detectFailed", comment: ""),
+                    error.localizedDescription
+                )
+            }
+            faceDetectionTask = nil
+        }
+    }
+
+    func cancelFaceDetection() {
+        faceDetectionTask?.cancel()
+        faceDetectionTask = nil
+        facePhase = .idle
+        setFaceReviewState(ImageFaceReviewState())
+    }
+
+    func cancelFaceReview() {
+        cancelFaceDetection()
+    }
+
+    func toggleFaceCandidate(_ id: UUID) {
+        guard isReviewingFaces else { return }
+        faceReviewState.toggle(id)
+        syncFaceReviewState()
+    }
+
+    func selectAllFaceCandidates() {
+        faceReviewState.selectAll()
+        syncFaceReviewState()
+    }
+
+    func deselectAllFaceCandidates() {
+        faceReviewState.deselectAll()
+        syncFaceReviewState()
+    }
+
+    func applySelectedFaceCandidates() {
+        guard isReviewingFaces else { return }
+        let rects = faceReviewState.selectedCandidates.map(\.rect)
+        guard !rects.isEmpty else { return }
+        applyRedactions(at: rects, effect: .faceSticker(faceSticker))
+        cancelFaceReview()
+    }
+
+    func requestFaceSticker(_ requestedSticker: FaceRedactionSticker) {
+        if faceStickerSelection.request(
+            requestedSticker,
+            hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess
+        ) {
+            faceSticker = faceStickerSelection.selected
+        } else {
+            premiumIntent.present(.faceSticker(requestedSticker))
+            showPremiumView = true
+        }
+    }
+
+    func presentPremiumForExport() {
+        faceStickerSelection.cancelPremiumRequest()
+        premiumIntent.present(.export)
+        showPremiumView = true
+    }
+
+    func premiumViewDidDismiss() -> ImageEditorPremiumDismissalAction {
+        let action = premiumIntent.resolveDismissal(
+            hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess,
+            selection: &faceStickerSelection
+        )
+        if case .applySticker(let sticker) = action {
+            faceSticker = sticker
+        }
+        return action
+    }
+
+    private func setFaceReviewState(_ state: ImageFaceReviewState) {
+        faceReviewState = state
+        syncFaceReviewState()
+    }
+
+    private func syncFaceReviewState() {
+        faceCandidates = faceReviewState.candidates
+        selectedFaceCandidateIDs = faceReviewState.selectedIDs
     }
 
     func applyRedaction(at region: CGRect) {

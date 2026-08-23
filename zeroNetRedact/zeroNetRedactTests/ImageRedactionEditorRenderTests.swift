@@ -199,6 +199,26 @@ final class ImageRedactionEditorRenderTests: XCTestCase {
             data(editor.currentImage), originalData, "模糊应改变区域像素")
     }
 
+    func testFaceStickersBatchAsOneUndoStep() async throws {
+        let editor = makeEditor(image: makeTestImage())
+        let originalData = try XCTUnwrap(data(editor.currentImage))
+
+        editor.applyRedactions(
+            at: [
+                CGRect(x: 10, y: 10, width: 40, height: 40),
+                CGRect(x: 120, y: 120, width: 50, height: 50),
+            ],
+            effect: .faceSticker(.orangeSmiley)
+        )
+        await editor.waitForPendingRender()
+
+        XCTAssertNotEqual(data(editor.currentImage), originalData)
+        XCTAssertEqual(editor.getFaceStickerRegions().count, 2)
+        editor.undo()
+        await editor.waitForPendingRender()
+        XCTAssertEqual(data(editor.currentImage), originalData)
+    }
+
     // MARK: - 方向归一化
 
     /// EXIF 方向非 .up 的图片加载后应归一化（渲染管线按 .up 位图处理）
