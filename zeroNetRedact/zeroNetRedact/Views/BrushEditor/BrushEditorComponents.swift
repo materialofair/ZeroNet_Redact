@@ -129,6 +129,14 @@ struct EffectSelectorView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    if showsFaceDetection {
+                        FaceDetectButton(isDetecting: isDetectingFaces, action: onDetectFaces)
+                            .disabled(isFaceDetectDisabled)
+
+                        Divider()
+                            .frame(height: 40)
+                    }
+
                     ForEach(BrushEffect.allCases, id: \.self) { effect in
                         EffectButton(
                             effect: effect,
@@ -154,11 +162,6 @@ struct EffectSelectorView: View {
                     DetectButton(
                         isDetecting: isDetecting, progress: detectProgress, action: onDetect)
                         .disabled(isDetectDisabled)
-
-                    if showsFaceDetection {
-                        FaceDetectButton(isDetecting: isDetectingFaces, action: onDetectFaces)
-                            .disabled(isFaceDetectDisabled)
-                    }
 
                     // 缩放控制条切换按钮（有脱敏区域时显示）
                     if hasRedactionRegions {
