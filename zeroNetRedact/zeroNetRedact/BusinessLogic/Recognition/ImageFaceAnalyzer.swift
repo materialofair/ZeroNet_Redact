@@ -10,7 +10,11 @@ enum ImageFaceAnalysisError: LocalizedError {
     }
 }
 
-final class ImageFaceAnalyzer {
+protocol ImageFaceAnalyzing {
+    func analyze(image: UIImage) async throws -> [CGRect]
+}
+
+final class ImageFaceAnalyzer: ImageFaceAnalyzing {
     nonisolated static let analysisMaximumDimension: CGFloat = 2048
 
     func analyze(image: UIImage) async throws -> [CGRect] {
@@ -18,7 +22,7 @@ final class ImageFaceAnalyzer {
             throw ImageFaceAnalysisError.invalidImage
         }
         let imageSize = image.size
-        return try await Task.detached(priority: .userInitiated) {
+        let analysisTask = Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
             let analysisImage = Self.downsampledImage(
                 source,
@@ -42,7 +46,12 @@ final class ImageFaceAnalyzer {
                         && $0.width >= 1 && $0.height >= 1
                 }
                 .sorted(by: Self.isOrderedBefore)
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            try await analysisTask.value
+        } onCancel: {
+            analysisTask.cancel()
+        }
     }
 
     nonisolated static func imageRect(

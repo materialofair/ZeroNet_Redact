@@ -12,6 +12,7 @@ import SwiftUI
 struct SimpleBrushEditor: View {
     let file: RedactableFile
     @StateObject private var viewModel: EditorViewModel
+    @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
 
     // MARK: - Brush State
@@ -258,7 +259,7 @@ struct SimpleBrushEditor: View {
                     selectedCount: viewModel.selectedFaceCount,
                     totalCount: viewModel.faceCandidates.count,
                     selectedSticker: viewModel.faceSticker,
-                    hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess,
+                    hasUnlimitedAccess: appState.hasUnlimitedAccess,
                     onSelectSticker: viewModel.requestFaceSticker,
                     onSelectAll: viewModel.selectAllFaceCandidates,
                     onDeselectAll: viewModel.deselectAllFaceCandidates,

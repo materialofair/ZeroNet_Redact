@@ -2,6 +2,7 @@ import XCTest
 
 @testable import zeroNetRedact
 
+@MainActor
 final class ImageFaceReviewStateTests: XCTestCase {
     func testCandidatesStartSelectedAndCanExcludeMany() {
         let candidates = [
@@ -58,5 +59,32 @@ final class ImageFaceReviewStateTests: XCTestCase {
             .none
         )
         XCTAssertEqual(selection.selected, .orangeSmiley)
+    }
+
+    func testImageAndVideoPremiumIntentsKeepEquivalentOutcomes() {
+        for sticker in FaceRedactionSticker.allCases where sticker.requiresPremium {
+            var imageSelection = FaceStickerSelectionState()
+            var imageIntent = ImageEditorPremiumIntentState()
+            XCTAssertFalse(imageSelection.request(sticker, hasUnlimitedAccess: false))
+            imageIntent.present(.faceSticker(sticker))
+
+            var videoSelection = VideoStickerSelectionState()
+            var videoIntent = VideoPremiumIntentState()
+            XCTAssertFalse(videoSelection.request(sticker, hasUnlimitedAccess: false))
+            videoIntent.present(.sticker(sticker))
+
+            let imageAction = imageIntent.resolveDismissal(
+                hasUnlimitedAccess: true,
+                selection: &imageSelection
+            )
+            let videoAction = videoIntent.resolveDismissal(
+                hasUnlimitedAccess: true,
+                selection: &videoSelection
+            )
+
+            XCTAssertEqual(imageSelection.selected, videoSelection.selected)
+            XCTAssertEqual(imageAction, .applySticker(sticker))
+            XCTAssertEqual(videoAction, .applySticker(sticker))
+        }
     }
 }

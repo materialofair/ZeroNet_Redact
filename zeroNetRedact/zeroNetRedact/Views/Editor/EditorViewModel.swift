@@ -68,6 +68,8 @@ class EditorViewModel: ObservableObject {
     /// PDF 页渲染代数：连续渲染时以代数丢弃过期结果
     private var pdfRenderGeneration: UInt64 = 0
     private var faceDetectionTask: Task<Void, Never>?
+    private var faceDetectionGeneration: UInt64 = 0
+    private let faceAnalyzer: any ImageFaceAnalyzing
     private var faceReviewState = ImageFaceReviewState()
     private var faceStickerSelection = FaceStickerSelectionState()
     private var premiumIntent = ImageEditorPremiumIntentState()
@@ -82,8 +84,22 @@ class EditorViewModel: ObservableObject {
         ImageOperationsHandler(editor: editor)
     }()
 
-    init(file: RedactableFile) {
+    convenience init(file: RedactableFile) {
+        self.init(
+            file: file,
+            editor: nil,
+            faceAnalyzer: ImageFaceAnalyzer()
+        )
+    }
+
+    init(
+        file: RedactableFile,
+        editor: AnyRedactionEditor?,
+        faceAnalyzer: any ImageFaceAnalyzing
+    ) {
         self.file = file
+        self.editor = editor
+        self.faceAnalyzer = faceAnalyzer
         loadGroups()
     }
 
@@ -214,12 +230,14 @@ class EditorViewModel: ObservableObject {
         cancelFaceDetection()
         faceDetectionMessage = nil
         facePhase = .detecting
-        let existingRects = imageEditor.getFaceStickerRegions()
+        let generation = faceDetectionGeneration
         faceDetectionTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let rects = try await ImageFaceAnalyzer().analyze(image: image)
+                let rects = try await faceAnalyzer.analyze(image: image)
                 try Task.checkCancellation()
+                guard generation == faceDetectionGeneration else { return }
+                let existingRects = imageEditor.getFaceStickerRegions()
                 let candidates = ImageFaceReviewState.excludingAlreadyProtected(
                     rects.map { ImageFaceCandidate(rect: $0) },
                     existingRects: existingRects
@@ -236,19 +254,24 @@ class EditorViewModel: ObservableObject {
                 setFaceReviewState(ImageFaceReviewState(candidates: candidates))
                 facePhase = .reviewing
             } catch is CancellationError {
+                guard generation == faceDetectionGeneration else { return }
                 facePhase = .idle
             } catch {
+                guard generation == faceDetectionGeneration else { return }
                 facePhase = .idle
                 faceDetectionMessage = String(
                     format: NSLocalizedString("image.face.detectFailed", comment: ""),
                     error.localizedDescription
                 )
             }
-            faceDetectionTask = nil
+            if generation == faceDetectionGeneration {
+                faceDetectionTask = nil
+            }
         }
     }
 
     func cancelFaceDetection() {
+        faceDetectionGeneration &+= 1
         faceDetectionTask?.cancel()
         faceDetectionTask = nil
         facePhase = .idle
