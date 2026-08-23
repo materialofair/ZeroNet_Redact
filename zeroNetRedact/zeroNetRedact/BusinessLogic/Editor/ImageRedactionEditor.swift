@@ -280,6 +280,9 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
             ) { filter in
                 filter.setValue(radius, forKey: kCIInputRadiusKey)
             }
+
+        case .faceSticker(let sticker):
+            FaceStickerRenderer.image(for: sticker).draw(in: region)
         }
     }
 
@@ -500,6 +503,19 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         return editHistory.enumerated().map { (index, operation) in
             (index: index, bounds: operation.region)
         }
+    }
+
+    /// 已应用的人脸贴纸区域，供再次检测时过滤重复候选。
+    func getFaceStickerRegions() -> [CGRect] {
+        editHistory.compactMap { operation in
+            guard case .faceSticker = operation.effect else { return nil }
+            return operation.region
+        }
+    }
+
+    /// 未烘焙任何编辑效果、方向已归一化的底图。
+    var imageForFaceAnalysis: UIImage? {
+        originalImage
     }
 
     /// 查找指定点击位置的脱敏区域索引（图片坐标系）

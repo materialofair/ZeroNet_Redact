@@ -13,6 +13,7 @@ enum RedactionEffect: Equatable, Hashable {
     case blur(radius: Float)  // 模糊（模糊半径）
     case rectangle(color: UIColor, opacity: Float)  // 矩形遮盖（颜色+透明度）
     case solidBlack  // 纯黑遮盖
+    case faceSticker(FaceRedactionSticker)  // 不透明人脸贴纸
 
     // 实现Hashable
     func hash(into hasher: inout Hasher) {
@@ -31,6 +32,9 @@ enum RedactionEffect: Equatable, Hashable {
             hasher.combine(opacity)
         case .solidBlack:
             hasher.combine("solidBlack")
+        case .faceSticker(let sticker):
+            hasher.combine("faceSticker")
+            hasher.combine(sticker)
         }
     }
 
@@ -41,6 +45,7 @@ enum RedactionEffect: Equatable, Hashable {
         case .blur: return NSLocalizedString("effect.blur", comment: "")
         case .rectangle: return NSLocalizedString("effect.rectangle", comment: "")
         case .solidBlack: return NSLocalizedString("effect.solidBlack", comment: "")
+        case .faceSticker(let sticker): return sticker.displayName
         }
     }
 
@@ -51,6 +56,7 @@ enum RedactionEffect: Equatable, Hashable {
         case .blur: return "circle.dotted"
         case .rectangle: return "rectangle.fill"
         case .solidBlack: return "square.fill"
+        case .faceSticker: return "face.smiling.inverse"
         }
     }
 

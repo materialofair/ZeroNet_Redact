@@ -130,7 +130,7 @@ struct SimpleBrushEditor: View {
             isPresented: $viewModel.showUsageLimitAlert
         ) {
             Button(NSLocalizedString("usage.limit.upgrade", comment: "")) {
-                viewModel.showPremiumView = true
+                viewModel.presentPremiumForExport()
             }
             Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
         } message: {
@@ -152,8 +152,7 @@ struct SimpleBrushEditor: View {
         .sheet(
             isPresented: $viewModel.showPremiumView,
             onDismiss: {
-                // 购买成功后自动重试导出
-                if AppState.shared.hasUnlimitedAccess {
+                if viewModel.premiumViewDidDismiss() == .retryExport {
                     performExport()
                 }
             }
@@ -167,6 +166,14 @@ struct SimpleBrushEditor: View {
             if let url = viewModel.exportedFileURL {
                 ShareSheet(items: [url])
             }
+        }
+        .onChange(of: viewModel.faceDetectionMessage) { _, message in
+            if let message {
+                showToast(message: message, isSuccess: false)
+            }
+        }
+        .onDisappear {
+            viewModel.cancelFaceDetection()
         }
     }
 
@@ -246,70 +253,87 @@ struct SimpleBrushEditor: View {
     @ViewBuilder
     private var bottomToolbar: some View {
         VStack(spacing: 0) {
-            // PDF页面导航栏
-            if viewModel.isPDFFile && viewModel.totalPDFPages > 1 {
-                PDFPageNavigator(
-                    currentPage: viewModel.currentPDFPageIndex,
-                    totalPages: viewModel.totalPDFPages,
-                    onPrevious: { goToPDFPage(viewModel.currentPDFPageIndex - 1) },
-                    onNext: { goToPDFPage(viewModel.currentPDFPageIndex + 1) }
+            if viewModel.isReviewingFaces {
+                ImageFaceReviewBar(
+                    selectedCount: viewModel.selectedFaceCount,
+                    totalCount: viewModel.faceCandidates.count,
+                    selectedSticker: viewModel.faceSticker,
+                    hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess,
+                    onSelectSticker: viewModel.requestFaceSticker,
+                    onSelectAll: viewModel.selectAllFaceCandidates,
+                    onDeselectAll: viewModel.deselectAllFaceCandidates,
+                    onApply: viewModel.applySelectedFaceCandidates,
+                    onCancel: viewModel.cancelFaceReview
                 )
-                .disabled(viewModel.isExporting)
-                Divider()
-            }
+            } else {
+                // PDF页面导航栏
+                if viewModel.isPDFFile && viewModel.totalPDFPages > 1 {
+                    PDFPageNavigator(
+                        currentPage: viewModel.currentPDFPageIndex,
+                        totalPages: viewModel.totalPDFPages,
+                        onPrevious: { goToPDFPage(viewModel.currentPDFPageIndex - 1) },
+                        onNext: { goToPDFPage(viewModel.currentPDFPageIndex + 1) }
+                    )
+                    .disabled(viewModel.isExporting)
+                    Divider()
+                }
 
-            // 检测结果条
-            if !viewModel.detectedRegions.isEmpty {
-                DetectionResultBar(
-                    regions: viewModel.regionsForCurrentPage,
-                    otherPagesCount: viewModel.otherPagesRegionCount,
-                    selectedIDs: selectedDetectedIDs,
-                    onApply: applyDetectedRegion,
-                    onIgnore: { region in
-                        viewModel.detectedRegions.removeAll { $0.id == region.id }
-                        selectedDetectedIDs.remove(region.id)
-                    },
-                    onApplyAll: applyAllDetectedRegions,
-                    onDismiss: {
-                        let currentPageIDs = Set(viewModel.regionsForCurrentPage.map { $0.id })
-                        viewModel.detectedRegions.removeAll { currentPageIDs.contains($0.id) }
-                        selectedDetectedIDs.subtract(currentPageIDs)
-                    },
-                    onSelect: toggleDetectedSelection,
-                    onApplySelected: applySelectedDetectedRegions,
-                    onIgnoreSelected: ignoreSelectedDetectedRegions
-                )
-                Divider()
-            }
+                // 检测结果条
+                if !viewModel.detectedRegions.isEmpty {
+                    DetectionResultBar(
+                        regions: viewModel.regionsForCurrentPage,
+                        otherPagesCount: viewModel.otherPagesRegionCount,
+                        selectedIDs: selectedDetectedIDs,
+                        onApply: applyDetectedRegion,
+                        onIgnore: { region in
+                            viewModel.detectedRegions.removeAll { $0.id == region.id }
+                            selectedDetectedIDs.remove(region.id)
+                        },
+                        onApplyAll: applyAllDetectedRegions,
+                        onDismiss: {
+                            let currentPageIDs = Set(viewModel.regionsForCurrentPage.map { $0.id })
+                            viewModel.detectedRegions.removeAll { currentPageIDs.contains($0.id) }
+                            selectedDetectedIDs.subtract(currentPageIDs)
+                        },
+                        onSelect: toggleDetectedSelection,
+                        onApplySelected: applySelectedDetectedRegions,
+                        onIgnoreSelected: ignoreSelectedDetectedRegions
+                    )
+                    Divider()
+                }
 
-            // 效果选择栏
-            EffectSelectorView(
-                selectedEffect: $selectedEffect,
-                selectedBrushSize: $selectedBrushSize,
-                isScaleBarVisible: $isScaleBarVisible,
-                onRotate: rotateImage,
-                isRotateDisabled: viewModel.currentImage == nil || viewModel.isPDFFile || viewModel.isExporting,
-                isBrushSizeDisabled: canvasMode != .brush,
-                hasRedactionRegions: hasRedactionRegions,
-                onDetect: {
-                    Task {
-                        await viewModel.detectSensitiveRegions()
-                        // 检测失败此前静默（errorMessage 只被导出路径读取），此处统一 toast 提示
-                        if let message = viewModel.detectErrorMessage {
-                            showToast(message: message, isSuccess: false)
+                // 效果选择栏
+                EffectSelectorView(
+                    selectedEffect: $selectedEffect,
+                    selectedBrushSize: $selectedBrushSize,
+                    isScaleBarVisible: $isScaleBarVisible,
+                    onRotate: rotateImage,
+                    isRotateDisabled: viewModel.currentImage == nil || viewModel.isPDFFile || viewModel.isExporting,
+                    isBrushSizeDisabled: canvasMode != .brush,
+                    hasRedactionRegions: hasRedactionRegions,
+                    onDetect: {
+                        Task {
+                            await viewModel.detectSensitiveRegions()
+                            if let message = viewModel.detectErrorMessage {
+                                showToast(message: message, isSuccess: false)
+                            }
                         }
-                    }
-                },
-                isDetecting: viewModel.isDetecting,
-                isDetectDisabled: viewModel.isDetecting || viewModel.currentImage == nil || viewModel.isExporting,
-                detectProgress: viewModel.detectProgress
-            )
+                    },
+                    isDetecting: viewModel.isDetecting,
+                    isDetectDisabled: viewModel.isDetecting || viewModel.currentImage == nil || viewModel.isExporting,
+                    detectProgress: viewModel.detectProgress,
+                    showsFaceDetection: viewModel.isImageFile,
+                    onDetectFaces: viewModel.startFaceDetection,
+                    isDetectingFaces: viewModel.isDetectingFaces,
+                    isFaceDetectDisabled: viewModel.isDetectingFaces || viewModel.currentImage == nil || viewModel.isExporting
+                )
 
-            Divider()
-                .padding(.vertical, 8)
+                Divider()
+                    .padding(.vertical, 8)
 
-            // 操作按钮栏
-            actionButtonsBar
+                // 操作按钮栏
+                actionButtonsBar
+            }
         }
         .background(Color(.systemBackground))
     }
@@ -524,16 +548,93 @@ struct SimpleBrushEditor: View {
             .contentShape(Rectangle())
             .gesture(
                 paintOrDragGesture(displaySize: displaySize),
-                including: canvasMode == .zoom ? .none : .all
+                including: canvasMode == .zoom || viewModel.isReviewingFaces ? .none : .all
             )
             .gesture(
                 zoomPanGesture(),
-                including: canvasMode == .zoom ? .all : .none
+                including: canvasMode == .zoom && !viewModel.isReviewingFaces ? .all : .none
             )
+
+            if viewModel.isReviewingFaces {
+                faceCandidateOverlay(displaySize: displaySize)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .scaleEffect(canvasScale, anchor: .center)
         .offset(canvasOffset)
+    }
+
+    private func faceCandidateOverlay(displaySize: CGSize) -> some View {
+        let converter = CoordinateConverter(imageSize: displaySize, viewModel: viewModel)
+        return ZStack {
+            ForEach(Array(viewModel.faceCandidates.enumerated()), id: \.element.id) { index, candidate in
+                if let rect = converter.imageRectToScreen(candidate.rect) {
+                    faceCandidateButton(candidate, index: index, screenRect: rect)
+                }
+            }
+        }
+        .frame(width: displaySize.width, height: displaySize.height)
+    }
+
+    private func faceCandidateButton(
+        _ candidate: ImageFaceCandidate,
+        index: Int,
+        screenRect: CGRect
+    ) -> some View {
+        let selected = viewModel.selectedFaceCandidateIDs.contains(candidate.id)
+        let hitSize = CGSize(
+            width: max(44, screenRect.width),
+            height: max(44, screenRect.height)
+        )
+        return Button {
+            viewModel.toggleFaceCandidate(candidate.id)
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                if selected {
+                    Image(uiImage: FaceStickerRenderer.image(for: viewModel.faceSticker))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: screenRect.width, height: screenRect.height)
+                        .clipped()
+                } else {
+                    Color.black.opacity(0.12)
+                        .frame(width: screenRect.width, height: screenRect.height)
+                }
+
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(
+                        selected ? Color.blue : Color.orange,
+                        style: StrokeStyle(
+                            lineWidth: selected ? 3 : 2,
+                            dash: selected ? [] : [5, 4]
+                        )
+                    )
+                    .frame(width: screenRect.width, height: screenRect.height)
+
+                Image(systemName: selected ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(selected ? .blue : .orange)
+                    .background(Circle().fill(.white))
+                    .offset(x: 7, y: -7)
+            }
+            .frame(width: hitSize.width, height: hitSize.height)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .position(x: screenRect.midX, y: screenRect.midY)
+        .accessibilityLabel(
+            String(
+                format: NSLocalizedString("image.face.candidate.accessibility", comment: ""),
+                index + 1
+            )
+        )
+        .accessibilityValue(
+            NSLocalizedString(
+                selected ? "image.face.candidate.selected" : "image.face.candidate.excluded",
+                comment: ""
+            )
+        )
+        .accessibilityHint(NSLocalizedString("image.face.candidate.hint", comment: ""))
     }
 
     // MARK: - Canvas Drawing
@@ -822,6 +923,7 @@ struct SimpleBrushEditor: View {
 
     private func rotateImage() {
         guard let currentImage = viewModel.currentImage else { return }
+        viewModel.cancelFaceDetection()
 
         // 已有脱敏记录时旋转会清空全部遮盖（坐标系变化、无法撤销），先确认
         if viewModel.canUndo {
