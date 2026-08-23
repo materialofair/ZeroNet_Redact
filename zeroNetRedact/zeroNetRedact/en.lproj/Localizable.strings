@@ -628,6 +628,24 @@
 "video.sticker.accessibility.premium" = "Premium sticker, locked";
 "video.sticker.accessibility.available" = "Available sticker";
 "video.sticker.accessibility.premiumHint" = "Opens Premium to unlock this sticker.";
+
+/* One-tap image face redaction */
+"image.face.action" = "Faces";
+"image.face.action.hint" = "Detects every face in this image locally on your device.";
+"image.face.review.title" = "Review face covers";
+"image.face.review.count" = "%d of %d faces selected";
+"image.face.review.selectAll" = "Select All";
+"image.face.review.selectNone" = "Select None";
+"image.face.review.apply" = "Cover %d Faces";
+"image.face.review.warning" = "Automatic detection can miss faces. Review the whole image before export.";
+"image.face.noFaces" = "No faces were detected. Review the image or cover faces manually with the brush.";
+"image.face.alreadyProtected" = "The detected faces are already covered by stickers.";
+"image.face.detectFailed" = "Face detection failed: %@";
+"image.face.error.invalidImage" = "This image cannot be analyzed for faces.";
+"image.face.candidate.accessibility" = "Face %d";
+"image.face.candidate.selected" = "Selected and will be covered";
+"image.face.candidate.excluded" = "Excluded and will not be covered";
+"image.face.candidate.hint" = "Double-tap to toggle whether this face is covered.";
 "video.premium.required.title" = "Video Exceeds Free Limit";
 "video.premium.required.message" = "The free tier supports videos up to 300MB. Upgrade to redact videos of any size.";
 "video.preview.protectedWorkspace" = "Private on-device workspace";

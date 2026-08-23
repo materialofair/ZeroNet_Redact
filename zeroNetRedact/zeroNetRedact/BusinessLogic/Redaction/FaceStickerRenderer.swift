@@ -3,11 +3,28 @@ import UIKit
 
 /// 生成图片/视频共用的不透明贴纸底图。
 enum FaceStickerRenderer {
+    private static let defaultSize = CGSize(width: 512, height: 512)
+    private static let defaultImages: [FaceRedactionSticker: UIImage] = Dictionary(
+        uniqueKeysWithValues: FaceRedactionSticker.allCases.map { sticker in
+            (sticker, makeImage(for: sticker, size: defaultSize))
+        }
+    )
+
     static func image(
         for sticker: FaceRedactionSticker,
-        size: CGSize = CGSize(width: 512, height: 512)
+        size: CGSize = defaultSize
     ) -> UIImage {
         let safeSize = CGSize(width: max(1, size.width), height: max(1, size.height))
+        if safeSize == defaultSize, let cached = defaultImages[sticker] {
+            return cached
+        }
+        return makeImage(for: sticker, size: safeSize)
+    }
+
+    private static func makeImage(
+        for sticker: FaceRedactionSticker,
+        size safeSize: CGSize
+    ) -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.opaque = true
         format.scale = 1

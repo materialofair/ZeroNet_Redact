@@ -115,6 +115,10 @@ struct EffectSelectorView: View {
     let isDetectDisabled: Bool
     /// 检测进度（0...1；nil 表示无进度信息）
     var detectProgress: Double? = nil
+    var showsFaceDetection = false
+    var onDetectFaces: () -> Void = {}
+    var isDetectingFaces = false
+    var isFaceDetectDisabled = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -151,6 +155,11 @@ struct EffectSelectorView: View {
                         isDetecting: isDetecting, progress: detectProgress, action: onDetect)
                         .disabled(isDetectDisabled)
 
+                    if showsFaceDetection {
+                        FaceDetectButton(isDetecting: isDetectingFaces, action: onDetectFaces)
+                            .disabled(isFaceDetectDisabled)
+                    }
+
                     // 缩放控制条切换按钮（有脱敏区域时显示）
                     if hasRedactionRegions {
                         ScaleBarToggleButton(isVisible: $isScaleBarVisible)
@@ -160,6 +169,38 @@ struct EffectSelectorView: View {
             }
         }
         .padding(.top, 6)
+    }
+}
+
+struct FaceDetectButton: View {
+    let isDetecting: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 34, height: 34)
+                    if isDetecting {
+                        ProgressView().scaleEffect(0.6)
+                    } else {
+                        Image(systemName: "face.smiling")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.blue)
+                    }
+                }
+                Text(NSLocalizedString("image.face.action", comment: ""))
+                    .font(.system(size: 10))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(width: 54)
+        }
+        .accessibilityLabel(NSLocalizedString("image.face.action", comment: ""))
+        .accessibilityHint(NSLocalizedString("image.face.action.hint", comment: ""))
     }
 }
 
