@@ -97,4 +97,40 @@ enum VideoTestFixture {
         )
         try file.write(from: buffer)
     }
+
+    /// 用覆盖元音与辅音关键频段的复合音近似语音频谱，避免单一低频音
+    /// 无法暴露变声后发闷、发尖或过度失真的问题。
+    static func makeSpeechSpectrumM4A(at url: URL, duration: Double = 1.5) throws {
+        let sampleRate = 44_100.0
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else {
+            throw VideoProcessingError.exportFailed("Unable to create speech fixture format")
+        }
+        let frames = AVAudioFrameCount(sampleRate * duration)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames),
+            let channel = buffer.floatChannelData?[0]
+        else {
+            throw VideoProcessingError.exportFailed("Unable to create speech fixture buffer")
+        }
+        let components: [(frequency: Double, amplitude: Double)] = [
+            (180, 0.08), (700, 0.07), (1_400, 0.065), (2_800, 0.055), (3_800, 0.045),
+        ]
+        buffer.frameLength = frames
+        for index in 0..<Int(frames) {
+            let time = Double(index) / sampleRate
+            let syllableEnvelope = 0.65 + 0.35 * sin(2 * .pi * 3.2 * time)
+            channel[index] = Float(components.reduce(0.0) { value, component in
+                value + sin(2 * .pi * component.frequency * time) * component.amplitude
+            } * syllableEnvelope)
+        }
+        let file = try AVAudioFile(
+            forWriting: url,
+            settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderBitRateKey: 128_000,
+            ]
+        )
+        try file.write(from: buffer)
+    }
 }

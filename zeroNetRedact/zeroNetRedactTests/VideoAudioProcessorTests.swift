@@ -3,6 +3,46 @@ import XCTest
 @testable import zeroNetRedact
 
 final class VideoAudioProcessorTests: XCTestCase {
+    func testAnonymousVoicePresetsPreserveSpeechClarity() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("VideoVoiceClarityTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let videoOnly = directory.appendingPathComponent("video.mp4")
+        let speech = directory.appendingPathComponent("speech-spectrum.m4a")
+        let source = directory.appendingPathComponent("source-with-speech.mp4")
+        try await VideoTestFixture.makeVideo(at: videoOnly, frameCount: 15)
+        try VideoTestFixture.makeSpeechSpectrumM4A(at: speech)
+        try await VideoMuxer().replaceAudio(videoURL: videoOnly, audioURL: speech, destinationURL: source)
+
+        let sourceMetrics = try Self.metrics(of: speech)
+        for preset in [VoicePreset.anonymousMale, .anonymousFemale, .robot] {
+            let output = directory.appendingPathComponent("clarity-\(preset.rawValue).m4a")
+            _ = try await VideoAudioProcessor().process(
+                sourceVideoURL: source,
+                destinationURL: output,
+                preset: preset
+            )
+            let metrics = try Self.metrics(of: output)
+            let centroidRatio = metrics.spectralCentroid / sourceMetrics.spectralCentroid
+
+            XCTAssertTrue(
+                0.8...1.25 ~= centroidRatio,
+                "\(preset.rawValue) 语音频谱偏移过大: \(centroidRatio)"
+            )
+            XCTAssertTrue(
+                0.6...1.6 ~= metrics.rms / sourceMetrics.rms,
+                "\(preset.rawValue) 响度变化过大: \(metrics.rms / sourceMetrics.rms)"
+            )
+            XCTAssertLessThan(
+                metrics.clippedSampleRatio,
+                0.005,
+                "\(preset.rawValue) 出现明显削波: \(metrics.clippedSampleRatio)"
+            )
+        }
+    }
+
     func testFixedVoicePresetsProduceReadableAudioAndMuteRemovesTrack() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("VideoAudioProcessorTests-\(UUID().uuidString)", isDirectory: true)
@@ -73,5 +113,52 @@ final class VideoAudioProcessorTests: XCTestCase {
             }
         }
         return peak
+    }
+
+    private struct AudioMetrics {
+        let rms: Double
+        let spectralCentroid: Double
+        let clippedSampleRatio: Double
+    }
+
+    private static func metrics(of url: URL) throws -> AudioMetrics {
+        let file = try AVAudioFile(forReading: url)
+        let frameCount = AVAudioFrameCount(file.length)
+        guard let buffer = AVAudioPCMBuffer(
+            pcmFormat: file.processingFormat,
+            frameCapacity: frameCount
+        ) else { throw VideoProcessingError.exportFailed("Unable to allocate metrics buffer") }
+        try file.read(into: buffer)
+        guard let channel = buffer.floatChannelData?[0] else {
+            throw VideoProcessingError.exportFailed("Missing metrics channel")
+        }
+        let samples = Array(UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength)))
+        let rms = sqrt(samples.reduce(0.0) { $0 + Double($1 * $1) } / Double(samples.count))
+        let clipped = samples.filter { abs($0) >= 0.98 }.count
+
+        let windowSize = min(8_192, samples.count)
+        let windowStart = max(0, samples.count / 2 - windowSize / 2)
+        let window = Array(samples[windowStart..<(windowStart + windowSize)])
+        let sampleRate = file.processingFormat.sampleRate
+        var weightedPower = 0.0
+        var totalPower = 0.0
+        for frequency in stride(from: 100.0, through: 5_000.0, by: 20.0) {
+            var real = 0.0
+            var imaginary = 0.0
+            for (index, sample) in window.enumerated() {
+                let angle = 2 * Double.pi * frequency * Double(index) / sampleRate
+                let hann = 0.5 - 0.5 * cos(2 * Double.pi * Double(index) / Double(windowSize - 1))
+                real += Double(sample) * hann * cos(angle)
+                imaginary -= Double(sample) * hann * sin(angle)
+            }
+            let power = real * real + imaginary * imaginary
+            totalPower += power
+            weightedPower += frequency * power
+        }
+        return AudioMetrics(
+            rms: rms,
+            spectralCentroid: weightedPower / max(totalPower, .leastNonzeroMagnitude),
+            clippedSampleRatio: Double(clipped) / Double(samples.count)
+        )
     }
 }

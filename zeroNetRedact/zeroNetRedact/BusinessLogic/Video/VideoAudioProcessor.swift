@@ -279,12 +279,12 @@ nonisolated final class VideoAudioProcessor: @unchecked Sendable {
         switch preset {
         case .anonymousMale:
             pitch.pitch = -500
-            lowBand.gain = 6
-            highBand.gain = -3
+            lowBand.gain = 0
+            highBand.gain = 0
         case .anonymousFemale:
             pitch.pitch = 500
-            lowBand.gain = -3
-            highBand.gain = 5
+            lowBand.gain = 0
+            highBand.gain = 0
         case .robot:
             pitch.pitch = 80
             lowBand.gain = 0
