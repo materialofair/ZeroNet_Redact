@@ -80,18 +80,3 @@ struct FaceTrackSmoother {
         )
     }
 }
-
-extension CGRect {
-    nonisolated var clampedToUnitSquare: CGRect {
-        intersection(CGRect(x: 0, y: 0, width: 1, height: 1))
-    }
-
-    nonisolated func expandedForPrivacy(scale: CGFloat = 1.3) -> CGRect {
-        CGRect(
-            x: midX - width * scale / 2,
-            y: midY - height * scale / 2,
-            width: width * scale,
-            height: height * scale
-        ).clampedToUnitSquare
-    }
-}
