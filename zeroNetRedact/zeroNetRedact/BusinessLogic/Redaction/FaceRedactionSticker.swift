@@ -1,7 +1,7 @@
 import Foundation
 
 /// 图片和视频共用的不透明人脸遮挡贴纸目录。
-enum FaceRedactionSticker: String, CaseIterable, Identifiable, Sendable {
+enum FaceRedactionSticker: String, CaseIterable, Hashable, Identifiable, Sendable {
     case orangeSmiley
     case blueSmiley
     case sunglasses
