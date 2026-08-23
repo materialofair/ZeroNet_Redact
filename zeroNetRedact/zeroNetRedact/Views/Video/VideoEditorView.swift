@@ -251,7 +251,7 @@ struct VideoEditorView: View {
                         .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large))
                 } else {
                     VStack(spacing: DesignSystem.Spacing.md) {
-                        Image(systemName: "video.badge.shield.fill")
+                        Image(systemName: "checkmark.shield.fill")
                             .font(.system(size: 36, weight: .medium))
                             .foregroundStyle(.white.opacity(0.82))
                         Text(NSLocalizedString("video.preview.protectedWorkspace", comment: ""))
@@ -820,7 +820,7 @@ private enum VideoEditorOrientation: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .portrait: return "rectangle.portrait"
-        case .landscape: return "rectangle.landscape"
+        case .landscape: return "rectangle"
         }
     }
 
