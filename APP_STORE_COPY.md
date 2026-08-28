@@ -1,7 +1,7 @@
 # App Store 提审文案（中英文）
 
 > 适用应用：ZeroNet Redact（零网隐私）
-> 更新日期：2026-07-10
+> 更新日期：2026-08-23
 > 各字段字数均已控制在 App Store Connect 限制内，可直接复制粘贴。
 
 ---
@@ -153,7 +153,43 @@ IN-APP PURCHASE: One non-consumable item, com.zeronet.redact.premium (unlocks un
 
 ---
 
-## 7. 版本更新日志（What's New in This Version，1.3）
+## 7. 版本更新日志（What's New in This Version，1.4）
+
+**中文**
+
+```
+【新功能】
+• 图片一键人脸脱敏：新增「一键人脸」，在设备本地自动检测图片中的全部人脸，逐张确认后一键贴上贴纸遮挡；支持全选/全不选，应用后可一键撤销
+• 视频新增 4 款高级人脸贴纸：爱心眼、机器人、小丑、狮子（Twemoji 授权素材），人脸遮挡更生动有趣
+
+【体验改进】
+• 匿名男声/女声清晰度提升：去除固定音效增益，换声后的语音更自然
+• 人脸检测更稳定：检测可随时取消，切换图片后旧结果不会覆盖新检测，已遮挡的人脸不会重复遮挡
+
+【问题修复】
+• 修复部分系统版本上视频贴纸图标无法显示的问题
+• 设置页新增「开源素材署名」，内置贴纸等素材的授权信息一目了然
+```
+
+**English**
+
+```
+NEW
+• One-tap face redaction for photos: a new "Faces" action detects every face in the image locally on your device — review them one by one, select or skip any face, and cover the chosen ones with stickers in one tap, with a single undo for all covers
+• 4 new premium video face stickers: Heart Eyes, Robot, Clown and Lion, powered by licensed Twemoji artwork
+
+IMPROVEMENTS
+• Clearer anonymous voice: removed the fixed EQ boost so the male/female voice presets sound more natural
+• More reliable face detection: detection can be canceled any time, and switching images no longer lets a stale result overwrite the new one; already-covered faces are never double-covered
+
+FIXES
+• Fixed video sticker icons missing on some OS versions
+• New "Open-Source Attributions" section in Settings makes bundled artwork licenses transparent
+```
+
+---
+
+## 8. 历史版本更新日志（What's New in This Version，1.3）
 
 **中文**
 
