@@ -46,7 +46,10 @@ struct SimpleBrushEditor: View {
 
     // MARK: - Export State
     @State private var exportTask: Task<Void, Never>?
-    @State private var showShareSheet = false
+    @State private var showExportCompletion = false
+    @State private var showDetectionReview = false
+    @State private var pendingReviewRegion: SensitiveRegion?
+    @State private var exportAfterReview = false
 
     // MARK: - Toast State
     @State private var toastMessage: String? = nil
@@ -160,13 +163,34 @@ struct SimpleBrushEditor: View {
         ) {
             PremiumView()
         }
-        .sheet(isPresented: $showShareSheet, onDismiss: {
-            // 分享结束（保存/发送/取消）后关闭编辑器
-            dismiss()
-        }) {
+        .sheet(isPresented: $showExportCompletion) {
             if let url = viewModel.exportedFileURL {
-                ShareSheet(items: [url])
+                EditorExportCompletionView(
+                    fileURL: url,
+                    onContinueEditing: { showExportCompletion = false },
+                    onDone: { dismiss() }
+                )
             }
+        }
+        .sheet(isPresented: $showDetectionReview, onDismiss: finishDetectionReview) {
+            DetectionReviewView(
+                regions: viewModel.detectedRegions,
+                isPDF: viewModel.isPDFFile,
+                onLocate: { region in
+                    pendingReviewRegion = region
+                    showDetectionReview = false
+                },
+                onIgnore: { region in
+                    viewModel.detectedRegions.removeAll { $0.id == region.id }
+                    selectedDetectedIDs.remove(region.id)
+                },
+                onExport: {
+                    viewModel.detectedRegions.removeAll()
+                    selectedDetectedIDs.removeAll()
+                    exportAfterReview = true
+                    showDetectionReview = false
+                }
+            )
         }
         .onChange(of: viewModel.faceDetectionMessage) { _, message in
             if let message {
@@ -284,6 +308,8 @@ struct SimpleBrushEditor: View {
                     DetectionResultBar(
                         regions: viewModel.regionsForCurrentPage,
                         otherPagesCount: viewModel.otherPagesRegionCount,
+                        isPDF: viewModel.isPDFFile,
+                        onReviewOtherPages: { showDetectionReview = true },
                         selectedIDs: selectedDetectedIDs,
                         onApply: applyDetectedRegion,
                         onIgnore: { region in
@@ -383,7 +409,8 @@ struct SimpleBrushEditor: View {
                 ) {
                     performExport()
                 }
-                .disabled(viewModel.isExporting)
+                .disabled(viewModel.isExporting || viewModel.isDetecting || viewModel.isDetectingFaces)
+                .accessibilityIdentifier("editor.export")
 
                 // 导出中提供显式取消（此前取消只能通过"放弃编辑"间接触发）
                 if viewModel.isExporting {
@@ -917,6 +944,8 @@ struct SimpleBrushEditor: View {
         autoApplyPendingStrokesIfNeeded()
         viewModel.goToPDFPage(pageIndex)
         currentStroke.removeAll()
+        selectedDetectedIDs.removeAll()
+        flashRegionID = nil
         selectedAnnotationIndex = nil
         currentDragOffset = .zero
         isDraggingRegion = false
@@ -1103,10 +1132,38 @@ struct SimpleBrushEditor: View {
 
     // MARK: - Export
 
+    private func finishDetectionReview() {
+        if let region = pendingReviewRegion {
+            pendingReviewRegion = nil
+            if let pageIndex = region.pageIndex, viewModel.isPDFFile {
+                goToPDFPage(pageIndex)
+            } else {
+                autoApplyPendingStrokesIfNeeded()
+            }
+            // 清除旧页的缩放与选择，确保目标区域出现在可见页面内。
+            canvasScale = 1
+            lastCanvasScale = 1
+            canvasOffset = .zero
+            lastCanvasOffset = .zero
+            selectedDetectedIDs = [region.id]
+            flashRegionID = region.id
+        }
+        if exportAfterReview {
+            exportAfterReview = false
+            performExport()
+        }
+    }
+
     private func performExport() {
-        guard !viewModel.isExporting else { return }
+        guard exportTask == nil, !viewModel.isExporting,
+            !viewModel.isDetecting, !viewModel.isDetectingFaces else { return }
+        guard viewModel.detectedRegions.isEmpty else {
+            showDetectionReview = true
+            return
+        }
 
         exportTask = Task {
+            defer { exportTask = nil }
             if !brushStrokes.isEmpty {
                 applyMosaic()
             }
@@ -1115,7 +1172,6 @@ struct SimpleBrushEditor: View {
 
             // 已被放弃/取消：不展示提示，不关闭编辑器，isExporting已由exportFile内部复位
             guard !Task.isCancelled else {
-                await MainActor.run { exportTask = nil }
                 return
             }
 
@@ -1132,15 +1188,11 @@ struct SimpleBrushEditor: View {
                         viewModel.errorMessage ?? NSLocalizedString("export.failed", comment: "")
                     showToast(message: message, isSuccess: false)
                 }
-                exportTask = nil
             }
 
             if success {
-                // 成功后短暂展示提示，再弹出系统分享 sheet（存储/发送），
-                // 分享 sheet 收起后关闭编辑器
-                try? await Task.sleep(nanoseconds: toastDisplayDurationNanoseconds)
                 await MainActor.run {
-                    showShareSheet = true
+                    showExportCompletion = true
                 }
             }
         }

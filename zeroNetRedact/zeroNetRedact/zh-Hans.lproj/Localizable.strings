@@ -703,3 +703,18 @@
 "voice.error.render" = "离线换声处理失败";
 "voice.error.silent" = "变声后的音频为空或无声，导出已停止，请重试。";
 "voice.error.format" = "无法创建离线音频格式";
+
+// Export completion and pending detection review
+"editor.export.shareCopy" = "分享副本";
+"editor.export.savedTitle" = "副本已保存";
+"editor.detect.applyPage" = "应用本页";
+"editor.review.title" = "检查未处理项";
+"editor.review.explanation" = "识别结果还没有全部应用遮挡。点击一项定位并处理，或左滑忽略；忽略的内容不会被自动遮挡。";
+"editor.review.locateHint" = "返回编辑器并定位此区域";
+"editor.review.ignore" = "忽略";
+"editor.review.export" = "导出副本";
+"editor.review.ignoreAndExport" = "忽略剩余 %d 处并导出";
+"editor.review.pdfSummary" = "还有 %d 处待处理，分布在 %d 页";
+"editor.review.imageSummary" = "还有 %d 处待处理";
+"editor.review.page" = "第 %d 页 · %d 处";
+"editor.review.regions" = "待处理区域";

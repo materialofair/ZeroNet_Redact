@@ -488,6 +488,8 @@ struct DetectionResultBar: View {
     let regions: [SensitiveRegion]
     /// 其他页面尚未处理的检测区域数量（图片文件恒为0）
     var otherPagesCount: Int = 0
+    let isPDF: Bool
+    let onReviewOtherPages: () -> Void
     /// 多选中的区域 id 集合
     let selectedIDs: Set<UUID>
     let onApply: (SensitiveRegion) -> Void
@@ -514,20 +516,25 @@ struct DetectionResultBar: View {
                     .foregroundColor(.secondary)
 
                     if otherPagesCount > 0 {
-                        Text(
-                            String(
-                                format: NSLocalizedString(
-                                    "editor.detectedRegions.otherPages", comment: ""),
-                                otherPagesCount)
-                        )
+                        Button(action: onReviewOtherPages) {
+                            Text(
+                                String(
+                                    format: NSLocalizedString(
+                                        "editor.detectedRegions.otherPages", comment: ""),
+                                    otherPagesCount)
+                            )
+                        }
                         .font(.caption2)
-                        .foregroundColor(.orange)
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("editor.reviewOtherPages")
                     }
                 }
 
                 Spacer()
 
-                Button(NSLocalizedString("editor.detect.applyAll", comment: "")) {
+                Button(NSLocalizedString(
+                    isPDF ? "editor.detect.applyPage" : "editor.detect.applyAll", comment: ""
+                )) {
                     onApplyAll()
                 }
                 .font(.system(size: 12, weight: .semibold))

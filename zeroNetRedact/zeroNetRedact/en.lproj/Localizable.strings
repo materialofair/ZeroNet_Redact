@@ -703,3 +703,18 @@
 "voice.error.render" = "Offline voice processing failed";
 "voice.error.silent" = "The processed audio is empty or silent. Export was stopped; please retry.";
 "voice.error.format" = "Unable to create the offline audio format";
+
+// Export completion and pending detection review
+"editor.export.shareCopy" = "Share Copy";
+"editor.export.savedTitle" = "Copy Saved";
+"editor.detect.applyPage" = "Apply This Page";
+"editor.review.title" = "Review Pending Items";
+"editor.review.explanation" = "Some detected items have not been covered. Tap an item to locate and handle it, or swipe left to ignore it. Ignored items will not be automatically covered.";
+"editor.review.locateHint" = "Return to the editor and locate this region";
+"editor.review.ignore" = "Ignore";
+"editor.review.export" = "Export Copy";
+"editor.review.ignoreAndExport" = "Ignore Remaining %d Items and Export";
+"editor.review.pdfSummary" = "%d pending items across %d pages";
+"editor.review.imageSummary" = "%d pending items";
+"editor.review.page" = "Page %d · %d items";
+"editor.review.regions" = "Pending Regions";
