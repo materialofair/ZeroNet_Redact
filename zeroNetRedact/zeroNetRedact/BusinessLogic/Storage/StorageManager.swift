@@ -202,8 +202,8 @@ class StorageManager {
         let originalURL = getOriginalURL(for: id, type: type)
         let thumbnailURL = getThumbnailURL(for: id, type: type)
 
-        try? FileManager.default.removeItem(at: originalURL)
-        try? FileManager.default.removeItem(at: thumbnailURL)
+        try removeIfPresent(at: originalURL)
+        try removeIfPresent(at: thumbnailURL)
     }
 
     /// 删除脱敏文件（文件不存在视为删除成功，与 deleteOriginal 语义一致）
@@ -216,6 +216,17 @@ class StorageManager {
         }
         let thumbnailURL = getRedactedThumbnailURL(for: id, type: type)
         try? FileManager.default.removeItem(at: thumbnailURL)
+    }
+
+    private func removeIfPresent(at url: URL) throws {
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch CocoaError.fileNoSuchFile {
+            return
+        }
+        guard !FileManager.default.fileExists(atPath: url.path) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
     }
 
     func getRedactedThumbnailURL(for id: UUID, type: FileType) -> URL {

@@ -5,6 +5,7 @@
 //  PDF 真删除（MuPDF）单元测试
 //
 
+import CoreData
 import PDFKit
 import UIKit
 import XCTest
@@ -12,6 +13,45 @@ import XCTest
 @testable import zeroNetRedact
 
 final class MuPDFRedactorTests: XCTestCase {
+
+    @MainActor
+    func testExportFailsWhenPhysicalPDFRedactionFails() async throws {
+        let input = try makeTextPDF(pages: [[
+            ("SENSITIVE", CGRect(x: 60, y: 60, width: 200, height: 30)),
+        ]])
+        let id = UUID()
+        let storage = StorageManager.shared
+        let encryptedInput = try CryptoEngine.shared.encrypt(data: input)
+        _ = try storage.saveEncryptedOriginal(data: encryptedInput, id: id, type: .pdf)
+        defer { try? storage.deleteOriginal(id: id, type: .pdf) }
+
+        let context = PersistenceController.shared.container.viewContext
+        let file = OriginalPDF.create(
+            in: context,
+            id: id,
+            encryptedDataPath: "",
+            encryptedThumbnailPath: "",
+            fileSize: Int64(input.count),
+            pageCount: 1,
+            title: "",
+            author: "",
+            creator: "",
+            isEncrypted: false
+        )
+        defer {
+            context.delete(file)
+            try? context.save()
+        }
+
+        let editor = PDFRedactionEditor(file: file) { _, _ in
+            throw MuPDFRedactorError.redactionFailed("forced failure")
+        }
+        try await editor.loadFile(file)
+        editor.applyRedaction(
+            at: CGRect(x: 55, y: 55, width: 210, height: 40), effect: .solidBlack)
+
+        await XCTAssertThrowsErrorAsync(try await editor.exportRedactedFile(progress: nil))
+    }
 
     // MARK: - 文本 PDF fixture
 
@@ -175,4 +215,15 @@ final class MuPDFRedactorTests: XCTestCase {
                 regions: [PDFRedactionRegion(
                     pageIndex: 99, rect: CGRect(x: 0, y: 0, width: 100, height: 100))]))
     }
+}
+
+private func XCTAssertThrowsErrorAsync<T>(
+    _ expression: @autoclosure () async throws -> T,
+    file: StaticString = #filePath,
+    line: UInt = #line
+) async {
+    do {
+        _ = try await expression()
+        XCTFail("Expected expression to throw", file: file, line: line)
+    } catch {}
 }

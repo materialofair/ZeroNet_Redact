@@ -206,6 +206,25 @@ final class StorageManagerTests: XCTestCase {
         XCTAssertNoThrow(try storageManager.deleteRedacted(id: nonExistentID, type: .pdf))
     }
 
+    func testDeleteOriginalPropagatesFailureToDeleteThumbnail() throws {
+        let fileID = UUID()
+        testFileIDs.append(fileID)
+        _ = try storageManager.saveEncryptedOriginal(
+            data: createTestData(), id: fileID, type: .image)
+        let thumbnailURL = try storageManager.saveEncryptedThumbnail(
+            data: createTestData(), id: fileID, type: .image)
+
+        let thumbnailDirectory = thumbnailURL.deletingLastPathComponent()
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o500], ofItemAtPath: thumbnailDirectory.path)
+        defer {
+            try? FileManager.default.setAttributes(
+                [.posixPermissions: 0o700], ofItemAtPath: thumbnailDirectory.path)
+        }
+
+        XCTAssertThrowsError(try storageManager.deleteOriginal(id: fileID, type: .image))
+    }
+
     // MARK: - 文件 URL 测试
 
     /// 测试获取原文件 URL

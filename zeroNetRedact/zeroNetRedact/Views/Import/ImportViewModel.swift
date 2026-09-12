@@ -542,8 +542,7 @@ class ImportViewModel: ObservableObject {
     // MARK: - 删除功能
 
     /// 删除单个原始文件
-    /// 顺序：先删 Core Data 记录并 save，save 成功后再删磁盘文件。
-    /// 这样即使磁盘删除失败也只留下孤立文件（无害），不会出现"磁盘已删、记录还在"的不一致。
+    /// 先删除并核验磁盘原件；失败时保留 Core Data 记录，避免文件从界面消失却仍残留在设备上。
     func deleteFile(_ file: OriginalFile) {
         // 先取出属性值：对象删除并保存后属性会变成 nil，再访问非可选属性会崩溃
         let fileID = file.id
@@ -552,21 +551,24 @@ class ImportViewModel: ObservableObject {
             (id: $0.id, type: $0.fileType)
         }
 
-        context.delete(file)
         do {
-            try context.save()
+            try StorageManager.shared.deleteOriginal(id: fileID, type: fileType)
         } catch {
-            context.rollback()
-            print("❌ 删除原始文件失败: \(error)")
+            print("❌ 磁盘清理失败 (\(fileID)): \(error)")
             errorMessage = error.localizedDescription
             showError = true
             return
         }
 
+        context.delete(file)
         do {
-            try StorageManager.shared.deleteOriginal(id: fileID, type: fileType)
+            try context.save()
         } catch {
-            print("❌ 磁盘清理失败 (\(fileID)): \(error)")
+            context.rollback()
+            print("❌ 删除原始文件记录失败: \(error)")
+            errorMessage = error.localizedDescription
+            showError = true
+            return
         }
         let cacheKey = "original_thumbnail_\(fileID.uuidString)"
         ImageCache.shared.removeImage(forKey: cacheKey)
@@ -583,8 +585,7 @@ class ImportViewModel: ObservableObject {
     }
 
     /// 批量删除当前选中的原始文件
-    /// 顺序同 deleteFile：先对全部选中对象 delete+save，save 成功后再逐个清理磁盘文件。
-    /// save 失败则 rollback，磁盘完全不动。
+    /// 对每项先删除磁盘原件；失败项保留在列表中，成功项再删除对应记录。
     func deleteSelectedFiles() {
         let filesToDelete = originalFiles.filter { selectedFileIDs.contains($0.id) }
         guard !filesToDelete.isEmpty else { return }
@@ -598,20 +599,6 @@ class ImportViewModel: ObservableObject {
             )
         }
 
-        for file in filesToDelete {
-            context.delete(file)
-        }
-
-        do {
-            try context.save()
-        } catch {
-            context.rollback()
-            print("❌ 保存批量删除结果失败: \(error)")
-            errorMessage = error.localizedDescription
-            showError = true
-            return
-        }
-
         var failedDiskCleanupIDs: [UUID] = []
         for snapshot in snapshots {
             do {
@@ -619,6 +606,7 @@ class ImportViewModel: ObservableObject {
             } catch {
                 print("❌ 磁盘清理失败 (\(snapshot.id)): \(error)")
                 failedDiskCleanupIDs.append(snapshot.id)
+                continue
             }
             let cacheKey = "original_thumbnail_\(snapshot.id.uuidString)"
             ImageCache.shared.removeImage(forKey: cacheKey)
@@ -629,7 +617,21 @@ class ImportViewModel: ObservableObject {
             }
         }
 
-        print("✅ 已批量删除 \(snapshots.count) 个原始文件")
+        let deletedIDs = Set(snapshots.map(\.id)).subtracting(Set(failedDiskCleanupIDs))
+        for file in filesToDelete where deletedIDs.contains(file.id) {
+            context.delete(file)
+        }
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            print("❌ 保存批量删除结果失败: \(error)")
+            errorMessage = error.localizedDescription
+            showError = true
+            return
+        }
+
+        print("✅ 已批量删除 \(deletedIDs.count) 个原始文件")
 
         if !failedDiskCleanupIDs.isEmpty {
             errorMessage = String(

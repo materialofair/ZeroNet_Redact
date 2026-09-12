@@ -33,12 +33,10 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
     private let crypto = CryptoEngine.shared
     private let storage = StorageManager.shared
     private let recognizer = TextRecognizer.shared
+    private let redactor: (Data, [PDFRedactionRegion]) throws -> Data
 
     /// 标记本 App 创建的遮盖注释，导出时据此识别真删除区域
     static let redactionAnnotationMarker = "com.zeronet.redact"
-
-    /// 真删除失败时退回视觉遮盖导出（EditorViewModel 据此提示用户）
-    private(set) var usedFallbackExport = false
 
     /// 注释状态快照：标记注释对象 + 当前 bounds
     struct PDFAnnotationSnapshot {
@@ -47,8 +45,12 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         let bounds: CGRect
     }
 
-    init(file: OriginalPDF) {
+    init(
+        file: OriginalPDF,
+        redactor: @escaping (Data, [PDFRedactionRegion]) throws -> Data = MuPDFRedactor.redact
+    ) {
         self.currentFile = file
+        self.redactor = redactor
     }
 
     // MARK: - RedactionEditor Protocol
@@ -298,23 +300,10 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         // 3. 真删除：MuPDF 把遮盖区域内的文字从内容流中物理移除
         //   （坐标约定：PDFKit annotation.bounds 与 MuPDF set_annot_rect
         //     同为页面显示空间，直接传递；旋转页由 MuPDF page_ctm 处理）
-        let redactedData: Data
-        do {
-            redactedData = try await Task.detached(priority: .userInitiated) {
-                try MuPDFRedactor.redact(pdfData: cleanData, regions: regions)
-            }.value
-            usedFallbackExport = false
-        } catch {
-            // 兜底：真删除失败时退回旧的视觉遮盖路径
-            print("⚠️ PDFRedactionEditor: MuPDF 真删除失败，退回视觉遮盖导出: \(error)")
-            sanitizeMetadata(document: document)
-            guard let fallbackData = document.dataRepresentation() else {
-                throw EditorError.exportFailed
-            }
-            usedFallbackExport = true
-            progress?(1.0)
-            return fallbackData
-        }
+        let redactor = self.redactor
+        let redactedData = try await Task.detached(priority: .userInitiated) {
+            try redactor(cleanData, regions)
+        }.value
         progress?(0.6)
 
         // 4. 重新叠加效果覆盖层：与编辑器所见保持一致（纯视觉填充，不含文字）

@@ -593,14 +593,6 @@ class EditorViewModel: ObservableObject {
                         // 记录导出使用量（免费用户计数）
                         self.recordExportUsage()
 
-                        // 真删除失败退回视觉遮盖时，提示用户
-                        if let pdfEditor = editor?.baseEditor as? PDFRedactionEditor,
-                            pdfEditor.usedFallbackExport
-                        {
-                            self.exportWarning = NSLocalizedString(
-                                "export.fallbackWarning", comment: "")
-                        }
-
                         didSaveRecord = true
                     } catch {
                         print("❌ 保存打码文件到相册失败: \(error)")
