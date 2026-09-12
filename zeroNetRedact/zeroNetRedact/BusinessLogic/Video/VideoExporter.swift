@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import OSLog
 
 /// 导出时如何处理音轨：
 /// - `original`：保留源视频音轨（直接导出，音轨原样转封装）。
@@ -20,6 +21,7 @@ final class VideoExporter {
         audio: VideoExportAudio = .original,
         progress: @escaping @Sendable (Double) -> Void = { _ in }
     ) async throws {
+        let started = CFAbsoluteTimeGetCurrent()
         let asset = AVURLAsset(url: sourceURL)
         guard !(try await asset.loadTracks(withMediaType: .video)).isEmpty else {
             throw VideoProcessingError.missingVideoTrack
@@ -102,10 +104,13 @@ final class VideoExporter {
                 throw VideoProcessingError.missingAudioTrack
             }
         }
+        Logger(subsystem: "zeroNetRedact", category: "VideoPerformance").info(
+            "export totalSeconds=\(CFAbsoluteTimeGetCurrent() - started) thermalState=\(ProcessInfo.processInfo.thermalState.rawValue) lowPower=\(ProcessInfo.processInfo.isLowPowerModeEnabled)"
+        )
         progress(1)
     }
 
-    /// 优先 HEVC：现代设备走硬件编码，比 H.264 最高质量快得多且体积更小；
+    /// 优先 HEVC；实际编码速度取决于源素材与设备，需用耗时记录验证。
     /// 设备/资产不支持时回退 H.264 最高质量。
     private static func preferredPreset(for asset: AVAsset) -> String {
         if AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHEVCHighestQuality) != nil {

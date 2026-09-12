@@ -167,6 +167,8 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     private func beginExport(sourceURL: URL, workspace: URL) {
+        // 避免预览与导出同时解码、合成视频而争用设备资源。
+        player.pause()
         phase = .exporting
         progress = 0
         errorMessage = nil
