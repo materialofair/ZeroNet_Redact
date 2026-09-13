@@ -1,0 +1,16 @@
+{
+  "en-US": {
+    "name": "zeroNet Redact: Blur & Censor",
+    "subtitle": "Photo, Video & PDF Privacy",
+    "keywords": "face,pixelate,mosaic,screenshot,document,text,email,phone,receipt,blackout,mask,offline,batch",
+    "promotionalText": "Hide private details in screenshots, PDFs and videos. Process on your device, review before sharing. Free daily exports. One-time upgrade, no subscription.",
+    "description": "Share the file without sharing every private detail. Hide phone numbers in screenshots, redact sensitive text in PDFs, and cover selected areas in videos — with content processing on your device and no upload of your originals.\n\nFOR SCREENSHOTS, RECEIPTS & PHOTOS\nUse local text detection to find phone numbers and email addresses, then review the suggested areas. Search repeated text or add covers manually. Choose solid covers, mosaic or blur, and review detected faces before covering them.\n\nFOR PDF DOCUMENTS\nPrepare a copy of a contract, receipt or other document before sending it. Search sensitive text, check pages that still need attention, and add manual covers where needed.\n\nFOR VIDEO PRIVACY\nReview detected faces or place your own cover over a selected area. Tap to position the box, adjust its size and choose when it appears. Manual boxes stay in a fixed position; preview the full video to check that moving details stay covered.\n\nPICK UP WHERE YOU LEFT OFF\nSave encrypted drafts for photos, PDFs and videos. For multiple images, apply shared detection rules, review each file, and pause or retry as needed. Organize originals and finished copies into groups, combine images into a long image, and share from the result preview.\n\nYOUR FILES, ON YOUR DEVICE\nImported originals and editing drafts are stored encrypted on your device. Optional app locking supports a password and Face ID or Touch ID on compatible devices. No account is required to process your files. Purchases and restoring purchases use Apple services.\n\nTRY FREE. UPGRADE WITH ONE PURCHASE.\nThe free version includes 3 image/video exports combined and 3 PDF exports per day. Free video exports support source files up to 300 MB. A one-time in-app purchase removes these limits and unlocks premium stickers. No subscription.\n\nAutomatic detection can miss private information. Review the entire exported result before sharing."
+  },
+  "zh-Hans": {
+    "name": "zeroNet Redact：图片视频打码",
+    "subtitle": "PDF脱敏、截图马赛克与人脸遮挡",
+    "keywords": "照片,涂黑,手机号,邮箱,身份证,银行卡,聊天,订单,合同,本地",
+    "promotionalText": "发截图、传 PDF、分享视频前，先遮住不该公开的私人信息。内容在本机处理，原文件无需上传。每天可免费限额导出，一次购买解锁不限量，无需订阅。",
+    "description": "分享文件，也可以保留隐私。发聊天截图前隐藏手机号，发送 PDF 前遮住敏感文字，分享视频前盖住指定区域。图片、PDF 和视频在一个应用中处理，内容留在本机，原文件无需上传。\n\n截图、订单和照片：识别后再复核\n本地文字识别辅助查找手机号、邮箱、身份证号和银行卡号，逐项检查后应用遮挡。支持搜索重复文字、手动选择和涂抹，可选实色、马赛克或模糊效果；图片人脸可检测后选择遮挡。\n\nPDF 文档：发送前逐页检查\n处理合同、账单等文档中的敏感文字，搜索重复内容，快速定位待处理页面，并手动补充需要遮挡的区域。导出处理后的副本再分享。\n\n视频：放好遮挡框，选好生效时段\n复核检测到的人脸，或手动添加遮挡框。轻点定位、调整大小，选择整个视频或指定时段。手动框固定在画面上，不会自动跟随移动，请预览完整视频确认遮挡范围。\n\n不用一次做完\n图片、PDF 和视频支持加密编辑草稿，稍后继续。多张图片可使用统一识别规则，逐张复核和导出，支持暂停与失败重试。原文件和脱敏成品可分组整理，也可拼接长图、查看处理记录，并从成品预览直接分享。\n\n本地处理，加密保存\n导入原文件与编辑草稿在设备中加密保存。可选密码锁，并在兼容设备上使用 Face ID 或 Touch ID。处理文件无需注册账户；购买与恢复购买使用 Apple 服务。\n\n先免费体验，再按需买断\n免费版每天可导出图片和视频合计 3 次、PDF 3 次，免费视频导出支持不超过 300 MB 的源文件。一次应用内购买解除上述限制，并解锁高级贴纸，无需订阅。\n\n自动识别可能遗漏隐私信息，请在分享前完整复核导出结果。"
+  }
+}
