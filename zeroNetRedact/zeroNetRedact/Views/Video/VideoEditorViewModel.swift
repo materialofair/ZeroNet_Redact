@@ -16,6 +16,10 @@ final class VideoEditorViewModel: ObservableObject {
     private var analyzedTimelineAvailable = false
     private var draftSaveTask: Task<Void, Never>?
     private var restoredPlaybackSeconds: Double?
+    private var playbackTimeObserver: VideoPlaybackTimeObservation?
+    private var isReviewScrubbing = false
+    private var reviewSeekGeneration = 0
+    private var pendingReviewSeek: Int?
 
     private func checkDraft() -> Bool {
         guard !draftChecked else { return !showDraftRestore }
@@ -44,9 +48,11 @@ final class VideoEditorViewModel: ObservableObject {
         }
         sticker = restoredSticker
         voicePreset = restoredVoice
+        manualRegions = state.manualRegions ?? []
+        groups = state.groups ?? []
         if let restored = state.timeline {
             timeline = restored
-            analyzedTimelineAvailable = true
+            analyzedTimelineAvailable = restored.frames.allSatisfy { $0.normalizedRects.count == $0.trackIDs.count }
         }
         restoredPlaybackSeconds = state.playbackSeconds
         pendingDraft = nil
@@ -69,9 +75,11 @@ final class VideoEditorViewModel: ObservableObject {
         draftSaveTask?.cancel()
         guard draftEnabled, let session = draftSession else { return false }
         do {
-            let state = DraftVideoState(sticker: sticker, voice: voicePreset,
+            var state = DraftVideoState(sticker: sticker, voice: voicePreset,
                                         timeline: analyzedTimelineAvailable ? timeline : nil,
                                         playbackSeconds: player.currentTime().seconds)
+            state.manualRegions = manualRegions
+            state.groups = groups
             let draft = EditorDraft(originalID: video.id, masks: [], pageIndex: 0,
                                     recognition: [], selectedEffect: try DraftEffect(.solidBlack), videoState: state)
             try EditorDraftStore.shared.save(draft, session: session)
@@ -115,6 +123,118 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var exportedFile: RedactedFile?
     @Published private(set) var exportAudioTrackCount: Int?
+    @Published private(set) var exportMetadataCount: Int?
+    @Published private(set) var exportedVoicePreset: VoicePreset?
+    @Published private(set) var manualRegions: [VideoManualRegion] = []
+    @Published private(set) var groups: [VideoPersonGroup] = []
+    @Published var selectedTrackIDs: Set<Int> = []
+    @Published var drawingRegion = false
+    @Published var pendingManualRegion: VideoManualRegion?
+    @Published var redrawingManualRegion: VideoManualRegion?
+
+    func beginRedrawing(_ region: VideoManualRegion) {
+        seekReview(region.start)
+        redrawingManualRegion = region
+        drawingRegion = true
+    }
+
+    func highlightedTracks(at seconds: Double) -> [(id: Int, rect: CGRect)] {
+        guard let frame = timeline.frame(at: seconds) else { return [] }
+        return zip(frame.trackIDs, frame.normalizedRects).compactMap { id, rect in
+            selectedTrackIDs.contains(id) ? (id: id, rect: rect) : nil
+        }
+    }
+    @Published var reviewSeconds = 0.0
+    private var pendingGroupTrackIDs: Set<Int>?
+
+    var trackIDs: [Int] { Array(Set(timeline.frames.flatMap(\.trackIDs))).sorted() }
+    var automaticCoverage: Int { timeline.frame(at: reviewSeconds)?.normalizedRects.count ?? 0 }
+    var manualCoverage: Int { manualRegions.filter { $0.contains(reviewSeconds) }.count }
+    func coverageIntervals(manual: Bool) -> [ClosedRange<Double>] {
+        if manual { return manualRegions.map { $0.start...$0.end } }
+        var intervals: [ClosedRange<Double>] = []
+        for index in timeline.frames.indices where !timeline.frames[index].normalizedRects.isEmpty {
+            let start = index == 0 ? 0 : (timeline.frames[index - 1].seconds + timeline.frames[index].seconds) / 2
+            let end = index + 1 == timeline.frames.count ? video.duration : (timeline.frames[index].seconds + timeline.frames[index + 1].seconds) / 2
+            guard end > start else { continue }
+            if let previous = intervals.last, previous.upperBound >= start {
+                intervals[intervals.count - 1] = previous.lowerBound...end
+            } else { intervals.append(start...end) }
+        }
+        return intervals
+    }
+
+    func trackRange(_ id: Int) -> ClosedRange<Double>? {
+        let frames = timeline.frames.filter { $0.trackIDs.contains(id) }
+        guard let first = frames.first, let last = frames.last else { return nil }
+        return first.seconds...min(video.duration, last.seconds + 1 / max(1, timeline.frameRate))
+    }
+
+    func seekReview(_ seconds: Double) {
+        reviewSeconds = seconds
+        player.pause()
+        reviewSeekGeneration += 1
+        let generation = reviewSeekGeneration
+        pendingReviewSeek = generation
+        player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.pendingReviewSeek == generation else { return }
+                self.pendingReviewSeek = nil
+            }
+        }
+    }
+
+    func reviewScrubbingChanged(_ isEditing: Bool) {
+        isReviewScrubbing = isEditing
+    }
+
+    func synchronizeReviewTime(_ seconds: Double) {
+        guard !isReviewScrubbing, pendingReviewSeek == nil, seconds.isFinite else { return }
+        reviewSeconds = min(video.duration, max(0, seconds))
+    }
+
+    private func observePlaybackTime() {
+        guard playbackTimeObserver == nil else { return }
+        playbackTimeObserver = VideoPlaybackTimeObservation(player: player) { [weak self] time in
+            Task { @MainActor in self?.synchronizeReviewTime(time.seconds) }
+        }
+    }
+
+    private func removePlaybackTimeObserver() {
+        playbackTimeObserver = nil
+        pendingReviewSeek = nil
+        isReviewScrubbing = false
+    }
+
+    func saveRegion(rect: CGRect, start: Double, end: Double, replacing: UUID? = nil, effect: String = "blur") -> Bool {
+        guard var region = VideoManualRegion(rect: rect, start: start, end: end, duration: video.duration) else { return false }
+        region.effect = effect
+        if let replacing { region.id = replacing; manualRegions.removeAll { $0.id == replacing } }
+        manualRegions.append(region)
+        scheduleDraftSave()
+        refreshPreview()
+        return true
+    }
+
+    func removeRegion(_ id: UUID) {
+        manualRegions.removeAll { $0.id == id }
+        scheduleDraftSave()
+        refreshPreview()
+    }
+
+    func applyGroupEffect(_ effect: String) {
+        guard !selectedTrackIDs.isEmpty else { return }
+        if let requested = VideoRedactionSticker(rawValue: effect), requested.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess) {
+            pendingGroupTrackIDs = selectedTrackIDs
+            requestStickerSelection(requested)
+            return
+        }
+        for index in groups.indices { groups[index].trackIDs.removeAll { selectedTrackIDs.contains($0) } }
+        groups.removeAll { $0.trackIDs.isEmpty }
+        groups.append(VideoPersonGroup(trackIDs: selectedTrackIDs.sorted(), effect: effect))
+        scheduleDraftSave()
+        refreshPreview()
+    }
     /// 分析阶段剩余时间预估（秒）；nil 表示无预估（分析中会持续更新）
     @Published private(set) var estimatedRemainingSeconds: TimeInterval?
 
@@ -200,6 +320,11 @@ final class VideoEditorViewModel: ObservableObject {
 
     func export() {
         guard phase == .ready, let sourceURL, let workspace else { return }
+        let effects = groups.map(\.effect) + manualRegions.map(\.effect)
+        if let locked = effects.compactMap(VideoRedactionSticker.init(rawValue:)).first(where: { $0.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess) }) {
+            requestStickerSelection(locked)
+            return
+        }
         guard !sticker.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess) else {
             requestStickerSelection(sticker)
             return
@@ -234,12 +359,16 @@ final class VideoEditorViewModel: ObservableObject {
         )
         switch action {
         case .applySticker(let selected):
-            applySelectedSticker(selected)
+            if let tracks = pendingGroupTrackIDs {
+                selectedTrackIDs = tracks
+                applyGroupEffect(selected.rawValue)
+            } else { applySelectedSticker(selected) }
         case .retryExport:
             export()
         case .none:
             break
         }
+        pendingGroupTrackIDs = nil
     }
 
     private func applySelectedSticker(_ selected: VideoRedactionSticker) {
@@ -294,6 +423,7 @@ final class VideoEditorViewModel: ObservableObject {
                         timeline: timeline,
                         sticker: sticker,
                         audio: .original,
+                        manualRegions: manualRegions, groups: groups,
                         progress: { [weak self] value in
                             Task { @MainActor in self?.progress = value * 0.95 }
                         }
@@ -306,6 +436,7 @@ final class VideoEditorViewModel: ObservableObject {
                         timeline: timeline,
                         sticker: sticker,
                         audio: .mute,
+                        manualRegions: manualRegions, groups: groups,
                         progress: { [weak self] value in
                             Task { @MainActor in self?.progress = value * 0.95 }
                         }
@@ -329,6 +460,7 @@ final class VideoEditorViewModel: ObservableObject {
                         timeline: timeline,
                         sticker: sticker,
                         audio: .replace(audioURL),
+                        manualRegions: manualRegions, groups: groups,
                         progress: { [weak self] value in
                             Task { @MainActor in self?.progress = 0.2 + value * 0.75 }
                         }
@@ -339,6 +471,9 @@ final class VideoEditorViewModel: ObservableObject {
                 progress = 0.95
 
                 let audioTracks = try? await AVURLAsset(url: exportURL).loadTracks(withMediaType: .audio)
+                let metadata = try? await AVURLAsset(url: exportURL).load(.metadata)
+                exportMetadataCount = metadata?.count
+                exportedVoicePreset = video.hasAudio ? voicePreset : .mute
                 let redacted = try persistExport(stagedURL: exportURL)
                 if !AppState.shared.hasUnlimitedAccess {
                     UsageTracker.shared.recordMediaExport()
@@ -358,6 +493,7 @@ final class VideoEditorViewModel: ObservableObject {
             }
             // 视图已离开且导出自行完成：清理明文工作副本（正常路径由 onDisappear→cleanup 处理）
             if !isViewVisible {
+                removePlaybackTimeObserver()
                 player.pause()
                 player.replaceCurrentItem(with: nil)
                 releasePlaybackAudioSession()
@@ -372,6 +508,7 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     func cleanup() {
+        removePlaybackTimeObserver()
         workTask?.cancel()
         previewTask?.cancel()
         player.pause()
@@ -512,7 +649,8 @@ final class VideoEditorViewModel: ObservableObject {
             phase = .ready
             progress = 1
             if let seconds = restoredPlaybackSeconds {
-                await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+                await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+                synchronizeReviewTime(player.currentTime().seconds)
                 restoredPlaybackSeconds = nil
             }
             flushDraft()
@@ -527,7 +665,7 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     private func refreshPreview() {
-        guard let sourceURL, !timeline.frames.isEmpty else { return }
+        guard let sourceURL else { return }
         let asset: AVAsset
         if isVoicePreviewActive, let previewAsset {
             asset = previewAsset
@@ -543,16 +681,19 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     private func installPreviewItem(asset: AVAsset) {
+        observePlaybackTime()
         let item = AVPlayerItem(asset: asset)
         item.videoComposition = VideoCompositionFactory.make(
             asset: asset,
             timeline: timeline,
-            sticker: sticker
+            sticker: sticker,
+            manualRegions: manualRegions,
+            groups: groups
         )
         let resumeTime = VideoPlaybackTime.resumeTime(from: player)
         player.replaceCurrentItem(with: item)
         if let resumeTime {
-            player.seek(to: resumeTime)
+            player.seek(to: resumeTime, toleranceBefore: .zero, toleranceAfter: .zero)
         }
     }
 
@@ -595,4 +736,18 @@ final class VideoEditorViewModel: ObservableObject {
             throw error
         }
     }
+}
+
+/// Holds the player used to register the token, so both explicit cleanup and
+/// model deallocation remove the observer from that exact player.
+private nonisolated final class VideoPlaybackTimeObservation {
+    private let player: AVPlayer
+    private let token: Any
+
+    init(player: AVPlayer, update: @escaping @Sendable (CMTime) -> Void) {
+        self.player = player
+        token = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.1, preferredTimescale: 600), queue: .main, using: update)
+    }
+
+    deinit { player.removeTimeObserver(token) }
 }

@@ -11,6 +11,7 @@ import SwiftUI
 /// 简单涂抹编辑器
 struct SimpleBrushEditor: View {
     let file: RedactableFile
+    private let batchItem: BatchRedactionItem?
     @StateObject private var viewModel: EditorViewModel
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
@@ -24,6 +25,8 @@ struct SimpleBrushEditor: View {
     @State private var imageSize: CGSize = .zero
     @State private var selectedEffect: BrushEffect = .black
     @State private var showTextSearch = false
+    @State private var showTextSelection = false
+    @AppStorage("editorReviewTipDismissed") private var reviewTipDismissed = false
     @State private var selectedBrushSize: BrushSize = .medium
     @State private var isInitialLoad = true
 
@@ -92,8 +95,9 @@ struct SimpleBrushEditor: View {
 
     // MARK: - Initialization
 
-    init(file: RedactableFile) {
+    init(file: RedactableFile, batchItem: BatchRedactionItem? = nil) {
         self.file = file
+        self.batchItem = batchItem
         _viewModel = StateObject(wrappedValue: EditorViewModel(file: file))
     }
 
@@ -102,6 +106,12 @@ struct SimpleBrushEditor: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if !reviewTipDismissed {
+                    HStack(alignment: .top) {
+                        Text("quickStart.editorHint").font(.caption)
+                        Button("quickStart.gotIt") { reviewTipDismissed = true }
+                    }.padding(12).background(Color.accentColor.opacity(0.08))
+                }
                 // 主编辑区域
                 editorContent
 
@@ -112,7 +122,16 @@ struct SimpleBrushEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { navigationToolbar }
             .task {
+                if isInitialLoad { viewModel.batchExportID = batchItem?.exportID }
                 await viewModel.loadFile()
+                if isInitialLoad, let batchItem {
+                    if viewModel.showDraftRestore {
+                        viewModel.restoreDraft()
+                    } else {
+                        viewModel.keepSearchResults(batchItem.candidates.map(\.region))
+                        viewModel.flushDraft()
+                    }
+                }
                 isInitialLoad = false
             }
             .background(Color.white)
@@ -207,6 +226,25 @@ struct SimpleBrushEditor: View {
                 onLocate: { pendingReviewRegion = $0 },
                 onKeepPending: viewModel.keepSearchResults
             )
+        }
+        .sheet(isPresented: $showTextSelection) {
+            if let image = viewModel.currentImage {
+                OCRTextSelectionView(image: image) { bounds in
+                    let rects: [CGRect]
+                    if viewModel.isPDFFile,
+                       let page = viewModel.currentPDFDocument?.page(at: viewModel.currentPDFPageIndex) {
+                        let size = page.bounds(for: .mediaBox).size
+                        rects = bounds.map { CGRect(x: $0.minX * size.width, y: $0.minY * size.height,
+                                                   width: $0.width * size.width, height: $0.height * size.height) }
+                    } else {
+                        rects = bounds.map { CGRect(x: $0.minX * image.size.width, y: (1 - $0.maxY) * image.size.height,
+                                                   width: $0.width * image.size.width, height: $0.height * image.size.height) }
+                    }
+                    viewModel.applyRedactions(at: rects, effect: selectedEffect.redactionEffect)
+                    if viewModel.isPDFFile { viewModel.refreshPDFPageImage() }
+                    viewModel.scheduleDraftSave()
+                }
+            }
         }
         .onChange(of: viewModel.faceDetectionMessage) { _, message in
             if let message {
@@ -525,6 +563,15 @@ struct SimpleBrushEditor: View {
 
         ToolbarItem(placement: .navigationBarTrailing) {
             HStack {
+                Button {
+                    autoApplyPendingStrokesIfNeeded()
+                    Task { @MainActor in
+                        if let editor = viewModel.editor?.baseEditor as? ImageRedactionEditor { await editor.waitForPendingRender() }
+                        showTextSelection = true
+                    }
+                } label: { Image(systemName: "text.cursor").frame(width: 44, height: 44) }
+                .accessibilityLabel(Text("textSelection.title"))
+                .disabled(viewModel.currentImage == nil || viewModel.isExporting || viewModel.isDetecting || viewModel.isDetectingFaces)
                 Button {
                     autoApplyPendingStrokesIfNeeded()
                     Task { @MainActor in

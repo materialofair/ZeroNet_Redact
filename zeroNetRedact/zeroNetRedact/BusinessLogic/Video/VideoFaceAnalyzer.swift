@@ -111,7 +111,7 @@ final class VideoFaceAnalyzer {
                 let seconds = result.seconds
                 let detections = result.normalizedRects
                 let smoothed = smoother.update(with: detections)
-                frames.append(VideoFaceFrame(seconds: seconds, normalizedRects: smoothed))
+                frames.append(VideoFaceFrame(seconds: seconds, normalizedRects: smoothed, trackIDs: smoother.tracks.map(\.id)))
 
                 let frameCost = CFAbsoluteTimeGetCurrent() - frameStart
                 perFrameEMA = perFrameEMA == 0 ? frameCost : perFrameEMA * 0.8 + frameCost * 0.2

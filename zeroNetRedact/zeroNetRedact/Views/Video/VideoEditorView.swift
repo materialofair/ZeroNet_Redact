@@ -160,6 +160,7 @@ struct VideoEditorView: View {
 
             if viewModel.phase == .ready {
                 protectionSection
+                VideoRegionControls(model: viewModel)
                 voiceSection
                 reviewNotice
             }
@@ -199,6 +200,7 @@ struct VideoEditorView: View {
                     stateContent
                     if viewModel.phase == .ready {
                         protectionSection
+                        VideoRegionControls(model: viewModel)
                         voiceSection
                         reviewNotice
                     }
@@ -268,6 +270,9 @@ struct VideoEditorView: View {
                 if viewModel.phase == .ready || viewModel.phase == .completed {
                     VideoPlayer(player: viewModel.player)
                         .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large))
+                    if viewModel.drawingRegion {
+                        VideoRegionDrawingOverlay(model: viewModel)
+                    }
                 } else {
                     VStack(spacing: DesignSystem.Spacing.md) {
                         Image(systemName: "checkmark.shield.fill")
@@ -292,9 +297,13 @@ struct VideoEditorView: View {
                     .background(.black.opacity(0.62), in: Capsule())
                     .padding(DesignSystem.Spacing.md)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .allowsHitTesting(false)
+                }
+                if viewModel.phase == .ready, !viewModel.selectedTrackIDs.isEmpty, !viewModel.drawingRegion {
+                    VideoSelectedTracksOverlay(model: viewModel)
                 }
             }
-            .aspectRatio(16 / 10, contentMode: .fit)
+            .aspectRatio(CGFloat(max(1, viewModel.video.width)) / CGFloat(max(1, viewModel.video.height)), contentMode: .fit)
             .overlay {
                 RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
                     .stroke(Color.white.opacity(0.12), lineWidth: 1)
@@ -432,6 +441,12 @@ struct VideoEditorView: View {
                 if let count = viewModel.exportAudioTrackCount {
                     Text(String(format: NSLocalizedString("report.audioTracks", comment: ""), count))
                         .font(.footnote)
+                }
+                if let voice = viewModel.exportedVoicePreset {
+                    Text(NSLocalizedString("video.report.audio", comment: "") + voice.displayName).font(.footnote)
+                }
+                if let count = viewModel.exportMetadataCount {
+                    Text(String(format: NSLocalizedString("video.report.metadata", comment: ""), count)).font(.footnote)
                 }
             }
             Spacer(minLength: 0)

@@ -52,6 +52,7 @@ struct VideoPremiumIntentState: Equatable, Sendable {
 struct VideoFaceFrame: Sendable {
     let seconds: Double
     let normalizedRects: [CGRect]
+    var trackIDs: [Int] = []
 }
 
 struct VideoFaceTimeline: Sendable {
@@ -60,6 +61,20 @@ struct VideoFaceTimeline: Sendable {
     let totalUniqueFaces: Int
 
     static let empty = VideoFaceTimeline(frames: [], frameRate: 30, totalUniqueFaces: 0)
+
+    func frame(at seconds: Double) -> VideoFaceFrame? {
+        guard seconds.isFinite else { return nil }
+        var low = 0
+        var high = frames.count
+        while low < high {
+            let middle = (low + high) / 2
+            if frames[middle].seconds < seconds { low = middle + 1 } else { high = middle }
+        }
+        guard !frames.isEmpty else { return nil }
+        if low == 0 { return frames[0] }
+        if low == frames.count { return frames.last }
+        return seconds - frames[low - 1].seconds <= frames[low].seconds - seconds ? frames[low - 1] : frames[low]
+    }
 
     func rects(at time: CMTime) -> [CGRect] {
         guard !frames.isEmpty else { return [] }

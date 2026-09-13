@@ -70,6 +70,7 @@ struct DraftFaceCandidate: Codable {
 struct DraftVideoFrame: Codable {
     var seconds: Double
     var rects: [CGRect]
+    var trackIDs: [Int]? = nil
 }
 
 struct DraftVideoState: Codable {
@@ -79,23 +80,26 @@ struct DraftVideoState: Codable {
     var frameRate: Double
     var faceCount: Int
     var playbackSeconds: Double
+    var manualRegions: [VideoManualRegion]? = nil
+    var groups: [VideoPersonGroup]? = nil
 
     init(sticker: VideoRedactionSticker, voice: VoicePreset, timeline: VideoFaceTimeline?, playbackSeconds: Double) {
         self.sticker = sticker.rawValue
         voicePreset = voice.rawValue
-        frames = timeline?.frames.map { DraftVideoFrame(seconds: $0.seconds, rects: $0.normalizedRects) }
+        frames = timeline?.frames.map { DraftVideoFrame(seconds: $0.seconds, rects: $0.normalizedRects, trackIDs: $0.trackIDs) }
         frameRate = timeline?.frameRate ?? 30
         faceCount = timeline?.totalUniqueFaces ?? 0
         self.playbackSeconds = playbackSeconds.isFinite ? max(0, playbackSeconds) : 0
     }
     var timeline: VideoFaceTimeline? {
-        frames.map { VideoFaceTimeline(frames: $0.map { VideoFaceFrame(seconds: $0.seconds, normalizedRects: $0.rects) }, frameRate: frameRate, totalUniqueFaces: faceCount) }
+        frames.map { VideoFaceTimeline(frames: $0.map { VideoFaceFrame(seconds: $0.seconds, normalizedRects: $0.rects, trackIDs: $0.trackIDs ?? []) }, frameRate: frameRate, totalUniqueFaces: faceCount) }
     }
 }
 
 struct EditorDraft: Codable {
     var version = 1
     var originalID: UUID
+    var scopeID: UUID? = nil
     var modifiedAt = Date()
     // Rotation in this editor bakes prior effects into a new base. Only that changed base is saved.
     var replacementImage: Data?
@@ -126,6 +130,14 @@ struct EditorDraft: Codable {
                   state.frameRate.isFinite, state.frameRate > 0,
                   state.playbackSeconds.isFinite, state.playbackSeconds >= 0,
                   state.faceCount >= 0 else { throw CocoaError(.coderReadCorrupt) }
+            for region in state.manualRegions ?? [] {
+                guard VideoManualRegion(rect: region.rect, start: region.start, end: region.end, duration: region.end) != nil,
+                      region.effect == "blur" || VideoRedactionSticker(rawValue: region.effect) != nil else { throw CocoaError(.coderReadCorrupt) }
+            }
+            for group in state.groups ?? [] {
+                guard !group.trackIDs.isEmpty, group.trackIDs.allSatisfy({ $0 > 0 }),
+                      group.effect == "blur" || VideoRedactionSticker(rawValue: group.effect) != nil else { throw CocoaError(.coderReadCorrupt) }
+            }
             for frame in state.frames ?? [] {
                 guard frame.seconds.isFinite, frame.seconds >= 0 else { throw CocoaError(.coderReadCorrupt) }
                 for rect in frame.rects {
@@ -143,37 +155,50 @@ final class EditorDraftStore {
     static let shared = EditorDraftStore()
     private let directory: URL
     private let lock = NSLock()
-    private var generations: [UUID: UUID] = [:]
+    private var generations: [String: UUID] = [:]
 
     init(directory: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("EditorDrafts", isDirectory: true)) {
         self.directory = directory
     }
-    func beginSession(for id: UUID) -> UUID {
+    func beginSession(for id: UUID, scope: UUID? = nil) -> UUID {
         lock.lock(); defer { lock.unlock() }
-        let token = UUID(); generations[id] = token; return token
+        let token = UUID(); generations[url(for: id, scope: scope).lastPathComponent] = token; return token
     }
-    func url(for id: UUID) -> URL { directory.appendingPathComponent(id.uuidString + ".draft") }
-    func load(id: UUID) throws -> EditorDraft? {
+    func url(for id: UUID, scope: UUID? = nil) -> URL {
+        directory.appendingPathComponent(id.uuidString + (scope.map { "_" + $0.uuidString } ?? "") + ".draft")
+    }
+    func load(id: UUID, scope: UUID? = nil) throws -> EditorDraft? {
         lock.lock(); defer { lock.unlock() }
-        let path = url(for: id)
+        let path = url(for: id, scope: scope)
         guard FileManager.default.fileExists(atPath: path.path) else { return nil }
         let draft = try JSONDecoder().decode(EditorDraft.self, from: CryptoEngine.shared.decrypt(data: Data(contentsOf: path)))
-        guard draft.version == 1, draft.originalID == id else { throw CocoaError(.coderReadCorrupt) }
+        guard draft.version == 1, draft.originalID == id, draft.scopeID == scope else { throw CocoaError(.coderReadCorrupt) }
         try draft.validate()
         return draft
     }
     func save(_ draft: EditorDraft, session: UUID) throws {
         lock.lock(); defer { lock.unlock() }
-        guard generations[draft.originalID] == session else { return }
+        let path = url(for: draft.originalID, scope: draft.scopeID)
+        guard generations[path.lastPathComponent] == session else { return }
         try draft.validate()
         let encrypted = try CryptoEngine.shared.encrypt(data: JSONEncoder().encode(draft))
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try encrypted.write(to: url(for: draft.originalID), options: [.atomic, .completeFileProtection])
+        try encrypted.write(to: path, options: [.atomic, .completeFileProtection])
     }
-    func delete(id: UUID) throws {
+    func delete(id: UUID, scope: UUID? = nil) throws {
         lock.lock(); defer { lock.unlock() }
-        generations[id] = nil
-        let path = url(for: id)
+        let path = url(for: id, scope: scope)
+        generations[path.lastPathComponent] = nil
         if FileManager.default.fileExists(atPath: path.path) { try FileManager.default.removeItem(at: path) }
+    }
+
+    func deleteAll(id: UUID) throws {
+        lock.lock(); defer { lock.unlock() }
+        for key in Array(generations.keys) where key.hasPrefix(id.uuidString) { generations[key] = nil }
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        for path in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            where path.lastPathComponent.hasPrefix(id.uuidString) && path.pathExtension == "draft" {
+            try FileManager.default.removeItem(at: path)
+        }
     }
 }

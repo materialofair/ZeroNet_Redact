@@ -21,8 +21,8 @@
 		AB1500000000000000000008 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (AB1500000000000000000006, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
 		AB1500000000000000000009 = {isa = PBXNativeTarget; buildConfigurationList = AB150000000000000000000A; buildPhases = (AB1500000000000000000007, AB1500000000000000000014, ); buildRules = (); dependencies = (); name = RedactShare; productName = RedactShare; productReference = AB1500000000000000000001; productType = "com.apple.product-type.app-extension"; };
 		AB150000000000000000000A = {isa = XCConfigurationList; buildConfigurations = (AB150000000000000000000B, AB150000000000000000000C, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		AB150000000000000000000B = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 11; DEVELOPMENT_TEAM = MB2PNFT9L9; INFOPLIST_FILE = ShareExtension/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.6; MARKETING_VERSION = 1.4.1; PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		AB150000000000000000000C = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 11; DEVELOPMENT_TEAM = MB2PNFT9L9; INFOPLIST_FILE = ShareExtension/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.6; MARKETING_VERSION = 1.4.1; PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+		AB150000000000000000000B = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 11; DEVELOPMENT_TEAM = MB2PNFT9L9; INFOPLIST_FILE = ShareExtension/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.6; MARKETING_VERSION = 1.5.0; PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		AB150000000000000000000C = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 11; DEVELOPMENT_TEAM = MB2PNFT9L9; INFOPLIST_FILE = ShareExtension/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.6; MARKETING_VERSION = 1.5.0; PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
 		AB150000000000000000000D = {isa = PBXTargetDependency; target = AB1500000000000000000009; };
 
 /* Begin PBXContainerItemProxy section */
@@ -484,7 +484,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"$(SRCROOT)/../third_party/mupdf-build/lib/$(PLATFORM_NAME)/libmupdf.a",
@@ -526,7 +526,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"$(SRCROOT)/../third_party/mupdf-build/lib/$(PLATFORM_NAME)/libmupdf.a",
@@ -554,7 +554,7 @@
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedactTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -576,7 +576,7 @@
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedactTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -596,7 +596,7 @@
 				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedactUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -616,7 +616,7 @@
 				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedactUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;

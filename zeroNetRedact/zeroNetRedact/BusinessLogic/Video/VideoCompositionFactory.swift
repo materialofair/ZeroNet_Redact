@@ -6,18 +6,26 @@ enum VideoCompositionFactory {
     static func make(
         asset: AVAsset,
         timeline: VideoFaceTimeline,
-        sticker: VideoRedactionSticker
+        sticker: VideoRedactionSticker,
+        manualRegions: [VideoManualRegion] = [],
+        groups: [VideoPersonGroup] = []
     ) -> AVVideoComposition {
         let renderer = VideoRedactionRenderer()
         let composition = AVMutableVideoComposition(
             asset: asset,
             applyingCIFiltersWithHandler: { request in
-                let rects = timeline.rects(at: request.compositionTime)
-                let output = renderer.render(
-                    source: request.sourceImage,
-                    normalizedRects: rects,
-                    sticker: sticker
-                )
+                let seconds = request.compositionTime.seconds
+                var output = request.sourceImage
+                if let frame = timeline.frame(at: seconds) {
+                    for (index, rect) in frame.normalizedRects.enumerated() {
+                        let trackID = frame.trackIDs.indices.contains(index) ? frame.trackIDs[index] : -1
+                        let effect = groups.first { $0.trackIDs.contains(trackID) }?.effect ?? sticker.rawValue
+                        output = renderer.render(source: output, rect: rect, effect: effect)
+                    }
+                }
+                for region in manualRegions where region.contains(seconds) {
+                    output = renderer.render(source: output, rect: region.rect, effect: region.effect)
+                }
                 request.finish(with: output, context: nil)
             }
         )

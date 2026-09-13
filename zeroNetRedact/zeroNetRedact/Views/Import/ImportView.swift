@@ -14,6 +14,7 @@ struct ImportView: View {
     @State private var showVideoSourceDialog = false
     @State private var showVideoFileImporter = false
     @State private var showOnboarding = false
+    @State private var showBatch = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,16 @@ struct ImportView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    if let id = viewModel.quickEditID,
+                       let file = viewModel.originalFiles.first(where: { $0.id == id }) {
+                        Button {
+                            selectedOriginalFile = file
+                            viewModel.quickEditID = nil
+                        } label: {
+                            Label("quickStart.openImported", systemImage: "arrow.right.circle.fill")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                        }.buttonStyle(.borderedProminent).padding(.horizontal)
+                    }
                     // 分组选择器
                     GroupSelectorBar(viewModel: viewModel)
                         .padding(.vertical, 12)
@@ -94,6 +105,9 @@ struct ImportView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
+                        Button { showBatch = true } label: {
+                            Label("batch.title", systemImage: "rectangle.stack.badge.play")
+                        }
                         // 回看新手引导
                         Button {
                             showOnboarding = true
@@ -124,6 +138,9 @@ struct ImportView: View {
             }
             .sheet(isPresented: $showOnboarding) {
                 OnboardingView()
+            }
+            .sheet(isPresented: $showBatch) {
+                BatchRedactionView(files: viewModel.originalFiles.filter { $0.fileType == .image })
             }
             .photosPicker(
                 isPresented: $viewModel.showPhotosPicker,

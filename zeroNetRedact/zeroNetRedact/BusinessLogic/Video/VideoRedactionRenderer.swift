@@ -29,6 +29,16 @@ final class VideoRedactionRenderer {
         }.cropped(to: source.extent)
     }
 
+    func render(source: CIImage, rect: CGRect, effect: String) -> CIImage {
+        if let sticker = VideoRedactionSticker(rawValue: effect) {
+            return render(source: source, normalizedRects: [rect], sticker: sticker)
+        }
+        let pixels = standardizedPixelRect(for: rect, in: source.extent)
+        guard pixels.width >= 1, pixels.height >= 1 else { return source }
+        let blurred = source.clampedToExtent().applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: max(20, min(pixels.width, pixels.height) * 0.25)])
+        return blurred.cropped(to: pixels).composited(over: source).cropped(to: source.extent)
+    }
+
     /// 所有渲染和测试共用同一像素边界：向外取整可以略微扩大遮挡，
     /// 但不会在脸框边缘留下半透明采样像素。
     func standardizedPixelRect(for normalized: CGRect, in extent: CGRect) -> CGRect {

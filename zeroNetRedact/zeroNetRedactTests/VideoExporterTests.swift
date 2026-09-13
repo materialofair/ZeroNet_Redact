@@ -170,6 +170,52 @@ final class VideoExporterTests: XCTestCase {
 // MARK: - Redaction coverage & frame-rate regression checks
 
 final class VideoExporterRedactionTests: XCTestCase {
+    func testMergedTrackGroupEffectIsExportedAcrossBothSegments() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("source.mp4")
+        let output = directory.appendingPathComponent("output.mp4")
+        try await makeSquareVideo(at: source)
+        let rect = CGRect(x: 0.375, y: 190.0 / 540, width: 0.25, height: 160.0 / 540)
+        let timeline = VideoFaceTimeline(frames: (0..<60).map { index in
+            VideoFaceFrame(seconds: Double(index) / 30, normalizedRects: [rect], trackIDs: [index < 30 ? 7 : 8])
+        }, frameRate: 30, totalUniqueFaces: 2)
+        let group = VideoPersonGroup(trackIDs: [7, 8], effect: VideoRedactionSticker.orangeSmiley.rawValue)
+        try await VideoExporter().export(sourceURL: source, destinationURL: output, timeline: timeline, sticker: .blueSmiley, groups: [group])
+        for seconds in [0.2, 1.2] {
+            let center = try await pixel(of: output, at: seconds, x: 480, y: 270)
+            XCTAssertGreaterThan(center[0], center[2], "Both group segments must use orange instead of global blue")
+        }
+    }
+
+    func testManualExportRespectsHalfOpenIntervalAndMatchesPreview() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("source.mp4")
+        let output = directory.appendingPathComponent("output.mp4")
+        try await makeSquareVideo(at: source)
+        var region = try XCTUnwrap(VideoManualRegion(rect: CGRect(x: 0.375, y: 190.0 / 540, width: 0.25, height: 160.0 / 540), start: 0.5, end: 1, duration: 2))
+        region.effect = VideoRedactionSticker.orangeSmiley.rawValue
+        try await VideoExporter().export(sourceURL: source, destinationURL: output, timeline: .empty, sticker: .blueSmiley, audio: .mute, manualRegions: [region])
+        let before = try await pixel(of: output, at: 0.4, x: 480, y: 270)
+        let inside = try await pixel(of: output, at: 0.5, x: 480, y: 270)
+        let after = try await pixel(of: output, at: 1, x: 480, y: 270)
+        XCTAssertGreaterThan(before[1], 220)
+        XCTAssertLessThan(inside[1], 200)
+        XCTAssertGreaterThan(after[1], 220)
+        let asset = AVURLAsset(url: source)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.videoComposition = VideoCompositionFactory.make(asset: asset, timeline: .empty, sticker: .blueSmiley, manualRegions: [region])
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
+        let preview = try generator.copyCGImage(at: CMTime(seconds: 0.5, preferredTimescale: 600), actualTime: nil)
+        var rgba = [UInt8](repeating: 0, count: 4)
+        CIContext().render(CIImage(cgImage: preview), toBitmap: &rgba, rowBytes: 4, bounds: CGRect(x: 480, y: 270, width: 1, height: 1), format: .RGBA8, colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
+        for channel in 0..<3 { XCTAssertEqual(Int(inside[channel]), Int(rgba[channel]), accuracy: 20) }
+    }
+
     /// 生成 30fps 灰底 + 中心绿色方块的测试视频（960x540）。
     private func makeSquareVideo(at url: URL, frameRate: Int32 = 30, frameCount: Int = 60) async throws {
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)

@@ -34,14 +34,18 @@
 - 高斯模糊
 - 撤销/重做
 - 加密存储原图
-- 视频逐帧人脸检测，支持强模糊与卡通贴纸遮挡
+- 本地视频人脸检测与动态采样，支持强模糊与卡通贴纸遮挡；自动检测可能遗漏，请人工复核
+- 视频时间区间手动补框、重画、逐段复核，以及用户确认的人物片段分组与统一效果
+- 图片/PDF/视频加密草稿恢复；重复文字搜索、滑选文字与局部放大镜
+- 图片批处理：统一识别规则、逐张复核、暂停恢复、失败重试，成功项在同批次中不重复导出
+- PDF 待处理页面导航、图片/PDF 分享扩展及基于实际输出的处理记录
 - 固定匿名男声、匿名女声、机器人和静音预设
 - 视频原件认证分块加密，处理与换声完全离线
 - 导出到相册或分享
 
 ### 系统要求
 
-- iOS 17.0+
+- iOS 17.6+
 - iPhone / iPad
 
 ### 安装
@@ -100,14 +104,18 @@ In an era where data is stolen at will, we worry about exposing phone numbers, a
 - Gaussian blur
 - Undo/Redo
 - Encrypted storage for originals
-- Frame-by-frame video face detection with strong blur or cartoon sticker covering
+- On-device video face detection with adaptive sampling, blur, or stickers; detection may miss content and requires review
+- Manual timed rectangles with redraw, segment review, and user-confirmed person grouping with shared effects
+- Encrypted image/PDF/video drafts; repeated-text search, swipe selection, and a magnifier
+- Image batches with shared rules, per-image review, pause/resume, and retry without re-exporting successful items in the same batch
+- Pending PDF page navigation, image/PDF share extension, and factual output processing reports
 - Fixed anonymous male, anonymous female, robot, and mute voice presets
 - Authenticated chunk encryption for source videos; processing and voice effects stay offline
 - Export to Photos or Share
 
 ### Requirements
 
-- iOS 17.0+
+- iOS 17.6+
 - iPhone / iPad
 
 ### Installation

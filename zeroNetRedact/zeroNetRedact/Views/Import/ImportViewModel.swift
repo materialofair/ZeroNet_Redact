@@ -21,6 +21,7 @@ class ImportViewModel: ObservableObject {
 
     // 导入结果提示（成功+跳过重复，非错误场景）
     @Published var showImportResultAlert = false
+    @Published var quickEditID: UUID?
     @Published var importResultMessage = ""
     @Published var pendingDuplicateSources: [ImportSource] = []
 
@@ -409,6 +410,7 @@ class ImportViewModel: ObservableObject {
                 case .success(let file):
                     attachToSelectedGroup(file)
                     successCount += 1
+                    if sources.count == 1, loadFailedCount == 0 { quickEditID = file.id }
 
                 case .duplicate:
                     // fileURL 来源当场转成内存数据，避免用户稍后点"仍然导入"时安全作用域已失效

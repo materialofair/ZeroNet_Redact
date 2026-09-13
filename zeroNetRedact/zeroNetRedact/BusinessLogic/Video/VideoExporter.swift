@@ -19,10 +19,16 @@ final class VideoExporter {
         timeline: VideoFaceTimeline,
         sticker: VideoRedactionSticker,
         audio: VideoExportAudio = .original,
+        manualRegions: [VideoManualRegion] = [],
+        groups: [VideoPersonGroup] = [],
         progress: @escaping @Sendable (Double) -> Void = { _ in }
     ) async throws {
         let started = CFAbsoluteTimeGetCurrent()
         let asset = AVURLAsset(url: sourceURL)
+        let duration = try await asset.load(.duration).seconds
+        guard manualRegions.allSatisfy({ VideoManualRegion(rect: $0.rect, start: $0.start, end: $0.end, duration: duration) != nil }) else {
+            throw VideoProcessingError.invalidDuration
+        }
         guard !(try await asset.loadTracks(withMediaType: .video)).isEmpty else {
             throw VideoProcessingError.missingVideoTrack
         }
@@ -53,7 +59,9 @@ final class VideoExporter {
         session.videoComposition = VideoCompositionFactory.make(
             asset: exportAsset,
             timeline: timeline,
-            sticker: sticker
+            sticker: sticker,
+            manualRegions: manualRegions,
+            groups: groups
         )
 
         let monitor = Task {

@@ -1,6 +1,6 @@
 #!/bin/sh
-# 自动递增构建号（CFBundleVersion / CURRENT_PROJECT_VERSION）
-# 仅 Release（Archive）构建时执行；Debug 构建不影响。
+# 为下一次 Release 自动递增项目构建号；本次 app/扩展使用同一个已解析值。
+# 不修改已生成或已签名的产物，避免主应用与分享扩展的版本号不一致。
 if [ "${CONFIGURATION}" != "Release" ]; then
   exit 0
 fi
@@ -13,17 +13,12 @@ if [ ! -f "${PBXPROJ}" ]; then
   exit 0
 fi
 
-current=$(/usr/bin/grep -m1 'CURRENT_PROJECT_VERSION = ' "${PBXPROJ}" | /usr/bin/sed 's/.*= *//; s/;//')
+current=$(/usr/bin/grep -o 'CURRENT_PROJECT_VERSION = [0-9][0-9]*;' "${PBXPROJ}" | /usr/bin/sed 's/[^0-9]//g' | /usr/bin/sort -u)
 case "${current}" in
-  ''|*[!0-9]*) echo "warning: bump-build-number: 无效构建号 '${current}'"; exit 0 ;;
+  ''|*[!0-9]*) echo "error: bump-build-number: 各目标构建号必须是同一整数"; exit 1 ;;
 esac
 
 next=$((current + 1))
 /usr/bin/sed -i '' "s/CURRENT_PROJECT_VERSION = ${current};/CURRENT_PROJECT_VERSION = ${next};/g" "${PBXPROJ}"
 
-# 本次构建产物立即生效（脚本阶段早于代码签名）
-PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
-if [ -f "${PLIST}" ]; then
-  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${next}" "${PLIST}" 2>/dev/null || true
-fi
-echo "Build number auto-incremented: ${current} -> ${next}"
+echo "Current build: ${current}; next Release build: ${next}"

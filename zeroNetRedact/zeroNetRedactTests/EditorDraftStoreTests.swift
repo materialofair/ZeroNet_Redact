@@ -70,6 +70,36 @@ final class EditorDraftStoreTests: XCTestCase {
         try store.save(draft, session: old)
         XCTAssertNil(try store.load(id: draft.originalID))
     }
+
+    func testBatchScopesPreserveIndependentReviewDecisionsAndDeleteWithOriginal() throws {
+        let id = UUID(), first = UUID(), second = UUID()
+        var regular = try draft(id: id)
+        var batchA = try draft(id: id)
+        var batchB = try draft(id: id)
+        batchA.scopeID = first; batchB.scopeID = second
+        regular.pageIndex = 1; batchA.pageIndex = 2; batchB.pageIndex = 3
+        batchA.recognition = [] // Explicitly ignored candidates must remain ignored on reopen.
+        let regularSession = store.beginSession(for: id)
+        let aSession = store.beginSession(for: id, scope: first)
+        let bSession = store.beginSession(for: id, scope: second)
+        try store.save(regular, session: regularSession)
+        try store.save(batchA, session: aSession)
+        try store.save(batchB, session: bSession)
+        XCTAssertEqual(try store.load(id: id)?.pageIndex, 1)
+        XCTAssertEqual(try store.load(id: id, scope: first)?.pageIndex, 2)
+        XCTAssertEqual(try store.load(id: id, scope: first)?.recognition.count, 0)
+        try store.delete(id: id, scope: first)
+        XCTAssertNil(try store.load(id: id, scope: first))
+        XCTAssertNotNil(try store.load(id: id))
+        XCTAssertEqual(try store.load(id: id, scope: second)?.pageIndex, 3)
+        try store.deleteAll(id: id)
+        try store.save(regular, session: regularSession)
+        try store.save(batchA, session: aSession)
+        try store.save(batchB, session: bSession)
+        XCTAssertNil(try store.load(id: id))
+        XCTAssertNil(try store.load(id: id, scope: first))
+        XCTAssertNil(try store.load(id: id, scope: second))
+    }
     func testOriginalDeletionRemovesDraft() throws {
         let draft = try draft()
         let shared = EditorDraftStore.shared

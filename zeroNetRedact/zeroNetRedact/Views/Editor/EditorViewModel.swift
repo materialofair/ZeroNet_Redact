@@ -12,6 +12,7 @@ enum ImageFacePhase: Equatable {
 @MainActor
 class EditorViewModel: ObservableObject {
     let file: RedactableFile
+    var batchExportID: UUID?
 
     @Published var showDraftRestore = false
     private var pendingDraft: EditorDraft?
@@ -21,8 +22,8 @@ class EditorViewModel: ObservableObject {
     private var draftEnabled = false
 
     private func prepareDraft() throws {
-        pendingDraft = try EditorDraftStore.shared.load(id: file.id)
-        draftSession = EditorDraftStore.shared.beginSession(for: file.id)
+        pendingDraft = try EditorDraftStore.shared.load(id: file.id, scope: batchExportID)
+        draftSession = EditorDraftStore.shared.beginSession(for: file.id, scope: batchExportID)
         showDraftRestore = pendingDraft != nil
         draftEnabled = pendingDraft == nil
         objectWillChange.sink { [weak self] _ in
@@ -61,7 +62,7 @@ class EditorViewModel: ObservableObject {
             } else if let pdf = editor?.baseEditor as? PDFRedactionEditor {
                 masks = try pdf.draftMasks()
             } else { return false }
-            let draft = EditorDraft(originalID: file.id, replacementImage: base, replacementScale: (editor?.baseEditor as? ImageRedactionEditor)?.draftImageScale, masks: masks,
+            let draft = EditorDraft(originalID: file.id, scopeID: batchExportID, replacementImage: base, replacementScale: (editor?.baseEditor as? ImageRedactionEditor)?.draftImageScale, masks: masks,
                                     pageIndex: currentPDFPageIndex,
                                     recognition: detectedRegions.map(DraftRecognition.init),
                                     selectedEffect: try DraftEffect(selectedEffect),
@@ -110,11 +111,11 @@ class EditorViewModel: ObservableObject {
         draftEnabled = false
         draftSaveTask?.cancel()
         do {
-            try EditorDraftStore.shared.delete(id: file.id)
+            try EditorDraftStore.shared.delete(id: file.id, scope: batchExportID)
             pendingDraft = nil
             showDraftRestore = false
             if startFresh {
-                draftSession = EditorDraftStore.shared.beginSession(for: file.id)
+                draftSession = EditorDraftStore.shared.beginSession(for: file.id, scope: batchExportID)
                 draftEnabled = true
             }
             return true
@@ -590,6 +591,23 @@ class EditorViewModel: ObservableObject {
     /// - Returns: 是否导出成功（配额超限或异常均返回 false，具体原因见 showUsageLimitAlert / errorMessage）
     @discardableResult
     func exportFile() async -> Bool {
+        // A batch retry reuses its durable export ID, including after a crash between
+        // the Core Data save and the queue's completion checkpoint.
+        if let id = batchExportID {
+            do {
+                let request: NSFetchRequest<RedactedFile> = RedactedFile.fetchRequest()
+                request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+                request.includesPendingChanges = false
+                if let existing = try PersistenceController.shared.container.viewContext.fetch(request).first {
+                    guard FileManager.default.fileExists(atPath: existing.fileURL.path) else {
+                        errorMessage = NSLocalizedString("batch.outputMissing", comment: "")
+                        return false
+                    }
+                    exportedFileURL = existing.fileURL
+                    return true
+                }
+            } catch { errorMessage = error.localizedDescription; return false }
+        }
         // 1. 检查配额
         if !canExport() {
             showUsageLimitAlert = true
@@ -626,7 +644,7 @@ class EditorViewModel: ObservableObject {
                 }
 
                 // 生成新的文件ID
-                let newFileId = UUID()
+                let newFileId = batchExportID ?? UUID()
 
                 // 保存打码后的文件（明文存储，不加密）
                 let url = try StorageManager.shared.saveRedactedFile(
@@ -648,6 +666,7 @@ class EditorViewModel: ObservableObject {
                 var didSaveRecord = false
                 await MainActor.run {
                     let context = PersistenceController.shared.container.viewContext
+                    var insertedRecord: RedactedFile?
 
                     do {
                         // 生成缩略图（明文保存）
@@ -696,6 +715,7 @@ class EditorViewModel: ObservableObject {
 
                         // 创建RedactedFile（打码后的文件保存到相册Tab）
                         let redactedFile = RedactedFile(context: context)
+                        insertedRecord = redactedFile
                         redactedFile.id = newFileId
                         redactedFile.fileTypeRaw = file.fileType.rawValue
                         // 只保存相对路径（去掉Documents前面的部分）
@@ -742,6 +762,7 @@ class EditorViewModel: ObservableObject {
 
                         didSaveRecord = true
                     } catch {
+                        if let insertedRecord { context.delete(insertedRecord) }
                         print("❌ 保存打码文件到相册失败: \(error)")
                         self.errorMessage = String(
                             format: NSLocalizedString("editor.exportFailed", comment: ""),

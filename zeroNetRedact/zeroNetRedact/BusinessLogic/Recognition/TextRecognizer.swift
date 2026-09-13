@@ -69,7 +69,7 @@ class TextRecognizer {
                 (cleanedText, { Self.mapRangeToOriginal($0, indexMap: cleanedIndexMap) }),
             ]
 
-            patternLoop: for (pattern, type) in patterns {
+            for (pattern, type) in patterns {
                 for (checkText, mapToOriginal) in variants {
                     let matches = SensitivePatterns.findMatches(in: checkText, pattern: pattern)
 
@@ -100,8 +100,6 @@ class TextRecognizer {
                                 recognizedText: matchedText
                             ))
 
-                        // 找到一个匹配就停止该文本的检测
-                        break patternLoop
                     }
                 }
             }
