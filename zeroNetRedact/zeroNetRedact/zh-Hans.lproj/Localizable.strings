@@ -356,7 +356,7 @@
 "file.original" = "原文件";
 
 /* Tab Bar */
-"tab.import" = "导入";
+"tab.import" = "文件";
 "tab.redacted" = "脱敏文件";
 "tab.settings" = "设置";
 
@@ -826,3 +826,12 @@
 "video.manual.checkFrame" = "拖动进度检查位置";
 "video.manual.fixedHint" = "遮挡框固定在画面上，不会自动跟随移动。拖动进度，检查目标是否始终在框内。";
 "video.manual.done" = "保存遮挡";
+"files.filter" = "筛选";
+"files.sort" = "排序";
+"files.emptyFiltered" = "没有匹配的文件";
+"files.emptyFilteredHint" = "当前分组没有此类型文件，可清除筛选查看其他文件。";
+"files.clearFilter" = "清除筛选";
+"files.switchGroup" = "切换文件分组";
+"list.sort.newest" = "最新优先";
+"list.sort.oldest" = "最早优先";
+"list.sort.largest" = "最大优先";

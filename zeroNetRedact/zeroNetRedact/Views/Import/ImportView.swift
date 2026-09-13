@@ -34,24 +34,21 @@ struct ImportView: View {
                                 .frame(maxWidth: .infinity, minHeight: 44)
                         }.buttonStyle(.borderedProminent).padding(.horizontal)
                     }
-                    // 分组选择器
-                    GroupSelectorBar(viewModel: viewModel)
-                        .padding(.vertical, 12)
-
-                    // 类型筛选 + 排序
-                    if !viewModel.originalFiles.isEmpty {
-                        FileTypeFilterBar(
-                            filterType: $viewModel.filterType,
-                            sortOption: $viewModel.sortOption
-                        )
-                        .padding(.bottom, 8)
-                    }
-
                     // 主内容区
                     Group {
                         if viewModel.originalFiles.isEmpty {
-                            // 空状态 - 显示导入引导
-                            ImportEmptyStateView(onAction: triggerImport)
+                            if viewModel.filterType != nil {
+                                ContentUnavailableView {
+                                    Label("files.emptyFiltered", systemImage: "line.3.horizontal.decrease.circle")
+                                } description: {
+                                    Text("files.emptyFilteredHint")
+                                } actions: {
+                                    Button("files.clearFilter") { viewModel.filterType = nil }
+                                        .buttonStyle(.borderedProminent)
+                                }
+                            } else {
+                                ImportEmptyStateView(onAction: triggerImport)
+                            }
                         } else {
                             // 文件网格
                             originalFilesGridView
@@ -65,7 +62,7 @@ struct ImportView: View {
                 }
 
                 // 悬浮导入按钮：非多选模式且有文件时显示
-                if !viewModel.originalFiles.isEmpty && !viewModel.isSelectionMode {
+                if !viewModel.isSelectionMode {
                     HStack {
                         Spacer()
                         importFabMenu
@@ -85,55 +82,19 @@ struct ImportView: View {
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.showSuccessToast)
                 }
             }
-            .navigationTitle(NSLocalizedString("import.title", comment: ""))
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        withAnimation(reduceMotion ? nil : .default) {
-                            viewModel.toggleSelectionMode()
-                        }
-                    }) {
-                        Text(
-                            viewModel.isSelectionMode
-                                ? NSLocalizedString("common.done", comment: "")
-                                : NSLocalizedString("import.select", comment: "")
-                        )
+                    if viewModel.isSelectionMode {
+                        Button("common.done") { viewModel.toggleSelectionMode() }
+                    } else {
+                        groupMenu
                     }
-                    .disabled(viewModel.originalFiles.isEmpty && !viewModel.isSelectionMode)
                 }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button { showBatch = true } label: {
-                            Label("batch.title", systemImage: "rectangle.stack.badge.play")
-                        }
-                        // 回看新手引导
-                        Button {
-                            showOnboarding = true
-                        } label: {
-                            Label(
-                                NSLocalizedString("onboarding.revisit", comment: ""),
-                                systemImage: "questionmark.circle"
-                            )
-                        }
-
-                        Button {
-                            viewModel.showManageGroups = true
-                        } label: {
-                            Label(
-                                NSLocalizedString("import.accessibility.manageGroups", comment: ""),
-                                systemImage: "folder.badge.gearshape"
-                            )
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .foregroundColor(DesignSystem.Colors.primaryBlue)
-                            // 44pt 触控目标
-                            .frame(minWidth: 44, minHeight: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityLabel(NSLocalizedString("common.more", comment: ""))
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    filterMenu.disabled(viewModel.isSelectionMode)
+                    moreMenu
                 }
             }
             .sheet(isPresented: $showOnboarding) {
@@ -281,6 +242,83 @@ struct ImportView: View {
                 viewModel.loadOriginalFiles()
             }
         }
+    }
+
+    private var groupMenu: some View {
+        Menu {
+            ForEach(viewModel.allGroups, id: \.objectID) { group in
+                Button { viewModel.selectGroup(group) } label: {
+                    Label(group.name ?? NSLocalizedString("group.unnamed", comment: ""),
+                          systemImage: viewModel.selectedGroup?.objectID == group.objectID ? "checkmark" : "folder")
+                }
+            }
+            Divider()
+            Button { viewModel.showCreateGroup = true } label: {
+                Label("import.accessibility.newGroup", systemImage: "folder.badge.plus")
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text(viewModel.selectedGroup?.name ?? NSLocalizedString("group.default", comment: ""))
+                    .font(.headline).lineLimit(1).truncationMode(.tail)
+                Image(systemName: "chevron.down").font(.caption.weight(.semibold))
+            }
+            .frame(maxWidth: 180, minHeight: 44, alignment: .leading)
+        }
+        .accessibilityIdentifier("files.groupMenu")
+        .accessibilityHint(Text("files.switchGroup"))
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            ForEach([nil, FileType.image, .pdf, .video], id: \.self) { type in
+                Button { viewModel.filterType = type } label: {
+                    if viewModel.filterType == type {
+                        Label(type?.displayName ?? NSLocalizedString("list.filter.all", comment: ""), systemImage: "checkmark")
+                    } else {
+                        Text(type?.displayName ?? NSLocalizedString("list.filter.all", comment: ""))
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: viewModel.filterType == nil ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
+                Text(viewModel.filterType?.displayName ?? NSLocalizedString("files.filter", comment: ""))
+                    .font(.subheadline).lineLimit(1)
+            }.frame(minHeight: 44)
+        }
+        .accessibilityIdentifier("files.filterMenu")
+        .accessibilityValue(viewModel.filterType?.displayName ?? NSLocalizedString("list.filter.all", comment: ""))
+    }
+
+    private var moreMenu: some View {
+        Menu {
+            Button { viewModel.toggleSelectionMode() } label: {
+                Label(viewModel.isSelectionMode ? NSLocalizedString("common.done", comment: "") : NSLocalizedString("import.select", comment: ""),
+                      systemImage: "checkmark.circle")
+            }.disabled(viewModel.originalFiles.isEmpty && !viewModel.isSelectionMode)
+            Menu {
+                ForEach(FileSortOption.allCases) { option in
+                    Button { viewModel.sortOption = option } label: {
+                        Label(option.displayName, systemImage: viewModel.sortOption == option ? "checkmark" : option.icon)
+                    }
+                }
+            } label: {
+                Label("files.sort", systemImage: "arrow.up.arrow.down")
+            }
+            Divider()
+            Button { showBatch = true } label: {
+                Label("batch.title", systemImage: "rectangle.stack.badge.play")
+            }
+            Button { viewModel.showManageGroups = true } label: {
+                Label("import.accessibility.manageGroups", systemImage: "folder.badge.gearshape")
+            }
+            Button { showOnboarding = true } label: {
+                Label("onboarding.revisit", systemImage: "questionmark.circle")
+            }
+        } label: {
+            Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel(Text("common.more"))
     }
 
     // MARK: - 文件网格视图

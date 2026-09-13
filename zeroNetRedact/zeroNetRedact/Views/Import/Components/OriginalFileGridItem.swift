@@ -105,6 +105,12 @@ struct OriginalFileGridItem: View {
             fileInfoView
         }
         .contextMenu {
+            Button {
+                if !viewModel.isSelectionMode { viewModel.toggleSelectionMode() }
+                viewModel.selectedFileIDs.insert(file.id)
+            } label: {
+                Label("import.select", systemImage: "checkmark.circle")
+            }
             Button(role: .destructive) {
                 showDeleteAlert = true
             } label: {
@@ -141,6 +147,10 @@ struct OriginalFileGridItem: View {
                 comment: "")
         )
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .accessibilityAction(named: Text("import.select")) {
+            if !viewModel.isSelectionMode { viewModel.toggleSelectionMode() }
+            viewModel.selectedFileIDs.insert(file.id)
+        }
         .accessibilityAction(named: Text(NSLocalizedString("common.delete", comment: ""))) {
             showDeleteAlert = true
         }

@@ -356,7 +356,7 @@
 "file.original" = "Original";
 
 /* Tab Bar */
-"tab.import" = "Import";
+"tab.import" = "Files";
 "tab.redacted" = "Redacted";
 "tab.settings" = "Settings";
 
@@ -826,3 +826,12 @@
 "video.manual.checkFrame" = "Scrub to check position";
 "video.manual.fixedHint" = "The cover stays in one position; it does not follow movement. Scrub through the video to check the target stays covered.";
 "video.manual.done" = "Save cover";
+"files.filter" = "Filter";
+"files.sort" = "Sort";
+"files.emptyFiltered" = "No matching files";
+"files.emptyFilteredHint" = "There are no files of this type in this group. Clear the filter to see other files.";
+"files.clearFilter" = "Clear filter";
+"files.switchGroup" = "Switch file group";
+"list.sort.newest" = "Newest first";
+"list.sort.oldest" = "Oldest first";
+"list.sort.largest" = "Largest first";
