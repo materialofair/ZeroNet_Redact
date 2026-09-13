@@ -27,6 +27,7 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
 
     private(set) var currentFile: OriginalImage?
     private var originalImage: UIImage?
+    private var replacementDraftImage: Data?
     /// 撤销栈：每次变更前的编辑状态快照（快照式撤销，覆盖新增/移动/缩放/删除）
     private var undoStack: [[EditOperation]] = []
     private let crypto = CryptoEngine.shared
@@ -193,6 +194,7 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
     func replaceOriginalImage(with newImage: UIImage) {
         let normalized = newImage.normalizedToUpOrientation()
         originalImage = normalized
+        replacementDraftImage = normalized.pngData()
         currentImage = normalized
         // 清空编辑历史（因为坐标系已改变）
         editHistory.removeAll()
@@ -641,6 +643,25 @@ class ImageRedactionEditor: RedactionEditor, ObservableObject {
         print("🔍 scaleRedactionRegion: 缩放区域\(index)，比例\(scale)，新尺寸: \(newBounds.size)")
 
         // 重新渲染图片
+        scheduleRender()
+    }
+
+    var draftImageScale: Double { Double(originalImage?.scale ?? 1) }
+
+    func draftState() throws -> (Data?, [DraftMask]) {
+        (replacementDraftImage, try editHistory.map { DraftMask(bounds: $0.region, page: nil, effect: try DraftEffect($0.effect)) })
+    }
+
+    func restoreDraft(_ draft: EditorDraft) throws {
+        let operations = try draft.masks.map { EditOperation(region: $0.bounds, effect: try $0.effect.restored()) }
+        if let data = draft.replacementImage {
+            guard let image = UIImage(data: data, scale: CGFloat(draft.replacementScale ?? 1)) else { throw EditorError.noImageLoaded }
+            originalImage = image
+            replacementDraftImage = data
+        }
+        undoStack = operations.isEmpty ? [] : [[]]
+        redoStack = []
+        editHistory = operations
         scheduleRender()
     }
 

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct EditorExportCompletionView: View {
     let fileURL: URL
+    var report: ExportProcessingReport? = nil
     let onContinueEditing: () -> Void
     let onDone: () -> Void
     @State private var showShareSheet = false
@@ -18,6 +19,18 @@ struct EditorExportCompletionView: View {
                     Text(NSLocalizedString("export.success.detail", comment: ""))
                         .font(.headline)
                         .multilineTextAlignment(.center)
+
+                    if let report {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("report.title").font(.headline)
+                            Text("\(report.format) · \(ByteCountFormatter.string(fromByteCount: Int64(report.size), countStyle: .file))")
+                            Text(String(format: NSLocalizedString("report.regions", comment: ""), report.regionCount))
+                            ForEach(report.verifiedAbsentFields, id: \.self) { key in
+                                Text(String(format: NSLocalizedString("report.absent", comment: ""), NSLocalizedString(key, comment: "")))
+                            }
+                            Text("report.reviewReminder").font(.caption).foregroundStyle(.secondary)
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     Button {
                         showShareSheet = true

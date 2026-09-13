@@ -14,6 +14,7 @@ struct SimpleBrushEditor: View {
     @StateObject private var viewModel: EditorViewModel
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - Brush State
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -22,6 +23,7 @@ struct SimpleBrushEditor: View {
     @State private var paintGestureStart: CGPoint = .zero
     @State private var imageSize: CGSize = .zero
     @State private var selectedEffect: BrushEffect = .black
+    @State private var showTextSearch = false
     @State private var selectedBrushSize: BrushSize = .medium
     @State private var isInitialLoad = true
 
@@ -125,7 +127,11 @@ struct SimpleBrushEditor: View {
         ) {
             Button(NSLocalizedString("editor.discardConfirm.discard", comment: ""), role: .destructive) {
                 exportTask?.cancel()
-                dismiss()
+                if viewModel.discardDraft() { dismiss() }
+            }
+            Button(NSLocalizedString("draft.keepAndClose", comment: "")) {
+                autoApplyPendingStrokesIfNeeded()
+                if viewModel.flushDraft() { dismiss() }
             }
             Button(NSLocalizedString("editor.discardConfirm.keepEditing", comment: ""), role: .cancel) {}
         }
@@ -167,8 +173,9 @@ struct SimpleBrushEditor: View {
             if let url = viewModel.exportedFileURL {
                 EditorExportCompletionView(
                     fileURL: url,
+                    report: viewModel.exportReport,
                     onContinueEditing: { showExportCompletion = false },
-                    onDone: { dismiss() }
+                    onDone: { if viewModel.discardDraft() { dismiss() } }
                 )
             }
         }
@@ -192,12 +199,48 @@ struct SimpleBrushEditor: View {
                 }
             )
         }
+        .sheet(isPresented: $showTextSearch, onDismiss: finishDetectionReview) {
+            SensitiveTextSearchView(
+                image: viewModel.currentImage, document: viewModel.currentPDFDocument,
+                currentPageIndex: viewModel.currentPDFPageIndex,
+                onApply: { viewModel.applySearchResults($0, effect: selectedEffect.redactionEffect) },
+                onLocate: { pendingReviewRegion = $0 },
+                onKeepPending: viewModel.keepSearchResults
+            )
+        }
         .onChange(of: viewModel.faceDetectionMessage) { _, message in
             if let message {
                 showToast(message: message, isSuccess: false)
             }
         }
+        .onChange(of: viewModel.errorMessage) { _, message in
+            if let message { showToast(message: message, isSuccess: false) }
+        }
+        .alert(NSLocalizedString("draft.restoreTitle", comment: ""), isPresented: $viewModel.showDraftRestore) {
+            Button(NSLocalizedString("draft.continue", comment: "")) {
+                viewModel.restoreDraft()
+                switch viewModel.selectedEffect {
+                case .mosaic: selectedEffect = .mosaic
+                case .blur: selectedEffect = .blur
+                case .rectangle(let color, _): selectedEffect = color.isEqual(UIColor.white) ? .white : .black
+                default: selectedEffect = .black
+                }
+            }
+            Button(NSLocalizedString("draft.delete", comment: ""), role: .destructive) {
+                viewModel.discardDraft(startFresh: true)
+            }
+        } message: {
+            Text(NSLocalizedString("draft.restoreMessage", comment: ""))
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                autoApplyPendingStrokesIfNeeded()
+                viewModel.flushDraft()
+            }
+        }
         .onDisappear {
+            autoApplyPendingStrokesIfNeeded()
+            viewModel.flushDraft()
             viewModel.cancelFaceDetection()
         }
     }
@@ -304,6 +347,14 @@ struct SimpleBrushEditor: View {
                 }
 
                 // 检测结果条
+                if let document = viewModel.currentPDFDocument, !viewModel.detectedRegions.isEmpty {
+                    PDFReviewNavigator(document: document, regions: viewModel.detectedRegions,
+                                       currentPage: viewModel.currentPDFPageIndex, selectedID: flashRegionID) {
+                        pendingReviewRegion = $0
+                        finishDetectionReview()
+                    }
+                    .disabled(viewModel.isExporting)
+                }
                 if !viewModel.detectedRegions.isEmpty {
                     DetectionResultBar(
                         regions: viewModel.regionsForCurrentPage,
@@ -473,7 +524,23 @@ struct SimpleBrushEditor: View {
         }
 
         ToolbarItem(placement: .navigationBarTrailing) {
-            groupMenu
+            HStack {
+                Button {
+                    autoApplyPendingStrokesIfNeeded()
+                    Task { @MainActor in
+                        if let image = viewModel.editor?.baseEditor as? ImageRedactionEditor {
+                            await image.waitForPendingRender()
+                        }
+                        guard !Task.isCancelled else { return }
+                        showTextSearch = true
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(Text("search.title"))
+                .disabled(viewModel.currentImage == nil || viewModel.isExporting || viewModel.isDetecting || viewModel.isDetectingFaces)
+                groupMenu
+            }
         }
     }
 
@@ -770,6 +837,8 @@ struct SimpleBrushEditor: View {
             }
             .onEnded { _ in
                 handleDragEnded()
+                autoApplyPendingStrokesIfNeeded()
+                viewModel.scheduleDraftSave()
             }
     }
 
@@ -862,6 +931,7 @@ struct SimpleBrushEditor: View {
             } else if !currentStroke.isEmpty {
                 brushStrokes.append(BrushStroke(points: currentStroke))
                 currentStroke = []
+                autoApplyPendingStrokesIfNeeded()
             }
         case .zoom:
             break

@@ -199,6 +199,7 @@ class StorageManager {
 
     /// 删除原文件及其缩略图
     func deleteOriginal(id: UUID, type: FileType) throws {
+        try EditorDraftStore.shared.delete(id: id)
         let originalURL = getOriginalURL(for: id, type: type)
         let thumbnailURL = getThumbnailURL(for: id, type: type)
 
@@ -363,6 +364,7 @@ class StorageManager {
 
     /// 删除文件
     func deleteFile(id: UUID, type: FileType) throws {
+        try EditorDraftStore.shared.delete(id: id)
         let typeDir = type.storageDirectoryName
         let originalURL = originalsURL.appendingPathComponent(typeDir).appendingPathComponent(
             "\(id.uuidString).encrypted")

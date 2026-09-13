@@ -2,6 +2,12 @@
 
 **Last Updated / 最后更新: 2025-11-26**
 
+## Unreleased v1.5 storage update / 未发布 v1.5 存储说明
+
+Editing drafts are stored locally in encrypted files, including editing operations, pending recognition results, video settings, and any rotated replacement image needed for restoration. The share extension stores incoming images/PDFs in an encrypted App Group inbox with a separate key. The containing app imports these files after authentication. Successfully imported entries are removed; failed entries remain locally encrypted for retry. No draft or inbox content is sent to a server.
+
+编辑草稿以加密文件保存在设备本地，包含编辑操作、待处理识别结果、视频设置，以及恢复时必要的旋转替换图片。分享扩展使用独立密钥，将图片/PDF 加密存入 App Group 收件箱。主应用通过认证后导入；成功条目删除，失败条目保留为本地加密文件以便重试。草稿和收件箱内容不会发送到服务器。
+
 ---
 
 ## English

@@ -349,8 +349,9 @@ final class StorageManagerTests: XCTestCase {
         // Then: 格式化字符串应该包含单位
         XCTAssertFalse(usage.formattedTotal.isEmpty, "格式化总大小不应该为空")
         XCTAssertFalse(usage.formattedOriginals.isEmpty, "格式化原文件大小不应该为空")
-        XCTAssertTrue(usage.formattedTotal.contains("KB") || usage.formattedTotal.contains("bytes"),
-                     "格式化字符串应该包含单位")
+        // 系统按总容量与当前语言选择单位，可能为 MB、GB 或本地化文本。
+        XCTAssertNotNil(usage.formattedTotal.range(of: "\\p{L}", options: .regularExpression),
+                        "格式化字符串应该包含单位")
     }
 
     // MARK: - 并发访问测试

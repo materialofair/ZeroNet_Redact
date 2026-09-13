@@ -13,6 +13,8 @@ struct VideoEditorView: View {
     @State private var editorOrientation: VideoEditorOrientation = .portrait
     @State private var initialOrientation: VideoEditorOrientation?
     @State private var showShareSheet = false
+    @State private var showCloseOptions = false
+    @Environment(\.scenePhase) private var scenePhase
 
     init(video: OriginalVideo) {
         _viewModel = StateObject(wrappedValue: VideoEditorViewModel(video: video))
@@ -57,7 +59,7 @@ struct VideoEditorView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button { dismiss() } label: {
+                        Button { showCloseOptions = true } label: {
                             Image(systemName: "xmark")
                         }
                         .accessibilityLabel(NSLocalizedString("common.close", comment: ""))
@@ -67,6 +69,24 @@ struct VideoEditorView: View {
             }
         }
         .interactiveDismissDisabled(isBusy)
+        .confirmationDialog(NSLocalizedString("draft.keepAndClose", comment: ""), isPresented: $showCloseOptions) {
+            Button(NSLocalizedString("draft.keepAndClose", comment: "")) { if viewModel.flushDraft() { dismiss() } }
+            Button(NSLocalizedString("draft.delete", comment: ""), role: .destructive) {
+                if viewModel.discardDraft() { dismiss() }
+            }
+        }
+        .alert(NSLocalizedString("draft.restoreTitle", comment: ""), isPresented: $viewModel.showDraftRestore) {
+            Button(NSLocalizedString("draft.continue", comment: "")) { viewModel.restoreDraft() }
+            Button(NSLocalizedString("draft.delete", comment: ""), role: .destructive) { viewModel.discardDraft(startFresh: true) }
+        } message: {
+            Text(NSLocalizedString("draft.restoreMessage", comment: ""))
+        }
+        .alert(NSLocalizedString("common.error", comment: ""), isPresented: Binding(
+            get: { viewModel.draftError != nil }, set: { if !$0 { viewModel.draftError = nil } }
+        )) {
+            Button(NSLocalizedString("common.ok", comment: "")) { viewModel.draftError = nil }
+        } message: { Text(viewModel.draftError ?? "") }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { viewModel.flushDraft() } }
         .sheet(isPresented: $showShareSheet) {
             if let file = viewModel.exportedFile {
                 ShareSheet(items: [file.fileURL])
@@ -409,6 +429,10 @@ struct VideoEditorView: View {
                     .font(.footnote)
                     .foregroundStyle(DesignSystem.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let count = viewModel.exportAudioTrackCount {
+                    Text(String(format: NSLocalizedString("report.audioTracks", comment: ""), count))
+                        .font(.footnote)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -720,7 +744,7 @@ struct VideoEditorView: View {
         case .completed:
             footerContainer {
                 HStack(spacing: DesignSystem.Spacing.md) {
-                    Button(NSLocalizedString("common.done", comment: "")) { dismiss() }
+                    Button(NSLocalizedString("common.done", comment: "")) { if viewModel.discardDraft() { dismiss() } }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
 

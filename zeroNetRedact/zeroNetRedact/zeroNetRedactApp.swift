@@ -91,6 +91,7 @@ struct zeroNetRedactApp: App {
                         .zIndex(3)
                 }
             }
+            .modifier(ShareInboxModifier(appState: appState))
             .onAppear {
                 // 延迟隐藏启动页（Reduce Motion 时无淡出动画）
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {

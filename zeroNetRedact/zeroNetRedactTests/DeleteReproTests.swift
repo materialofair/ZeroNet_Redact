@@ -23,6 +23,7 @@ final class DeleteReproTests: XCTestCase {
 
         // 2. 走真实导入路径（与 importPhotos 相同的 .imageData 来源）
         let imported = try await ImportManager.shared.importFile(from: .imageData(data))
+        let importedID = imported.id
         print("REPRO: imported id=\(imported.id)")
 
         // 3. 复刻 attachToSelectedGroup：挂到默认分组
@@ -45,6 +46,6 @@ final class DeleteReproTests: XCTestCase {
 
         print("REPRO: showError=\(vm.showError) errorMessage=\(vm.errorMessage ?? "nil")")
         XCTAssertFalse(vm.showError, "删除报错: \(vm.errorMessage ?? "")")
-        XCTAssertNil(vm.originalFiles.first { $0.id == imported.id }, "文件仍在列表中")
+        XCTAssertNil(vm.originalFiles.first { $0.id == importedID }, "文件仍在列表中")
     }
 }

@@ -13,6 +13,117 @@ enum ImageFacePhase: Equatable {
 class EditorViewModel: ObservableObject {
     let file: RedactableFile
 
+    @Published var showDraftRestore = false
+    private var pendingDraft: EditorDraft?
+    private var draftSession: UUID?
+    private var draftSaveTask: Task<Void, Never>?
+    private var draftSubscriptions = Set<AnyCancellable>()
+    private var draftEnabled = false
+
+    private func prepareDraft() throws {
+        pendingDraft = try EditorDraftStore.shared.load(id: file.id)
+        draftSession = EditorDraftStore.shared.beginSession(for: file.id)
+        showDraftRestore = pendingDraft != nil
+        draftEnabled = pendingDraft == nil
+        objectWillChange.sink { [weak self] _ in
+            Task { @MainActor [weak self] in self?.scheduleDraftSave() }
+        }.store(in: &draftSubscriptions)
+        if let image = editor?.baseEditor as? ImageRedactionEditor {
+            image.objectWillChange.sink { [weak self] _ in
+                Task { @MainActor [weak self] in self?.scheduleDraftSave() }
+            }.store(in: &draftSubscriptions)
+        }
+        if let pdf = editor?.baseEditor as? PDFRedactionEditor {
+            pdf.objectWillChange.sink { [weak self] _ in
+                Task { @MainActor [weak self] in self?.scheduleDraftSave() }
+            }.store(in: &draftSubscriptions)
+        }
+    }
+
+    func scheduleDraftSave() {
+        guard draftEnabled else { return }
+        draftSaveTask?.cancel()
+        draftSaveTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+            self?.flushDraft()
+        }
+    }
+
+    @discardableResult
+    func flushDraft() -> Bool {
+        draftSaveTask?.cancel()
+        guard draftEnabled, let session = draftSession else { return false }
+        do {
+            var base: Data?
+            var masks: [DraftMask] = []
+            if let image = editor?.baseEditor as? ImageRedactionEditor {
+                (base, masks) = try image.draftState()
+            } else if let pdf = editor?.baseEditor as? PDFRedactionEditor {
+                masks = try pdf.draftMasks()
+            } else { return false }
+            let draft = EditorDraft(originalID: file.id, replacementImage: base, replacementScale: (editor?.baseEditor as? ImageRedactionEditor)?.draftImageScale, masks: masks,
+                                    pageIndex: currentPDFPageIndex,
+                                    recognition: detectedRegions.map(DraftRecognition.init),
+                                    selectedEffect: try DraftEffect(selectedEffect),
+                                    faceCandidates: faceCandidates.map { DraftFaceCandidate(id: $0.id, rect: $0.rect, selected: selectedFaceCandidateIDs.contains($0.id)) },
+                                    faceSticker: faceSticker.rawValue)
+            try EditorDraftStore.shared.save(draft, session: session)
+            return true
+        } catch {
+            let message = NSLocalizedString("draft.saveFailed", comment: "")
+            if errorMessage != message { errorMessage = message }
+            return false
+        }
+    }
+
+    func restoreDraft() {
+        guard let draft = pendingDraft else { return }
+        do {
+            if let image = editor?.baseEditor as? ImageRedactionEditor { try image.restoreDraft(draft) }
+            if let pdf = editor?.baseEditor as? PDFRedactionEditor {
+                try pdf.restoreDraft(draft)
+                currentPDFPageIndex = pdf.currentPageIndex
+                refreshPDFPageImage()
+            }
+            detectedRegions = draft.recognition.map(\.region)
+            selectedEffect = try draft.selectedEffect.restored()
+            if let candidates = draft.faceCandidates, !candidates.isEmpty {
+                var review = ImageFaceReviewState(candidates: candidates.map { ImageFaceCandidate(id: $0.id, rect: $0.rect) })
+                for candidate in candidates where !candidate.selected { review.toggle(candidate.id) }
+                setFaceReviewState(review)
+                facePhase = .reviewing
+            }
+            if let raw = draft.faceSticker, let value = FaceRedactionSticker(rawValue: raw) {
+                faceSticker = value
+            }
+            updateUndoRedoState()
+            pendingDraft = nil
+            draftEnabled = true
+            showDraftRestore = false
+        } catch {
+            errorMessage = NSLocalizedString("draft.restoreFailed", comment: "")
+        }
+    }
+
+    @discardableResult
+    func discardDraft(startFresh: Bool = false) -> Bool {
+        draftEnabled = false
+        draftSaveTask?.cancel()
+        do {
+            try EditorDraftStore.shared.delete(id: file.id)
+            pendingDraft = nil
+            showDraftRestore = false
+            if startFresh {
+                draftSession = EditorDraftStore.shared.beginSession(for: file.id)
+                draftEnabled = true
+            }
+            return true
+        } catch {
+            errorMessage = NSLocalizedString("draft.deleteFailed", comment: "")
+            return false
+        }
+    }
+
     // MARK: - 状态管理（委托给 StateManager）
 
     @Published var isLoading = false
@@ -31,6 +142,7 @@ class EditorViewModel: ObservableObject {
     @Published private(set) var faceDetectionMessage: String?
 
     @Published var selectedEffect: RedactionEffect = .solidBlack
+    @Published private(set) var exportReport: ExportProcessingReport?
     @Published var detectedRegions: [SensitiveRegion] = []
 
     @Published var currentImage: UIImage?
@@ -108,6 +220,7 @@ class EditorViewModel: ObservableObject {
     var selectedFaceCount: Int { selectedFaceCandidateIDs.count }
 
     func loadFile() async {
+        guard editor == nil else { return }
         await MainActor.run {
             isLoading = true
             errorMessage = nil
@@ -174,6 +287,9 @@ class EditorViewModel: ObservableObject {
 
             await MainActor.run {
                 updateUndoRedoState()
+                do { try prepareDraft() } catch {
+                    errorMessage = NSLocalizedString("draft.restoreFailed", comment: "")
+                }
             }
         } catch {
             await MainActor.run {
@@ -373,6 +489,36 @@ class EditorViewModel: ObservableObject {
         updateUndoRedoState()
     }
 
+    func keepSearchResults(_ regions: [SensitiveRegion]) {
+        let existing = Set(detectedRegions.map(\.id))
+        detectedRegions.append(contentsOf: regions.filter { !existing.contains($0.id) })
+        scheduleDraftSave()
+    }
+
+    func applySearchResults(_ regions: [SensitiveRegion], effect: RedactionEffect) {
+        let applied: [SensitiveRegion]
+        selectedEffect = effect
+        if let pdf = editor?.baseEditor as? PDFRedactionEditor {
+            applied = pdf.applyRedactionsByPage(regions, effect: effect)
+            refreshPDFPageImage()
+        } else if let image = currentImage, isImageFile {
+            applied = regions.filter {
+                let b = $0.boundingBox
+                return [b.minX, b.minY, b.width, b.height].allSatisfy(\.isFinite)
+                    && b.width > 0 && b.height > 0 && CGRect(x: 0, y: 0, width: 1, height: 1).contains(b)
+            }
+            applyRedactions(at: applied.map {
+                let b = $0.boundingBox
+                return CGRect(x: b.minX * image.size.width, y: (1 - b.maxY) * image.size.height,
+                              width: b.width * image.size.width, height: b.height * image.size.height)
+            }, effect: effect)
+        } else { return }
+        let appliedIDs = Set(applied.map(\.id))
+        detectedRegions.removeAll { appliedIDs.contains($0.id) }
+        updateUndoRedoState()
+        scheduleDraftSave()
+    }
+
     func undo() {
         editor?.undo()
 
@@ -455,6 +601,7 @@ class EditorViewModel: ObservableObject {
         defer { isExporting = false }
         exportWarning = nil
         exportedFileURL = nil
+        exportReport = nil
         exportProgress = nil
 
         if Task.isCancelled {
@@ -602,6 +749,13 @@ class EditorViewModel: ObservableObject {
                     }
                 }
                 if didSaveRecord {
+                    let count: Int
+                    if let image = editor?.baseEditor as? ImageRedactionEditor {
+                        count = image.getRedactionRegions().count
+                    } else if let pdf = editor?.baseEditor as? PDFRedactionEditor {
+                        count = pdf.redactionRegionCount
+                    } else { count = 0 }
+                    exportReport = .inspect(data: data, isPDF: isPDFFile, regionCount: count)
                     // 记录导出文件位置，供导出后分享 sheet 使用
                     exportedFileURL = url
                 }

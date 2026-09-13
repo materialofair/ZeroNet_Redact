@@ -172,6 +172,48 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         print("✅ PDFRedactionEditor: 当前页面共有\(page.annotations.count)个annotations")
     }
 
+    func draftMasks() throws -> [DraftMask] {
+        try captureSnapshot().map {
+            DraftMask(bounds: $0.bounds, page: $0.pageIndex,
+                      effect: try DraftEffect(.rectangle(color: $0.annotation.interiorColor ?? .black, opacity: 1)))
+        }
+    }
+
+    var redactionRegionCount: Int { captureSnapshot().count }
+
+    func restoreDraft(_ draft: EditorDraft) throws {
+        let entries = try draft.masks.map { mask -> PDFAnnotationSnapshot in
+            guard let page = mask.page, page >= 0, page < getTotalPages() else { throw CocoaError(.coderReadCorrupt) }
+            let annotation = PDFAnnotation(bounds: mask.bounds, forType: .square, withProperties: nil)
+            guard case .rectangle(let color, _) = try mask.effect.restored() else { throw CocoaError(.coderReadCorrupt) }
+            annotation.color = color; annotation.interiorColor = color
+            annotation.border = PDFBorder(); annotation.border?.lineWidth = 0
+            annotation.userName = Self.redactionAnnotationMarker
+            return PDFAnnotationSnapshot(pageIndex: page, annotation: annotation, bounds: mask.bounds)
+        }
+        undoStack = entries.isEmpty ? [] : [[]]
+        redoStack = []
+        restore(entries)
+        goToPage(min(max(0, draft.pageIndex), max(0, getTotalPages() - 1)))
+    }
+
+    @discardableResult
+    func applyRedactionsByPage(_ regions: [SensitiveRegion], effect: RedactionEffect) -> [SensitiveRegion] {
+        let valid = regions.filter { ($0.pageIndex ?? currentPageIndex) >= 0 && ($0.pageIndex ?? currentPageIndex) < getTotalPages() }
+        guard !valid.isEmpty else { return [] }
+        let prior = captureSnapshot()
+        let oldUndo = undoStack
+        let current = currentPageIndex
+        for (page, entries) in Dictionary(grouping: valid, by: { $0.pageIndex ?? current }) {
+            currentPageIndex = page
+            applyRedactions(at: entries.map(\.boundingBox), effect: effect)
+        }
+        currentPageIndex = current
+        undoStack = oldUndo + [prior]
+        redoStack = []
+        return valid
+    }
+
     func undo() {
         guard let snapshot = undoStack.popLast() else { return }
 

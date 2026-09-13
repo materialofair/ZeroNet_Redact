@@ -7,6 +7,98 @@ import UIKit
 
 @MainActor
 final class VideoEditorViewModel: ObservableObject {
+    @Published var showDraftRestore = false
+    @Published var draftError: String?
+    private var pendingDraft: EditorDraft?
+    private var draftChecked = false
+    private var draftSession: UUID?
+    private var draftEnabled = false
+    private var analyzedTimelineAvailable = false
+    private var draftSaveTask: Task<Void, Never>?
+    private var restoredPlaybackSeconds: Double?
+
+    private func checkDraft() -> Bool {
+        guard !draftChecked else { return !showDraftRestore }
+        draftChecked = true
+        do {
+            pendingDraft = try EditorDraftStore.shared.load(id: video.id)
+            draftSession = EditorDraftStore.shared.beginSession(for: video.id)
+            if pendingDraft?.videoState != nil {
+                showDraftRestore = true
+                return false
+            }
+            draftEnabled = true
+            return true
+        } catch {
+            draftError = NSLocalizedString("draft.restoreFailed", comment: "")
+            return true
+        }
+    }
+
+    func restoreDraft() {
+        guard let state = pendingDraft?.videoState,
+              let restoredSticker = VideoRedactionSticker(rawValue: state.sticker),
+              let restoredVoice = VoicePreset(rawValue: state.voicePreset) else {
+            draftError = NSLocalizedString("draft.restoreFailed", comment: "")
+            return
+        }
+        sticker = restoredSticker
+        voicePreset = restoredVoice
+        if let restored = state.timeline {
+            timeline = restored
+            analyzedTimelineAvailable = true
+        }
+        restoredPlaybackSeconds = state.playbackSeconds
+        pendingDraft = nil
+        showDraftRestore = false
+        draftEnabled = true
+        start()
+    }
+
+    private func scheduleDraftSave() {
+        guard draftEnabled else { return }
+        draftSaveTask?.cancel()
+        draftSaveTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+            self?.flushDraft()
+        }
+    }
+
+    @discardableResult
+    func flushDraft() -> Bool {
+        draftSaveTask?.cancel()
+        guard draftEnabled, let session = draftSession else { return false }
+        do {
+            let state = DraftVideoState(sticker: sticker, voice: voicePreset,
+                                        timeline: analyzedTimelineAvailable ? timeline : nil,
+                                        playbackSeconds: player.currentTime().seconds)
+            let draft = EditorDraft(originalID: video.id, masks: [], pageIndex: 0,
+                                    recognition: [], selectedEffect: try DraftEffect(.solidBlack), videoState: state)
+            try EditorDraftStore.shared.save(draft, session: session)
+            return true
+        } catch { draftError = NSLocalizedString("draft.saveFailed", comment: ""); return false }
+    }
+
+    @discardableResult
+    func discardDraft(startFresh: Bool = false) -> Bool {
+        draftEnabled = false
+        draftSaveTask?.cancel()
+        do {
+            try EditorDraftStore.shared.delete(id: video.id)
+            pendingDraft = nil
+            showDraftRestore = false
+            if startFresh {
+                draftSession = EditorDraftStore.shared.beginSession(for: video.id)
+                draftEnabled = true
+                start()
+            }
+            return true
+        } catch {
+            draftError = NSLocalizedString("draft.deleteFailed", comment: "")
+            return false
+        }
+    }
+
     enum Phase: Equatable {
         case preparing
         case analyzing
@@ -22,6 +114,7 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var faceCount = 0
     @Published private(set) var errorMessage: String?
     @Published private(set) var exportedFile: RedactedFile?
+    @Published private(set) var exportAudioTrackCount: Int?
     /// 分析阶段剩余时间预估（秒）；nil 表示无预估（分析中会持续更新）
     @Published private(set) var estimatedRemainingSeconds: TimeInterval?
 
@@ -36,6 +129,7 @@ final class VideoEditorViewModel: ObservableObject {
         didSet {
             guard oldValue != voicePreset else { return }
             voicePreviewError = nil
+            scheduleDraftSave()
             // 正在试听/生成试听时切换预设会与播放内容不一致，先恢复为原声预览。
             if isVoicePreviewActive || isPreparingVoicePreview {
                 stopVoicePreview()
@@ -73,7 +167,7 @@ final class VideoEditorViewModel: ObservableObject {
     var canPreviewVoice: Bool { phase == .ready && video.hasAudio && voicePreset != .original }
 
     func start() {
-        guard workTask == nil else { return }
+        guard workTask == nil, phase == .preparing, checkDraft() else { return }
         configurePlaybackAudioSession()
         workTask = Task { await prepareAndAnalyze() }
     }
@@ -90,6 +184,7 @@ final class VideoEditorViewModel: ObservableObject {
         faceCount = 0
         errorMessage = nil
         timeline = .empty
+        analyzedTimelineAvailable = false
         start()
     }
 
@@ -97,6 +192,7 @@ final class VideoEditorViewModel: ObservableObject {
     /// 否则 onDisappear 路径会误杀正在后台受保护的导出
     func viewDidDisappear() {
         isViewVisible = false
+        flushDraft()
         if phase != .exporting {
             cleanup()
         }
@@ -149,6 +245,7 @@ final class VideoEditorViewModel: ObservableObject {
     private func applySelectedSticker(_ selected: VideoRedactionSticker) {
         guard sticker != selected else { return }
         sticker = selected
+        scheduleDraftSave()
         refreshPreview()
     }
 
@@ -241,11 +338,13 @@ final class VideoEditorViewModel: ObservableObject {
                 try Task.checkCancellation()
                 progress = 0.95
 
+                let audioTracks = try? await AVURLAsset(url: exportURL).loadTracks(withMediaType: .audio)
                 let redacted = try persistExport(stagedURL: exportURL)
                 if !AppState.shared.hasUnlimitedAccess {
                     UsageTracker.shared.recordMediaExport()
                 }
                 exportedFile = redacted
+                exportAudioTrackCount = audioTracks?.count
                 phase = .completed
                 progress = 1
             } catch is CancellationError {
@@ -394,7 +493,8 @@ final class VideoEditorViewModel: ObservableObject {
             phase = .analyzing
             progress = 0
             estimatedRemainingSeconds = nil
-            timeline = try await VideoFaceAnalyzer().analyze(
+            if !analyzedTimelineAvailable {
+                timeline = try await VideoFaceAnalyzer().analyze(
                 url: source,
                 progress: { [weak self] value in
                     Task { @MainActor in self?.progress = value }
@@ -403,12 +503,19 @@ final class VideoEditorViewModel: ObservableObject {
                     Task { @MainActor in self?.estimatedRemainingSeconds = value }
                 }
             )
+            }
+            analyzedTimelineAvailable = true
             try Task.checkCancellation()
             estimatedRemainingSeconds = nil
             faceCount = timeline.totalUniqueFaces
             refreshPreview()
             phase = .ready
             progress = 1
+            if let seconds = restoredPlaybackSeconds {
+                await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+                restoredPlaybackSeconds = nil
+            }
+            flushDraft()
         } catch is CancellationError {
             // 主动取消是中性状态，不应被渲染成处理失败。
             phase = .cancelled
