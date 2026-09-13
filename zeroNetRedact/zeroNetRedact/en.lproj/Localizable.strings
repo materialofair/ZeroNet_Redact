@@ -835,3 +835,15 @@
 "list.sort.newest" = "Newest first";
 "list.sort.oldest" = "Oldest first";
 "list.sort.largest" = "Largest first";
+"settings.section.membership" = "Membership";
+"settings.section.privacyStorage" = "Privacy & Storage";
+"settings.section.help" = "Help";
+"settings.section.about" = "About";
+"settings.quota.media" = "Media exports used today";
+"settings.quota.documents" = "Document exports used today";
+"settings.storage" = "Local storage";
+"settings.guide" = "Getting started";
+"album.summary" = "Current list summary";
+"album.openOriginal" = "Open original";
+"album.empty.explanation" = "Your redacted files will appear here.";
+"album.empty.start" = "Go to files";

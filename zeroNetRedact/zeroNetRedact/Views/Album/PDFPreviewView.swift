@@ -56,20 +56,13 @@ struct PDFPreviewView: View {
                     .padding(.trailing, 12)
                 }
 
-                Button {
-                    showShareSheet = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.title2)
-                        .foregroundColor(.primary)
-                }
-                .accessibilityLabel(NSLocalizedString("album.shareFile", comment: ""))
             }
             .padding()
             .background(Color(.systemBackground))
 
             // 使用原生PDFView
             PDFKitView(document: pdfDocument)
+            PreviewShareBar { showShareSheet = true }
         }
         .sheet(isPresented: $showShareSheet) {
             if let pdfData = pdfDocument.dataRepresentation() {

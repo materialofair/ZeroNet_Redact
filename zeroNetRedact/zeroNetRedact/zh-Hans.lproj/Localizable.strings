@@ -835,3 +835,15 @@
 "list.sort.newest" = "最新优先";
 "list.sort.oldest" = "最早优先";
 "list.sort.largest" = "最大优先";
+"settings.section.membership" = "会员";
+"settings.section.privacyStorage" = "隐私与存储";
+"settings.section.help" = "使用帮助";
+"settings.section.about" = "关于";
+"settings.quota.media" = "今日图片与视频导出已用";
+"settings.quota.documents" = "今日文档导出已用";
+"settings.storage" = "本地存储";
+"settings.guide" = "使用指南";
+"album.summary" = "当前列表统计";
+"album.openOriginal" = "打开原件";
+"album.empty.explanation" = "完成脱敏后，文件会显示在这里。";
+"album.empty.start" = "去处理文件";

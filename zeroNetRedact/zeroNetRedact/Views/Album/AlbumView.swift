@@ -24,6 +24,8 @@ struct AlbumView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedTab: Int
 
+    @State private var showStatistics = false
+    @State private var sourceToOpen: OriginalFile?
     @State private var previewFile: RedactedFile?
     @State private var previewImage: UIImage?
     @State private var previewPDFDocument: PDFDocument?
@@ -47,31 +49,16 @@ struct AlbumView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    // 统计卡片（只有在有文件时显示）
-                    if !viewModel.redactedFiles.isEmpty {
-                        statisticsCard
-                            .padding(.horizontal, DesignSystem.Spacing.lg)
-                            .padding(.top, DesignSystem.Spacing.md)
-                    }
-
-                    // 分组选择器
-                    RedactedGroupSelectorBar(viewModel: viewModel)
-                        .padding(.vertical, 12)
-
-                    // 类型筛选 + 排序
-                    if !viewModel.redactedFiles.isEmpty {
-                        FileTypeFilterBar(
-                            filterType: $viewModel.filterType,
-                            sortOption: $viewModel.sortOption
-                        )
-                        .padding(.bottom, 8)
-                    }
-
                     // 主内容
                     Group {
                         if viewModel.redactedFiles.isEmpty {
-                            // 空状态
-                            emptyStateView
+                            if viewModel.filterType != nil {
+                                ContentUnavailableView {
+                                    Label("files.emptyFiltered", systemImage: "line.3.horizontal.decrease.circle")
+                                } description: { Text("files.emptyFilteredHint") } actions: {
+                                    Button("files.clearFilter") { viewModel.filterType = nil }.buttonStyle(.borderedProminent)
+                                }
+                            } else { emptyStateView }
                         } else {
                             // 脱敏文件网格
                             redactedFilesGridView
@@ -93,26 +80,31 @@ struct AlbumView: View {
                         .scaleEffect(1.5)
                 }
             }
-            .navigationTitle(NSLocalizedString("album.title", comment: ""))
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if !viewModel.redactedFiles.isEmpty {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            withAnimation(reduceMotion ? nil : .default) {
-                                isSelectionMode.toggle()
-                                if !isSelectionMode {
-                                    selectedFileIDs.removeAll()
-                                }
-                            }
-                        } label: {
-                            Text(
-                                isSelectionMode
-                                    ? NSLocalizedString("common.done", comment: "")
-                                    : NSLocalizedString("album.select", comment: ""))
-                        }
-                    }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if isSelectionMode {
+                        Button("common.done") { isSelectionMode = false; selectedFileIDs.removeAll() }
+                    } else { groupMenu }
                 }
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    filterMenu.disabled(isSelectionMode)
+                    moreMenu
+                }
+            }
+            .sheet(isPresented: $showStatistics) {
+                NavigationStack {
+                    statisticsCard.padding()
+                        .navigationTitle("album.summary")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar { Button("common.close") { showStatistics = false } }
+                }.presentationDetents([.medium, .large])
+            }
+            .sheet(item: $sourceToOpen) { file in
+                if let video = file as? OriginalVideo {
+                    VideoEditorView(video: video)
+                } else { SimpleBrushEditor(file: file) }
             }
             .fullScreenCover(item: $previewImage) { image in
                 if let file = previewFile {
@@ -174,6 +166,7 @@ struct AlbumView: View {
                 Text(viewModel.errorMessage ?? "")
             }
             .onAppear {
+                viewModel.loadGroups()
                 viewModel.loadFiles()
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) {
@@ -198,6 +191,68 @@ struct AlbumView: View {
                 }
             }
         }
+    }
+
+    private var groupMenu: some View {
+        Menu {
+            ForEach(viewModel.allGroups, id: \.objectID) { group in
+                Button {
+                    selectedFileIDs.removeAll()
+                    isSelectionMode = false
+                    viewModel.selectGroup(group)
+                } label: {
+                    Label(group.name ?? NSLocalizedString("group.unnamed", comment: ""),
+                          systemImage: viewModel.selectedGroup?.objectID == group.objectID ? "checkmark" : "folder")
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text(viewModel.selectedGroup?.name ?? NSLocalizedString("group.default", comment: ""))
+                    .font(.headline).lineLimit(1).truncationMode(.tail)
+                Image(systemName: "chevron.down").font(.caption.weight(.semibold))
+            }.frame(maxWidth: 180, minHeight: 44, alignment: .leading)
+        }.accessibilityHint(Text("files.switchGroup"))
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            ForEach([nil, FileType.image, .pdf, .video], id: \.self) { type in
+                Button { viewModel.filterType = type } label: {
+                    if viewModel.filterType == type {
+                        Label(type?.displayName ?? NSLocalizedString("list.filter.all", comment: ""), systemImage: "checkmark")
+                    } else { Text(type?.displayName ?? NSLocalizedString("list.filter.all", comment: "")) }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: viewModel.filterType == nil ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
+                Text(viewModel.filterType?.displayName ?? NSLocalizedString("files.filter", comment: ""))
+                    .font(.subheadline).lineLimit(1)
+            }.frame(minHeight: 44)
+        }.accessibilityValue(viewModel.filterType?.displayName ?? NSLocalizedString("list.filter.all", comment: ""))
+    }
+
+    private var moreMenu: some View {
+        Menu {
+            Button {
+                isSelectionMode.toggle()
+                selectedFileIDs.removeAll()
+            } label: {
+                Label(isSelectionMode ? NSLocalizedString("common.done", comment: "") : NSLocalizedString("album.select", comment: ""), systemImage: "checkmark.circle")
+            }.disabled(viewModel.redactedFiles.isEmpty && !isSelectionMode)
+            Menu {
+                ForEach(FileSortOption.allCases) { option in
+                    Button { viewModel.sortOption = option } label: {
+                        Label(option.displayName, systemImage: viewModel.sortOption == option ? "checkmark" : option.icon)
+                    }
+                }
+            } label: { Label("files.sort", systemImage: "arrow.up.arrow.down") }
+            Button { showStatistics = true } label: {
+                Label("album.summary", systemImage: "chart.bar")
+            }
+        } label: {
+            Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44)
+        }.accessibilityLabel(Text("common.more"))
     }
 
     // MARK: - 统计卡片
@@ -230,7 +285,9 @@ struct AlbumView: View {
                         file: file,
                         viewModel: viewModel,
                         isSelectionMode: isSelectionMode,
-                        isSelected: selectedFileIDs.contains(file.id)
+                        isSelected: selectedFileIDs.contains(file.id),
+                        onSelect: { isSelectionMode = true; selectedFileIDs.insert(file.id) },
+                        onOpenOriginal: { sourceToOpen = file.originalFile }
                     )
                     .onTapGesture {
                         if isSelectionMode {
@@ -401,6 +458,8 @@ struct RedactedFileGridItem: View {
     @ObservedObject var viewModel: AlbumViewModel
     var isSelectionMode: Bool = false
     var isSelected: Bool = false
+    var onSelect: () -> Void = {}
+    var onOpenOriginal: () -> Void = {}
     @State private var thumbnailImage: UIImage?
     @State private var isLoading = false
     /// 缩略图加载失败（此前失败永远停留在通用占位图，无法与正常状态区分）
@@ -414,89 +473,73 @@ struct RedactedFileGridItem: View {
         if file.isDeleted || file.managedObjectContext == nil {
             Color.clear
         } else {
-            mainContent
+            VStack(spacing: 8) {
+                mainContent
+                Text(file.fileType.displayName).font(.caption.weight(.medium))
+                Text(file.exportedAt, style: .date).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
         }
     }
 
     private var mainContent: some View {
-        // 单层紧凑卡片：缩略图满铺 + 底部渐变日期条 + 右上角徽章。
-        // 此前为内嵌灰板 + 双层阴影 + 卡片下方整行文字，整体偏大偏重。
-        ZStack {
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                .fill(DesignSystem.Colors.backgroundCard)
+        GeometryReader { geometry in
+            ZStack {
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                    .fill(DesignSystem.Colors.backgroundCard)
 
-            // 内容区域（满铺）
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .tint(DesignSystem.Colors.successGreen)
-                } else if let thumbnail = thumbnailImage {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
-                        // clipShape只裁剪显示不裁剪命中区域:长图缩略图的
-                        // 溢出部分会偷走相邻卡片的点击,必须显式约束命中范围
-                        .contentShape(
-                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
-                } else if thumbnailLoadFailed {
-                    VStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(DesignSystem.Colors.dangerRed)
-                        Text(
-                            NSLocalizedString("import.thumbnail.loadFailed", comment: ""))
-                        .font(.caption2)
-                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                // 内容区域（满铺）
+                Group {
+                    if isLoading {
+                        ProgressView()
+                            .tint(DesignSystem.Colors.successGreen)
+                    } else if let thumbnail = thumbnailImage {
+                        Image(uiImage: thumbnail)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipShape(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
+                            // clipShape只裁剪显示不裁剪命中区域:长图缩略图的
+                            // 溢出部分会偷走相邻卡片的点击,必须显式约束命中范围
+                            .contentShape(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
+                    } else if thumbnailLoadFailed {
+                        VStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(DesignSystem.Colors.dangerRed)
+                            Text(
+                                NSLocalizedString("import.thumbnail.loadFailed", comment: ""))
+                            .font(.caption2)
+                            .foregroundColor(DesignSystem.Colors.textTertiary)
+                        }
+                    } else {
+                        Image(systemName: file.fileType.icon)
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundStyle(DesignSystem.Gradients.success)
                     }
-                } else {
-                    Image(systemName: file.fileType.icon)
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(DesignSystem.Gradients.success)
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium - 1))
 
-            // 底部渐变日期条（信息叠在图上，不再单独占一行）
-            VStack {
-                Spacer()
-                LinearGradient(
-                    gradient: Gradient(colors: [.clear, .black.opacity(0.42)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 32)
-                .overlay(alignment: .bottomLeading) {
-                    Text(file.exportedAt, style: .date)
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 6)
+                // 脱敏徽章（缩小并贴近角落）
+                RedactedBadge(size: 20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(6)
+
+                // 多选标记
+                if isSelectionMode {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : .white)
+                        .background(
+                            Circle()
+                                .fill(isSelected ? Color.white : Color.black.opacity(0.35))
+                                .padding(-3)
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .padding(8)
                 }
-            }
-            .allowsHitTesting(false)
-
-            // 脱敏徽章（缩小并贴近角落）
-            RedactedBadge(size: 20)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(6)
-
-            // 多选标记
-            if isSelectionMode {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(isSelected ? DesignSystem.Colors.primaryBlue : .white)
-                    .background(
-                        Circle()
-                            .fill(isSelected ? Color.white : Color.black.opacity(0.35))
-                            .padding(-3)
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(8)
             }
         }
         .aspectRatio(1, contentMode: .fit)
@@ -508,6 +551,11 @@ struct RedactedFileGridItem: View {
                 .stroke(DesignSystem.Shadow.cardBorder(for: colorScheme), lineWidth: 1)
         )
         .contextMenu {
+            ShareLink(item: file.fileURL) { Label("album.shareFile", systemImage: "square.and.arrow.up") }
+            if file.originalFile != nil {
+                Button(action: onOpenOriginal) { Label("album.openOriginal", systemImage: "doc") }
+            }
+            Button(action: onSelect) { Label("album.select", systemImage: "checkmark.circle") }
             Button(role: .destructive) {
                 showDeleteAlert = true
             } label: {
@@ -531,6 +579,7 @@ struct RedactedFileGridItem: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabelText)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .accessibilityAction(named: Text("album.select"), onSelect)
     }
 
     // MARK: - 无障碍
@@ -657,6 +706,7 @@ struct RedactedVideoPreviewView: View {
             VideoPlayer(player: player)
                 .background(Color.black.ignoresSafeArea())
                 .navigationBarTitleDisplayMode(.inline)
+                .safeAreaInset(edge: .bottom) { PreviewShareBar { showShareSheet = true } }
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button {
@@ -669,11 +719,6 @@ struct RedactedVideoPreviewView: View {
                         HStack(spacing: 20) {
                             FilePreviewActionsMenu(file: file, viewModel: viewModel) {
                                 dismiss()
-                            }
-                            Button {
-                                showShareSheet = true
-                            } label: {
-                                Image(systemName: "square.and.arrow.up")
                             }
                         }
                     }
@@ -741,6 +786,7 @@ struct ImagePreviewView: View {
                     .scaledToFit()
             }
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) { PreviewShareBar { showShareSheet = true } }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -760,14 +806,6 @@ struct ImagePreviewView: View {
                         }
                         .foregroundColor(.white)
 
-                        Button {
-                            showShareSheet = true
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                                .foregroundColor(.white)
-                                .font(.title2)
-                        }
-                        .accessibilityLabel(NSLocalizedString("album.shareFile", comment: ""))
                     }
                 }
             }
@@ -967,4 +1005,19 @@ struct RedactedFileGroupPicker: View {
 
 #Preview {
     AlbumView(selectedTab: .constant(1))
+}
+
+struct PreviewShareBar: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label("album.shareFile", systemImage: "square.and.arrow.up")
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .padding(.horizontal, DesignSystem.Spacing.lg)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+    }
 }
