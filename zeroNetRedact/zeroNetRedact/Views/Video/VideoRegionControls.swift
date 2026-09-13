@@ -4,9 +4,6 @@ import AVFoundation
 struct VideoRegionControls: View {
     @ObservedObject var model: VideoEditorViewModel
     @State private var editing: VideoManualRegion?
-    @State private var start = 0.0
-    @State private var end = 1.0
-    @State private var effect = "blur"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -17,21 +14,10 @@ struct VideoRegionControls: View {
                 .accessibilityLabel(Text("video.review.time"))
             Text(String(format: NSLocalizedString("video.review.coverage", comment: ""), model.reviewSeconds, model.automaticCoverage, model.manualCoverage))
                 .font(.caption).monospacedDigit()
-            Button(model.drawingRegion ? "common.cancel" : "video.manual.draw") {
-                model.player.pause()
-                let seconds = model.player.currentTime().seconds
-                if seconds.isFinite { model.reviewSeconds = min(model.video.duration, max(0, seconds)) }
-                model.drawingRegion.toggle()
-                model.redrawingManualRegion = nil
-            }.buttonStyle(.bordered)
-            if model.drawingRegion { Text(model.redrawingManualRegion == nil ? "video.manual.drawHint" : "video.manual.redrawHint").font(.caption) }
             ForEach(model.manualRegions) { region in
                 HStack {
                     Button {
                         editing = region
-                        start = region.start
-                        end = region.end
-                        effect = region.effect
                         model.seekReview(region.start)
                     } label: {
                         Text(String(format: NSLocalizedString("video.manual.interval", comment: ""), region.start, region.end))
@@ -76,40 +62,9 @@ struct VideoRegionControls: View {
                 }
             }
         }
-        .onChange(of: model.pendingManualRegion?.id) { _, _ in
-            if let region = model.pendingManualRegion {
-                start = region.start
-                end = region.end
-                effect = region.effect
-                editing = region
-                model.pendingManualRegion = nil
-            }
-        }
         .sheet(item: $editing) { region in
-            NavigationStack {
-                Form {
-                    Text("video.manual.halfOpen")
-                    Button("video.manual.redraw") {
-                        guard var candidate = VideoManualRegion(rect: region.rect, start: start, end: end, duration: model.video.duration) else { return }
-                        candidate.id = region.id
-                        candidate.effect = effect
-                        model.beginRedrawing(candidate)
-                        editing = nil
-                    }.disabled(VideoManualRegion(rect: region.rect, start: start, end: end, duration: model.video.duration) == nil)
-                    TextField("video.manual.start", value: $start, format: .number).keyboardType(.decimalPad)
-                    TextField("video.manual.end", value: $end, format: .number).keyboardType(.decimalPad)
-                    Picker("video.effect.title", selection: $effect) {
-                        Text("video.effect.blur").tag("blur")
-                        ForEach(VideoRedactionSticker.allCases.filter { !$0.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess) }) { sticker in
-                            Text(sticker.displayName).tag(sticker.rawValue)
-                        }
-                    }
-                    Button("video.manual.save") {
-                        if model.saveRegion(rect: region.rect, start: start, end: end, replacing: region.id, effect: effect) { editing = nil }
-                    }.disabled(VideoManualRegion(rect: region.rect, start: start, end: end, duration: model.video.duration) == nil)
-                }.navigationTitle(Text("video.manual.edit"))
-                    .toolbar { Button("common.cancel") { editing = nil } }
-            }.presentationDetents([.medium])
+            VideoManualRegionEditor(model: model, region: region)
+                .presentationDetents([.large])
         }
     }
 
@@ -129,48 +84,6 @@ struct VideoRegionControls: View {
                 }
             }.frame(height: 8)
         }
-    }
-}
-
-struct VideoRegionDrawingOverlay: View {
-    @ObservedObject var model: VideoEditorViewModel
-    @State private var origin: CGPoint?
-    @State private var current: CGPoint?
-
-    var body: some View {
-        GeometryReader { geometry in
-            let size = geometry.size
-            ZStack {
-                Color.clear.contentShape(Rectangle())
-                if let origin, let current {
-                    let rect = CGRect(x: min(origin.x, current.x), y: min(origin.y, current.y), width: abs(current.x - origin.x), height: abs(current.y - origin.y))
-                    Rectangle().fill(.orange.opacity(0.3)).overlay(Rectangle().stroke(.orange, lineWidth: 2))
-                        .frame(width: rect.width, height: rect.height).position(x: rect.midX, y: rect.midY)
-                }
-            }.gesture(DragGesture(minimumDistance: 2)
-                .onChanged { value in
-                    origin = value.startLocation
-                    current = CGPoint(x: min(size.width, max(0, value.location.x)), y: min(size.height, max(0, value.location.y)))
-                }
-                .onEnded { _ in
-                    defer { origin = nil; current = nil }
-                    guard let origin, let current, size.width > 0, size.height > 0 else { return }
-                    let rect = CGRect(x: min(origin.x, current.x) / size.width, y: 1 - max(origin.y, current.y) / size.height,
-                                      width: abs(current.x - origin.x) / size.width, height: abs(current.y - origin.y) / size.height)
-                    let start = min(model.reviewSeconds, max(0, model.video.duration - 0.001))
-                    let candidate: VideoManualRegion?
-                    if let existing = model.redrawingManualRegion {
-                        candidate = existing.redrawing(rect: rect, duration: model.video.duration)
-                    } else {
-                        candidate = VideoManualRegion(rect: rect, start: start, end: model.video.duration, duration: model.video.duration)
-                    }
-                    if let region = candidate {
-                        model.pendingManualRegion = region
-                        model.drawingRegion = false
-                        model.redrawingManualRegion = nil
-                    }
-                })
-        }.accessibilityLabel(Text("video.manual.drawHint"))
     }
 }
 

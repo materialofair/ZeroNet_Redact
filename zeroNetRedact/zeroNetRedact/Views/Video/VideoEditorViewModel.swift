@@ -128,15 +128,6 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var manualRegions: [VideoManualRegion] = []
     @Published private(set) var groups: [VideoPersonGroup] = []
     @Published var selectedTrackIDs: Set<Int> = []
-    @Published var drawingRegion = false
-    @Published var pendingManualRegion: VideoManualRegion?
-    @Published var redrawingManualRegion: VideoManualRegion?
-
-    func beginRedrawing(_ region: VideoManualRegion) {
-        seekReview(region.start)
-        redrawingManualRegion = region
-        drawingRegion = true
-    }
 
     func highlightedTracks(at seconds: Double) -> [(id: Int, rect: CGRect)] {
         guard let frame = timeline.frame(at: seconds) else { return [] }

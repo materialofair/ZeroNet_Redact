@@ -3,6 +3,24 @@ import CoreData
 @testable import zeroNetRedact
 
 final class VideoManualRegionTests: XCTestCase {
+    func testMovingCoverClampsAtEdgesWithoutChangingSize() {
+        let rect = CGRect(x: 0.3, y: 0.3, width: 0.4, height: 0.4)
+        XCTAssertEqual(VideoRegionGeometry.centered(rect, at: CGPoint(x: -2, y: 3)),
+                       CGRect(x: 0, y: 0.6, width: 0.4, height: 0.4))
+        XCTAssertEqual(VideoRegionGeometry.centered(rect, at: CGPoint(x: 3, y: -2)),
+                       CGRect(x: 0.6, y: 0, width: 0.4, height: 0.4))
+    }
+
+    func testResizingCoverKeepsCenterAndNeverExceedsImage() throws {
+        let rect = CGRect(x: 0.3, y: 0.3, width: 0.4, height: 0.4)
+        let small = VideoRegionGeometry.resized(rect, width: 0.2, height: 0.1)
+        XCTAssertEqual(small.midX, rect.midX, accuracy: 0.00001)
+        XCTAssertEqual(small.midY, rect.midY, accuracy: 0.00001)
+        let full = VideoRegionGeometry.resized(rect, width: 3, height: 4)
+        XCTAssertEqual(full, CGRect(x: 0, y: 0, width: 1, height: 1))
+        XCTAssertNotNil(VideoManualRegion(rect: full, start: 0, end: 1, duration: 1))
+    }
+
     @MainActor
     func testPlaybackTimeUpdatesReviewWithoutOverwritingActiveScrub() throws {
         let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)

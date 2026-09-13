@@ -14,6 +14,7 @@ struct VideoEditorView: View {
     @State private var initialOrientation: VideoEditorOrientation?
     @State private var showShareSheet = false
     @State private var showCloseOptions = false
+    @State private var editingManualRegion: VideoManualRegion?
     @Environment(\.scenePhase) private var scenePhase
 
     init(video: OriginalVideo) {
@@ -69,6 +70,10 @@ struct VideoEditorView: View {
             }
         }
         .interactiveDismissDisabled(isBusy)
+        .sheet(item: $editingManualRegion) { region in
+            VideoManualRegionEditor(model: viewModel, region: region)
+                .presentationDetents([.large])
+        }
         .confirmationDialog(NSLocalizedString("draft.keepAndClose", comment: ""), isPresented: $showCloseOptions) {
             Button(NSLocalizedString("draft.keepAndClose", comment: "")) { if viewModel.flushDraft() { dismiss() } }
             Button(NSLocalizedString("draft.delete", comment: ""), role: .destructive) {
@@ -270,9 +275,6 @@ struct VideoEditorView: View {
                 if viewModel.phase == .ready || viewModel.phase == .completed {
                     VideoPlayer(player: viewModel.player)
                         .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large))
-                    if viewModel.drawingRegion {
-                        VideoRegionDrawingOverlay(model: viewModel)
-                    }
                 } else {
                     VStack(spacing: DesignSystem.Spacing.md) {
                         Image(systemName: "checkmark.shield.fill")
@@ -299,7 +301,7 @@ struct VideoEditorView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .allowsHitTesting(false)
                 }
-                if viewModel.phase == .ready, !viewModel.selectedTrackIDs.isEmpty, !viewModel.drawingRegion {
+                if viewModel.phase == .ready, !viewModel.selectedTrackIDs.isEmpty {
                     VideoSelectedTracksOverlay(model: viewModel)
                 }
             }
@@ -310,6 +312,18 @@ struct VideoEditorView: View {
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(NSLocalizedString("video.accessibility.preview", comment: ""))
+
+            if viewModel.phase == .ready {
+                Button {
+                    viewModel.player.pause()
+                    editingManualRegion = VideoManualRegion(rect: CGRect(x: 0.3, y: 0.3, width: 0.4, height: 0.4), start: 0, end: viewModel.video.duration, duration: viewModel.video.duration)
+                } label: {
+                    Label("video.manual.add", systemImage: "plus.rectangle.fill")
+                        .frame(maxWidth: .infinity).padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("video.manual.add")
+            }
 
             if viewModel.phase == .ready || viewModel.phase == .completed {
                 Label(
