@@ -10,6 +10,8 @@
 
 No account required · On-device processing · One-time upgrade, no subscription
 
+[Product facts / 产品资料](docs/marketing/product-facts.md) · [Photo guide](https://zeronet-redact.materialofair.chatgpt.site/en/guides/redact-photos-iphone/) · [Video guide](https://zeronet-redact.materialofair.chatgpt.site/en/guides/redact-video-iphone/) · [PDF guide](https://zeronet-redact.materialofair.chatgpt.site/en/guides/redact-pdf-iphone/)
+
 [English](#english) | [中文](#中文)
 
 </div>
