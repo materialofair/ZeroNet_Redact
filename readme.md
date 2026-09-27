@@ -2,27 +2,39 @@
 
 # ZeroNet Redact
 
-**完全离线的隐私脱敏工具**
+**Redact photos, videos and PDFs on your iPhone and iPad.**
+
+**照片、视频、PDF，一处完成本地脱敏。**
+
+[Download on the App Store](https://apps.apple.com/app/id6756290503) · [Website / 官网](https://zeronet-redact.materialofair.chatgpt.site/en/)
+
+No account required · On-device processing · One-time upgrade, no subscription
 
 [English](#english) | [中文](#中文)
 
 </div>
 
+| Photos / 照片 | Videos / 视频 | PDFs / 文档 |
+|:--:|:--:|:--:|
+| <img src="docs/marketing/assets/photo.png" width="220" alt="Photo editor with private details covered"> | <img src="docs/marketing/assets/video.png" width="220" alt="Video editor with cover position and time controls"> | <img src="docs/marketing/assets/pdf.png" width="220" alt="PDF editor with an email redacted"> |
+
+Actual app screens with fictional examples. The orange video box is an editing selection. / 真实应用截图，内容均为虚构示例；视频橙色框表示编辑选区。
+
 ---
 
 ## 中文
 
-下一版本开发内容与发布前验证要求见 [v1.5 开发交付说明](docs/v1.5-development-notes.md)，包括加密草稿、文字搜索、PDF 导航、系统分享导入与导出处理记录。
+v1.5 开发内容与验证记录见 [v1.5 开发交付说明](docs/v1.5-development-notes.md)，包括加密草稿、文字搜索、PDF 导航、系统分享导入与导出处理记录。
 
 ### 为什么做这个应用？
 
-在这个数据被肆意窃取的时代，我们分享一张截图前，总要担心是否暴露了手机号、地址、银行卡号。市面上的「隐私工具」大多需要上传到云端处理——这本身就是一种讽刺。
+发送照片、视频或 PDF 前，先遮住不想公开的信息。ZeroNet Redact 支持图片文字与人脸复核、视频指定区域和时段遮挡、PDF 敏感文字搜索与逐页处理，再导出副本用于分享。视频手动框位置固定，请完整预览移动内容。
 
-**ZeroNet Redact 的答案很简单：让你的照片永远不离开你的手机。**
+**文件内容在设备本地处理，无需上传原文件。自动检测可能遗漏信息，分享前请检查完整导出结果。**
 
 ### 核心理念
 
-- **零网络** — 应用完全离线运行，没有网络权限，你的文件永远不会被上传
+- **离线处理** — 脱敏操作无需网络；购买和恢复购买使用 Apple 服务
 - **本地处理** — 所有脱敏操作都在你的设备上完成，没有云端、没有服务器
 - **隐私至上** — 无账号、无追踪、无广告，我们不知道你是谁，也不想知道
 - **开源透明** — 开源不是为了免费，而是为了让你可以验证我们的承诺，建立彼此的信任
@@ -50,13 +62,15 @@
 
 ### 安装
 
-从 [App Store](#) 下载（即将上线）
+从 [App Store](https://apps.apple.com/app/id6756290503) 下载，或访问[产品官网](https://zeronet-redact.materialofair.chatgpt.site/)。
+
+免费版每天可导出 3 个 PDF，以及合计 3 个图片/视频；免费视频源文件上限为 300 MB。一次性内购可解除这些限制并解锁高级贴纸，无订阅。价格以当地 App Store 为准。
 
 或克隆代码自行编译：
 
 ```bash
-git clone https://github.com/materialofair/ZeroNet-Redact.git
-cd ZeroNet-Redact/zeroNetRedact
+git clone https://github.com/materialofair/ZeroNet_Redact.git
+cd ZeroNet_Redact/zeroNetRedact
 open zeroNetRedact.xcodeproj
 ```
 
@@ -71,7 +85,7 @@ open zeroNetRedact.xcodeproj
 
 ### 反馈与建议
 
-如果你有任何问题或建议，欢迎通过 [GitHub Issues](https://github.com/materialofair/ZeroNet-Redact/issues) 与我们联系。
+如果你有任何问题或建议，欢迎通过 [GitHub Issues](https://github.com/materialofair/ZeroNet_Redact/issues) 与我们联系。
 
 ### 许可证
 
@@ -86,13 +100,13 @@ App 自身代码以 GPL-3.0 许可；二进制链接 MuPDF（AGPL-3.0）后按 A
 
 ### Why This App?
 
-In an era where data is stolen at will, we worry about exposing phone numbers, addresses, or bank details before sharing a screenshot. Most "privacy tools" require uploading to the cloud—which is ironic in itself.
+Hide a phone number in a photo, cover a private detail in a video, or redact text in a PDF. ZeroNet Redact brings all three workflows together: import, review, cover, and export a copy. Manual video covers stay in a fixed position; preview moving content carefully.
 
-**ZeroNet Redact's answer is simple: your photos never leave your device.**
+**Content is processed on your device without uploading your originals. Automatic detection can miss details; review the entire exported result before sharing.**
 
 ### Core Philosophy
 
-- **Zero Network** — The app runs completely offline with no network permissions. Your files never get uploaded.
+- **Offline Processing** — Redaction works offline. Purchases and restoring purchases use Apple services.
 - **Local Processing** — All redaction happens on your device. No cloud, no servers.
 - **Privacy First** — No accounts, no tracking, no ads. We don't know who you are, and we don't want to.
 - **Open Source** — Open source isn't about being free—it's about letting you verify our promises and building mutual trust.
@@ -120,13 +134,15 @@ In an era where data is stolen at will, we worry about exposing phone numbers, a
 
 ### Installation
 
-Download from [App Store](#) (Coming Soon)
+Download from the [App Store](https://apps.apple.com/app/id6756290503) or visit the [product website](https://zeronet-redact.materialofair.chatgpt.site/en/).
+
+Try 3 PDF exports and 3 combined photo/video exports per day for free. Free video exports support source files up to 300 MB. A one-time purchase removes these limits and unlocks premium stickers. No subscription; see your local App Store for pricing.
 
 Or clone and build:
 
 ```bash
-git clone https://github.com/materialofair/ZeroNet-Redact.git
-cd ZeroNet-Redact/zeroNetRedact
+git clone https://github.com/materialofair/ZeroNet_Redact.git
+cd ZeroNet_Redact/zeroNetRedact
 open zeroNetRedact.xcodeproj
 ```
 
@@ -141,7 +157,7 @@ open zeroNetRedact.xcodeproj
 
 ### Feedback
 
-If you have any questions or suggestions, feel free to reach out via [GitHub Issues](https://github.com/materialofair/ZeroNet-Redact/issues).
+If you have any questions or suggestions, feel free to reach out via [GitHub Issues](https://github.com/materialofair/ZeroNet_Redact/issues).
 
 ### License
 
