@@ -66,7 +66,7 @@ struct GroupManagementSheet: View {
                 }
             } message: {
                 if let group = groupToDelete {
-                    let groupName = group.name ?? NSLocalizedString("group.unnamed", comment: "")
+                    let groupName = group.localizedDisplayName
                     let originalCount = GroupManager.shared.getFiles(in: group).count
                     let redactedCount = GroupManager.shared.getRedactedFiles(in: group).count
 
@@ -185,7 +185,7 @@ struct GroupEditRow: View {
                     )
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 } else {
-                    Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
+                    Text(group.localizedDisplayName)
                         .font(.headline)
                 }
 

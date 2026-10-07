@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>settings.fileCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d fichier</string>
+			<key>many</key>
+			<string>%d fichiers</string>
+			<key>other</key>
+			<string>%d fichiers</string>
+		</dict>
+	</dict>
+	<key>group.fileCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d fichier</string>
+			<key>many</key>
+			<string>%d fichiers</string>
+			<key>other</key>
+			<string>%d fichiers</string>
+		</dict>
+	</dict>
+	<key>album.redactedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d fichier masqué</string>
+			<key>many</key>
+			<string>%d fichiers masqués</string>
+			<key>other</key>
+			<string>%d fichiers masqués</string>
+		</dict>
+	</dict>
+	<key>search.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d résultat</string>
+			<key>many</key>
+			<string>%d résultats</string>
+			<key>other</key>
+			<string>%d résultats</string>
+		</dict>
+	</dict>
+	<key>editor.review.imageSummary</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d élément à vérifier</string>
+			<key>many</key>
+			<string>%d éléments à vérifier</string>
+			<key>other</key>
+			<string>%d éléments à vérifier</string>
+		</dict>
+	</dict>
+	<key>pdf.preview</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@pages@</string>
+		<key>pages</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Aperçu PDF · %d page</string>
+			<key>other</key>
+			<string>Aperçu PDF · %d pages</string>
+		</dict>
+	</dict>
+	<key>editor.review.page</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Page %1$d · %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d élément</string>
+			<key>other</key>
+			<string>%d éléments</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

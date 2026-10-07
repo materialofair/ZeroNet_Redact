@@ -24,6 +24,7 @@ struct SettingsView: View {
             List {
                 premiumSection
                 securitySection
+                OCRSettingsSection()
                 helpSection
                 aboutSection
             }

@@ -124,7 +124,7 @@ struct VideoManualRegionEditor: View {
     private var minimumInterval: Double { min(0.01, model.video.duration / 2) }
 
     private func timeLabel(_ value: Double) -> String {
-        String(format: "%02d:%05.2f", Int(value) / 60, value.truncatingRemainder(dividingBy: 60))
+        String(format: "%02d:%05.2f", locale: .current, Int(value) / 60, value.truncatingRemainder(dividingBy: 60))
     }
 
     private func seek(_ value: Double) {

@@ -12,7 +12,7 @@ struct VideoRegionControls: View {
             coverageBar(manual: true)
             Slider(value: Binding(get: { model.reviewSeconds }, set: model.seekReview), in: 0...max(0.001, model.video.duration), onEditingChanged: model.reviewScrubbingChanged)
                 .accessibilityLabel(Text("video.review.time"))
-            Text(String(format: NSLocalizedString("video.review.coverage", comment: ""), model.reviewSeconds, model.automaticCoverage, model.manualCoverage))
+            Text(String(format: NSLocalizedString("video.review.coverage", comment: ""), locale: .current, model.reviewSeconds, model.automaticCoverage, model.manualCoverage))
                 .font(.caption).monospacedDigit()
             ForEach(model.manualRegions) { region in
                 HStack {
@@ -20,7 +20,7 @@ struct VideoRegionControls: View {
                         editing = region
                         model.seekReview(region.start)
                     } label: {
-                        Text(String(format: NSLocalizedString("video.manual.interval", comment: ""), region.start, region.end))
+                        Text(String(format: NSLocalizedString("video.manual.interval", comment: ""), locale: .current, region.start, region.end))
                     }
                     Spacer()
                     Button(role: .destructive) { model.removeRegion(region.id) } label: { Image(systemName: "trash") }
@@ -40,7 +40,7 @@ struct VideoRegionControls: View {
                         VStack(alignment: .leading) {
                             Text(String(format: NSLocalizedString("video.group.segment", comment: ""), id))
                             if let range = model.trackRange(id) {
-                                Button(String(format: "%.3f–%.3f s", range.lowerBound, range.upperBound)) {
+                                Button(String(format: "%.3f–%.3f s", locale: .current, range.lowerBound, range.upperBound)) {
                                     model.selectedTrackIDs.insert(id)
                                     model.seekReview(range.lowerBound)
                                 }

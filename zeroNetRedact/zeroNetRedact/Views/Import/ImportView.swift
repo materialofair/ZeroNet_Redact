@@ -248,7 +248,7 @@ struct ImportView: View {
         Menu {
             ForEach(viewModel.allGroups, id: \.objectID) { group in
                 Button { viewModel.selectGroup(group) } label: {
-                    Label(group.name ?? NSLocalizedString("group.unnamed", comment: ""),
+                    Label(group.localizedDisplayName,
                           systemImage: viewModel.selectedGroup?.objectID == group.objectID ? "checkmark" : "folder")
                 }
             }

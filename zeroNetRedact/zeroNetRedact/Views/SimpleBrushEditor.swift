@@ -16,6 +16,7 @@ struct SimpleBrushEditor: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - Brush State
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -561,8 +562,7 @@ struct SimpleBrushEditor: View {
             .disabled(viewModel.isExporting)
         }
 
-        ToolbarItem(placement: .navigationBarTrailing) {
-            HStack {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
                     autoApplyPendingStrokesIfNeeded()
                     Task { @MainActor in
@@ -587,7 +587,6 @@ struct SimpleBrushEditor: View {
                 .accessibilityLabel(Text("search.title"))
                 .disabled(viewModel.currentImage == nil || viewModel.isExporting || viewModel.isDetecting || viewModel.isDetectingFaces)
                 groupMenu
-            }
         }
     }
 
@@ -602,7 +601,7 @@ struct SimpleBrushEditor: View {
                     }
                 } label: {
                     Label {
-                        Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
+                        Text(group.localizedDisplayName)
                     } icon: {
                         Image(systemName: group.iconName ?? "folder.fill")
                     }
@@ -612,11 +611,13 @@ struct SimpleBrushEditor: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: viewModel.currentGroup?.iconName ?? "folder.fill")
-                Text(
-                    viewModel.currentGroup?.name
-                        ?? NSLocalizedString("group.default", comment: "")
-                )
-                .lineLimit(1)
+                if horizontalSizeClass != .compact {
+                    Text(
+                        viewModel.currentGroup?.localizedDisplayName
+                            ?? NSLocalizedString("group.default", comment: "")
+                    )
+                    .lineLimit(1)
+                }
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))
             }
@@ -624,6 +625,10 @@ struct SimpleBrushEditor: View {
             .foregroundColor(.accentColor)
             .contentShape(Rectangle())
         }
+        .accessibilityLabel(Text(
+            viewModel.currentGroup?.localizedDisplayName
+                ?? NSLocalizedString("group.default", comment: "")
+        ))
         .menuStyle(.borderlessButton)
         .fixedSize()
     }

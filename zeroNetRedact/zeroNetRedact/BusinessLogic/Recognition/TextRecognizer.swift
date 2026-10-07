@@ -53,13 +53,26 @@ class TextRecognizer {
         var regions: [SensitiveRegion] = []
 
         let patterns: [(pattern: String, type: SensitiveType)] = [
-            (SensitivePatterns.idCard, .idCard),  // 优先检测身份证
-            (SensitivePatterns.phoneNumber, .phoneNumber),
             (SensitivePatterns.bankCard, .bankCard),
             (SensitivePatterns.email, .email),
         ]
 
         for text in texts {
+            let nearbyLabel = texts.filter { other in
+                guard other.id != text.id, other.pageIndex == text.pageIndex else { return false }
+                let maxGap = max(text.boundingBox.height, other.boundingBox.height) * 2.5
+                let verticalGap = max(0, max(other.boundingBox.minY - text.boundingBox.maxY,
+                                            text.boundingBox.minY - other.boundingBox.maxY))
+                return verticalGap <= maxGap && other.boundingBox.maxX >= text.boundingBox.minX
+                    && text.boundingBox.maxX >= other.boundingBox.minX
+            }.map(\.text).joined(separator: "\n")
+            let nsText = text.text as NSString
+            for match in InternationalSensitiveDetector.matches(in: text.text, nearbyLabel: nearbyLabel) {
+                let box = text.substringBox?(match.range) ?? text.boundingBox
+                regions.append(SensitiveRegion(type: match.type, boundingBox: box,
+                    confidence: text.confidence, pageIndex: text.pageIndex, isConfirmed: false,
+                    recognizedText: nsText.substring(with: match.range)))
+            }
             // 清理文本：移除空格和常见分隔符,并记录清理后索引→原始索引的映射
             let (cleanedText, cleanedIndexMap) = Self.cleanedTextWithIndexMap(text.text)
 
@@ -138,16 +151,6 @@ class TextRecognizer {
     /// 验证敏感数据的有效性
     private func isValidSensitiveData(_ text: String, type: SensitiveType) -> Bool {
         switch type {
-        case .idCard:
-            // 身份证号长度验证
-            let cleanText = text.replacingOccurrences(of: " ", with: "")
-            return cleanText.count == 18 || cleanText.count == 15
-
-        case .phoneNumber:
-            // 手机号验证：移除分隔符后必须是11位
-            let digits = text.filter { $0.isNumber }
-            return digits.count == 11
-
         case .bankCard:
             // 银行卡验证：13-19位数字
             let digits = text.filter { $0.isNumber }
@@ -371,19 +374,13 @@ class ImageOCRRecognizer: TextRecognition {
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest()
 
-            // 🔧 优化配置 - 针对中文身份证识别
-            request.recognitionLevel = .accurate  // 使用最高精度
-            request.recognitionLanguages = ["zh-Hans", "en-US"]  // 简体中文 + 英文
-            request.usesLanguageCorrection = true  // 启用语言纠正
-            request.minimumTextHeight = 0.005  // 降低最小文字高度，识别更小的字
-
-            // 添加身份证常见词汇，提高识别准确率
-            request.customWords = [
-                "身份证", "公民身份号码", "居民身份证",
-                "姓名", "性别", "民族", "出生", "住址", "公民身份",
-                "签发机关", "有效期限", "年", "月", "日",
-                "男", "女", "汉族",
-            ]
+            do {
+                try OCRLanguageConfiguration.configure(request)
+            } catch {
+                continuation.resume(throwing: error)
+                return
+            }
+            request.minimumTextHeight = 0.005
 
             let handler = VNImageRequestHandler(
                 cgImage: cgImage, orientation: orientation, options: [:])
@@ -449,46 +446,71 @@ class PDFTextRecognizer: TextRecognition {
         for pageIndex in 0..<document.pageCount {
             // 逐页上报进度
             progress?(Double(pageIndex) / Double(document.pageCount))
-            guard let page = document.page(at: pageIndex),
-                let pageContent = page.string
-            else {
+            try Task.checkCancellation()
+            guard let page = document.page(at: pageIndex) else { continue }
+            let content = page.string ?? ""
+            let nsContent = content as NSString
+            if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                allTexts += try await recognizeScannedPage(page, pageIndex: pageIndex)
                 continue
             }
 
-            // PDF可以直接获取文字（不需要OCR）
-            let words = pageContent.components(separatedBy: .whitespacesAndNewlines)
-                .filter { !$0.isEmpty }
-
-            // 词按出现顺序切分,顺序推进搜索起点,保证重复词也能定位到各自的实际位置
-            let nsContent = pageContent as NSString
+            // Keep complete lines so split international numbers and their field labels survive extraction.
             var searchLocation = 0
-
-            for word in words {
-                let searchRange = NSRange(
-                    location: searchLocation, length: nsContent.length - searchLocation)
-                let wordRange = nsContent.range(of: word, range: searchRange)
-                guard wordRange.location != NSNotFound else { continue }
-                searchLocation = wordRange.location + wordRange.length
-
-                // 在PDF中查找这个词的位置
-                if let selections = page.selection(for: wordRange),
-                    let firstSelection = selections.selectionsByLine().first
-                {
-                    let bounds = firstSelection.bounds(for: page)
-
-                    allTexts.append(
-                        RecognizedText(
-                            text: word,
-                            boundingBox: bounds,
-                            confidence: 1.0,  // PDF文字100%准确
-                            pageIndex: pageIndex
-                        ))
-                }
+            let lines = page.selection(for: NSRange(location: 0, length: nsContent.length))?.selectionsByLine() ?? []
+            for line in lines {
+                guard let value = line.string, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+                let range = nsContent.range(of: value, range: NSRange(location: searchLocation, length: nsContent.length-searchLocation))
+                if range.location != NSNotFound { searchLocation = NSMaxRange(range) }
+                allTexts.append(RecognizedText(text: value, boundingBox: line.bounds(for: page),
+                    confidence: 1, pageIndex: pageIndex, substringBox: { substring in
+                        guard range.location != NSNotFound, substring.location >= 0,
+                              NSMaxRange(substring) <= range.length else { return nil }
+                        return page.selection(for: NSRange(location: range.location+substring.location,
+                                                           length: substring.length))?.bounds(for: page)
+                    }))
             }
         }
 
         progress?(1.0)
         return allTexts
+    }
+
+    /// Raster pages without a text layer; invert the actual PDF drawing transform for exact page coordinates.
+    private func recognizeScannedPage(_ page: PDFPage, pageIndex: Int) async throws -> [RecognizedText] {
+        guard let reference = page.pageRef else { return [] }
+        let crop = page.bounds(for: .cropBox)
+        guard crop.width > 0, crop.height > 0 else { return [] }
+        let rotated = abs(page.rotation % 180) == 90
+        let display = CGSize(width: rotated ? crop.height : crop.width,
+                             height: rotated ? crop.width : crop.height)
+        let scale = min(4, 4096/max(display.width,display.height))
+        let size = CGSize(width: display.width*scale, height: display.height*scale)
+        let transform = reference.getDrawingTransform(.cropBox, rect: CGRect(origin:.zero,size:size), rotate:0, preserveAspectRatio:true)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size:size,format:format).image { renderer in
+            UIColor.white.setFill()
+            renderer.fill(CGRect(origin:.zero,size:size))
+            let context = renderer.cgContext
+            context.translateBy(x:0,y:size.height)
+            context.scaleBy(x:1,y:-1)
+            context.concatenate(transform)
+            context.drawPDFPage(reference)
+        }
+        guard let data = image.pngData() else { return [] }
+        let texts = try await ImageOCRRecognizer().recognizeText(in:data,fileType:.image)
+        let inverse = transform.inverted()
+        func remap(_ rect: CGRect) -> CGRect {
+            CGRect(x:rect.minX*size.width,y:rect.minY*size.height,
+                   width:rect.width*size.width,height:rect.height*size.height).applying(inverse).intersection(crop)
+        }
+        return texts.map { text in
+            RecognizedText(text:text.text,boundingBox:remap(text.boundingBox),confidence:text.confidence,
+                           pageIndex:pageIndex,substringBox:text.substringBox.map { original in
+                { range in original(range).map(remap) }
+            })
+        }
     }
 
     func detectSensitiveInfo(in texts: [RecognizedText]) -> [SensitiveRegion] {

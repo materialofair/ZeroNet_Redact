@@ -402,7 +402,7 @@
 "fileType.unknown" = "未知";
 
 /* Sensitive Types */
-"sensitiveType.idCard" = "身份证";
+"sensitiveType.idCard" = "证件 / 护照";
 "sensitiveType.bankCard" = "银行卡";
 "sensitiveType.phone" = "手机号";
 "sensitiveType.name" = "姓名";
@@ -554,7 +554,7 @@
 "recognition.error.invalidImageData" = "图片数据无效，无法识别";
 "recognition.error.invalidPDFData" = "PDF数据无效，无法识别";
 "sensitiveType.custom" = "自定义";
-"sensitiveType.phoneNumber" = "手机号";
+"sensitiveType.phoneNumber" = "电话号码";
 
 /* Import - Review fixes */
 "import.photo.loadFailedCount" = "%d 张照片读取失败";
@@ -847,3 +847,20 @@
 "album.openOriginal" = "打开原件";
 "album.empty.explanation" = "完成脱敏后，文件会显示在这里。";
 "album.empty.start" = "去处理文件";
+"list.sort.label" = "文件排序";
+"share.error.unavailable" = "共享存储暂时不可用。请解锁设备后重试。";
+"share.error.unsupported" = "仅支持图片和 PDF 文件。";
+"share.error.size" = "每个附件不能为空，且大小不得超过 15 MB。";
+
+/* Current OCR and pattern-detection scope */
+"search.languageScope" = "OCR 使用本机 Apple 支持的语言。自动识别不准时可在设置中选择语言。电话与证件检测仅覆盖部分格式，分享前请复核结果。";
+
+"ocr.section" = "文字识别";
+
+"ocr.language" = "OCR 识别语言";
+
+"ocr.automatic" = "自动识别";
+
+"ocr.documentScope" = "识别国际电话号码及部分证件、护照格式。分享前请复核建议遮盖区域。";
+
+"ocr.languageScope" = "照片、长图及扫描 PDF 使用本机 OCR；可选语言取决于 iOS 版本。文字 PDF 直接提取文字，视频文字仍需手动遮盖。";

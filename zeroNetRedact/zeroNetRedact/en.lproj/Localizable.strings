@@ -402,7 +402,7 @@
 "fileType.unknown" = "Unknown";
 
 /* Sensitive Types */
-"sensitiveType.idCard" = "ID Card";
+"sensitiveType.idCard" = "ID / Passport";
 "sensitiveType.bankCard" = "Bank Card";
 "sensitiveType.phone" = "Phone";
 "sensitiveType.name" = "Name";
@@ -847,3 +847,20 @@
 "album.openOriginal" = "Open original";
 "album.empty.explanation" = "Your redacted files will appear here.";
 "album.empty.start" = "Go to files";
+"list.sort.label" = "Sort files";
+"share.error.unavailable" = "Shared storage is unavailable. Unlock your device and try again.";
+"share.error.unsupported" = "Only images and PDF files are supported.";
+"share.error.size" = "Each attachment must be nonempty and no larger than 15 MB.";
+
+/* Current OCR and pattern-detection scope */
+"search.languageScope" = "OCR uses Apple-supported languages on this device. Select a language in Settings if automatic recognition is inaccurate. Phone and document detection covers selected formats; review the output before sharing.";
+
+"ocr.section" = "Text Recognition";
+
+"ocr.language" = "OCR language";
+
+"ocr.automatic" = "Automatic";
+
+"ocr.documentScope" = "Recognizes international phone numbers and selected ID/passport formats. Review suggested regions before sharing.";
+
+"ocr.languageScope" = "Photos, long images and scanned PDFs use on-device OCR. Languages depend on your iOS version. Text PDFs use embedded text; video text covers remain manual.";

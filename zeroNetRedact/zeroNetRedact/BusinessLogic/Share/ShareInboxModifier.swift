@@ -18,7 +18,7 @@ struct ShareInboxModifier: ViewModifier {
             .alert("Shared files", isPresented: Binding(get: { message != nil && !appState.shouldAuthenticate() },
                                                        set: { if !$0 { message = nil } })) {
                 Button("share.retry") { message = nil; Task { await consume() } }
-                Button("OK", role: .cancel) { message = nil }
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) { message = nil }
             } message: { Text(message ?? "") }
             .sheet(item: $selectedFile) { file in
                 if !appState.shouldAuthenticate() { SimpleBrushEditor(file: file) }

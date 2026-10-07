@@ -9,6 +9,7 @@ struct SensitiveTextSearchView: View {
     let onLocate: (SensitiveRegion) -> Void
     let onKeepPending: ([SensitiveRegion]) -> Void
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var isQueryFocused: Bool
     @State private var query = ""
     @State private var caseSensitive = false
     @State private var texts: [RecognizedText] = []
@@ -25,6 +26,7 @@ struct SensitiveTextSearchView: View {
                     TextField("search.query", text: $query)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($isQueryFocused)
                         .submitLabel(.search)
                         .onSubmit(search)
                     Toggle("search.caseSensitive", isOn: $caseSensitive)
@@ -32,6 +34,8 @@ struct SensitiveTextSearchView: View {
                         .disabled(isLoading || query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     if isLoading { ProgressView("search.recognizing") }
                     if let error { Text(error).foregroundStyle(.red) }
+                } footer: {
+                    Text("search.languageScope")
                 }
                 if searched && !isLoading {
                     Section {
@@ -120,6 +124,7 @@ struct SensitiveTextSearchView: View {
 
     private func search() {
         guard !isLoading else { return }
+        isQueryFocused = false
         let options = TextSearchOptions(caseSensitive: caseSensitive)
         if let document {
             results = TextRecognizer.shared.findOccurrences(of: query, in: document, options: options)

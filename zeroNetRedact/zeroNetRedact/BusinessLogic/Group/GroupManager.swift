@@ -309,3 +309,21 @@ class GroupManager {
         return true
     }
 }
+
+// Default groups follow the current interface language without rewriting stored names.
+extension FileGroup {
+    var localizedDisplayName: String {
+        if id == GroupManager.defaultGroupID {
+            let builtInNames = Bundle.main.localizations.compactMap { language -> String? in
+                guard let path = Bundle.main.path(forResource: language, ofType: "lproj"),
+                      let bundle = Bundle(path: path) else { return nil }
+                return bundle.localizedString(forKey: "group.default", value: nil, table: nil)
+            }
+            // Users may rename even the default group; preserve such names.
+            if name == nil || builtInNames.contains(name ?? "") {
+                return NSLocalizedString("group.default", comment: "")
+            }
+        }
+        return name ?? NSLocalizedString("group.unnamed", comment: "")
+    }
+}

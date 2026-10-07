@@ -201,7 +201,7 @@ struct AlbumView: View {
                     isSelectionMode = false
                     viewModel.selectGroup(group)
                 } label: {
-                    Label(group.name ?? NSLocalizedString("group.unnamed", comment: ""),
+                    Label(group.localizedDisplayName,
                           systemImage: viewModel.selectedGroup?.objectID == group.objectID ? "checkmark" : "folder")
                 }
             }
@@ -956,7 +956,7 @@ struct RedactedFileGroupPicker: View {
                                 )
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(group.name ?? NSLocalizedString("group.unnamed", comment: ""))
+                                Text(group.localizedDisplayName)
                                     .font(.body)
                                     .fontWeight(.medium)
                                     .foregroundColor(DesignSystem.Colors.textPrimary)
