@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "Pomiń pozostałe elementy (%d) i eksportuj";
 "album.moreActions" = "Więcej działań";
 "feature.openSource.title" = "Otwarty kod źródłowy";
-"security.error.keychainError" = "Nie udało się zapisać hasła (kod błędu: %d)";
+"security.error.keychainError" = "Nie można uzyskać dostępu do magazynu haseł. Spróbuj ponownie (kod błędu: %d).";
 "import.selectPDF" = "Wybierz PDF";
 "security.error.invalidPassword" = "Nieprawidłowy format hasła";
 "security.error.tooManyAttempts" = "Zbyt wiele prób. Spróbuj ponownie później";

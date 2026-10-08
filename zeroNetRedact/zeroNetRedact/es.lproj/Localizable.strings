@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "Ignorar lo pendiente (%d) y exportar";
 "album.moreActions" = "Más acciones";
 "feature.openSource.title" = "Código abierto";
-"security.error.keychainError" = "No se pudo guardar la contraseña (código de error: %d)";
+"security.error.keychainError" = "No se puede acceder al almacenamiento de la contraseña. Inténtalo de nuevo (código de error: %d).";
 "import.selectPDF" = "Seleccionar PDF";
 "security.error.invalidPassword" = "Formato de contraseña no válido";
 "security.error.tooManyAttempts" = "Demasiados intentos. Vuelve a intentarlo más tarde.";

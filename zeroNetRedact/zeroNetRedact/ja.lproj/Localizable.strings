@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "残り%d件を無視して書き出し";
 "album.moreActions" = "その他の操作";
 "feature.openSource.title" = "オープンソース";
-"security.error.keychainError" = "パスワードを保存できませんでした（エラーコード：%d）";
+"security.error.keychainError" = "パスワードの保存領域にアクセスできません。もう一度お試しください（エラーコード：%d）。";
 "import.selectPDF" = "PDFを選択";
 "security.error.invalidPassword" = "パスワードの形式が正しくありません";
 "security.error.tooManyAttempts" = "試行回数が多すぎます。しばらくしてから再試行してください";

@@ -88,14 +88,8 @@ class AppState: ObservableObject {
 
     // MARK: - Initialization
 
-    private init() {
-        // 检查是否真的启用了密码
-        if passwordEnabled && !passwordManager.hasPassword() {
-            // 数据不一致，重置状态
-            passwordEnabled = false
-        }
-
-        // 如果启用了密码，启动时需要锁定
+    init() {
+        // 已启用的密码保护始终要求认证；凭据缺失或暂不可读不能关闭保护。
         if passwordEnabled {
             isLocked = true
             isAuthenticated = false

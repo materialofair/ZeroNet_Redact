@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "Ignorar pendências (%d) e exportar";
 "album.moreActions" = "Mais ações";
 "feature.openSource.title" = "Código aberto";
-"security.error.keychainError" = "Não foi possível salvar a senha (código de erro: %d)";
+"security.error.keychainError" = "Não foi possível acessar o armazenamento da senha. Tente novamente (código de erro: %d).";
 "import.selectPDF" = "Selecionar PDF";
 "security.error.invalidPassword" = "Formato de senha inválido";
 "security.error.tooManyAttempts" = "Muitas tentativas. Tente novamente mais tarde.";

@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "Ignorer les éléments restants (%d) et exporter";
 "album.moreActions" = "Autres actions";
 "feature.openSource.title" = "Open source";
-"security.error.keychainError" = "Impossible d’enregistrer le mot de passe (code d’erreur : %d)";
+"security.error.keychainError" = "Impossible d’accéder au stockage du mot de passe. Veuillez réessayer (code d’erreur : %d).";
 "import.selectPDF" = "Sélectionner un PDF";
 "security.error.invalidPassword" = "Format du mot de passe invalide";
 "security.error.tooManyAttempts" = "Trop de tentatives. Réessayez plus tard";

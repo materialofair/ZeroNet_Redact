@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "Abaikan %d item tersisa dan ekspor";
 "album.moreActions" = "Tindakan lainnya";
 "feature.openSource.title" = "Sumber terbuka";
-"security.error.keychainError" = "Gagal menyimpan kata sandi (kode kesalahan: %d)";
+"security.error.keychainError" = "Tidak dapat mengakses penyimpanan kata sandi. Coba lagi (kode kesalahan: %d).";
 "import.selectPDF" = "Pilih PDF";
 "security.error.invalidPassword" = "Format kata sandi tidak valid";
 "security.error.tooManyAttempts" = "Terlalu banyak percobaan, coba lagi nanti";

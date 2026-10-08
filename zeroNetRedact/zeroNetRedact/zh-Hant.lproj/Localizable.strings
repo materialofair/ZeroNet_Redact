@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "忽略剩餘 %d 處並匯出";
 "album.moreActions" = "更多操作";
 "feature.openSource.title" = "開源透明";
-"security.error.keychainError" = "密碼儲存失敗 (錯誤代碼: %d)";
+"security.error.keychainError" = "無法存取密碼儲存，請稍後再試（錯誤代碼：%d）。";
 "import.selectPDF" = "選擇 PDF";
 "security.error.invalidPassword" = "密碼格式無效";
 "security.error.tooManyAttempts" = "嘗試次數過多，請稍後重試";

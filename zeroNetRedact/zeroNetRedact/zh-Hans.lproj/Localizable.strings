@@ -383,7 +383,7 @@
 "security.error.invalidPassword" = "密码格式无效";
 "security.error.passwordTooShort" = "密码至少需要6个字符";
 "security.error.passwordMismatch" = "两次输入的密码不一致";
-"security.error.keychainError" = "密码存储失败 (错误代码: %d)";
+"security.error.keychainError" = "无法访问密码存储，请稍后重试（错误代码：%d）。";
 "security.error.biometricNotAvailable" = "生物识别不可用";
 "security.error.biometricFailed" = "生物识别验证失败";
 "security.error.tooManyAttemptsWithTime" = "尝试次数过多，请在 %@ 后重试";

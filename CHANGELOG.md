@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.3 (Unreleased)
+
+### Password protection
+
+- 将密码哈希和盐合并为单个 Keychain 凭据，更新失败时保留旧密码。
+- 兼容旧版密码数据，正确密码验证后迁移，迁移失败时保留原始凭据并允许登录。
+- 密码存储读取失败时保持锁定并提示重试，不再自动关闭密码保护或消耗错误密码次数。
+- 更新十种语言的密码存储错误提示，并补充密码回归及 Keychain 集成测试。
+
 ## Unreleased
 
 ### Editing workflow

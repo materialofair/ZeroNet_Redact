@@ -16,7 +16,7 @@ class AuthenticationViewModel: ObservableObject {
 
     // MARK: - Private Properties
 
-    private let passwordManager = PasswordManager.shared
+    private let passwordManager: PasswordManager
     private let biometricManager = BiometricAuthManager.shared
 
     private static let durationFormatter: DateComponentsFormatter = {
@@ -46,7 +46,8 @@ class AuthenticationViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init() {
+    init(passwordManager: PasswordManager = .shared) {
+        self.passwordManager = passwordManager
         updateRemainingAttempts()
         checkLockout()
     }
@@ -74,7 +75,15 @@ class AuthenticationViewModel: ObservableObject {
         // 模拟网络延迟，提供更好的用户体验
         try? await Task.sleep(nanoseconds: 200_000_000)  // 0.2秒
 
-        let isValid = passwordManager.verifyPassword(passwordInput)
+        let isValid: Bool
+        do {
+            isValid = try passwordManager.verifyPassword(passwordInput)
+        } catch {
+            // 存储故障并非输错密码，保持锁定且不消耗重试次数。
+            isVerifying = false
+            errorMessage = error.localizedDescription
+            return false
+        }
 
         isVerifying = false
 

@@ -383,7 +383,7 @@
 "security.error.invalidPassword" = "Invalid password format";
 "security.error.passwordTooShort" = "Password must be at least 6 characters";
 "security.error.passwordMismatch" = "Passwords do not match";
-"security.error.keychainError" = "Failed to save password (error code: %d)";
+"security.error.keychainError" = "Unable to access password storage. Please try again (error code: %d).";
 "security.error.biometricNotAvailable" = "Biometric authentication not available";
 "security.error.biometricFailed" = "Biometric authentication failed";
 "security.error.tooManyAttemptsWithTime" = "Too many attempts, please try again in %@";

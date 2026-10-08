@@ -482,7 +482,7 @@
 "editor.review.ignoreAndExport" = "Verbleibende Elemente ignorieren (%d) und exportieren";
 "album.moreActions" = "Weitere Aktionen";
 "feature.openSource.title" = "Open Source";
-"security.error.keychainError" = "Passwort konnte nicht gespeichert werden (Fehlercode: %d)";
+"security.error.keychainError" = "Auf den Passwortspeicher kann nicht zugegriffen werden. Bitte versuche es erneut (Fehlercode: %d).";
 "import.selectPDF" = "PDF auswählen";
 "security.error.invalidPassword" = "Ungültiges Passwortformat";
 "security.error.tooManyAttempts" = "Zu viele Versuche. Bitte später erneut versuchen";

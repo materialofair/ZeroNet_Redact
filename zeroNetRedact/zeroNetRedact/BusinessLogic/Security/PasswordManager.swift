@@ -3,15 +3,28 @@ import CryptoKit
 import Foundation
 import Security
 
+/// Security API 边界，便于隔离真实凭据并验证 Keychain 故障。
+struct PasswordKeychainOperations {
+    var read: (CFDictionary, UnsafeMutablePointer<AnyObject?>?) -> OSStatus = {
+        SecItemCopyMatching($0, $1)
+    }
+    var add: (CFDictionary, UnsafeMutablePointer<AnyObject?>?) -> OSStatus = {
+        SecItemAdd($0, $1)
+    }
+    var update: (CFDictionary, CFDictionary) -> OSStatus = { SecItemUpdate($0, $1) }
+    var delete: (CFDictionary) -> OSStatus = { SecItemDelete($0) }
+}
+
 /// 密码管理器 - 负责密码的加密、验证、存储
 class PasswordManager {
     static let shared = PasswordManager()
 
     // MARK: - Constants
 
-    private let service = "com.zeronet.redact"
+    private let service: String
     private let passwordAccount = "app.password.hash"
     private let saltAccount = "app.password.salt"
+    private let credentialAccount = "app.password.credential.v1"
 
     // CRITICAL-5: 失败次数与锁定状态改存 Keychain（避免卸载/重装 App 后 UserDefaults 被清零绕过锁定）
     private let attemptsAccount = "app.password.attempts"
@@ -30,13 +43,22 @@ class PasswordManager {
     private let maxAttempts = 5
     private let lockoutDurations: [TimeInterval] = [0, 0, 60, 300, 600]  // 0, 0, 1分钟, 5分钟, 10分钟
 
-    private init() {}
+    private let keychain: PasswordKeychainOperations
+    private let defaults: UserDefaults
+
+    init(service: String = "com.zeronet.redact",
+         keychain: PasswordKeychainOperations = PasswordKeychainOperations(),
+         defaults: UserDefaults = .standard) {
+        self.service = service
+        self.keychain = keychain
+        self.defaults = defaults
+    }
 
     // MARK: - Public Methods
 
     /// 检查是否已设置密码
-    func hasPassword() -> Bool {
-        return readFromKeychain(account: passwordAccount) != nil
+    func hasPassword() throws -> Bool {
+        return try readPasswordRecord() != nil
     }
 
     /// 设置密码
@@ -46,47 +68,47 @@ class PasswordManager {
         }
 
         // 生成盐值
-        let salt = generateSalt()
+        let salt = try generateSalt()
 
         // 派生密钥
         let hash = try deriveKey(from: password, salt: salt)
 
         // 保存到 Keychain
-        try saveToKeychain(data: hash, account: passwordAccount)
-        try saveToKeychain(data: salt, account: saltAccount)
+        // 一次写入完整凭据，失败时保留旧条目。
+        try savePasswordRecord(hash: hash, salt: salt)
+        clearLegacyPassword()
 
         // 重置失败次数
         resetFailedAttempts()
     }
 
     /// 验证密码
-    func verifyPassword(_ password: String) -> Bool {
-        guard let storedHash = readFromKeychain(account: passwordAccount),
-            let salt = readFromKeychain(account: saltAccount)
-        else {
-            return false
+    func verifyPassword(_ password: String) throws -> Bool {
+        guard let record = try readPasswordRecord() else {
+            throw SecurityError.noPasswordSet
         }
 
-        do {
-            let inputHash = try deriveKey(from: password, salt: salt)
-
-            // 使用常数时间比较防止时序攻击
-            let isValid = constantTimeComparison(inputHash, storedHash)
-
-            if isValid {
-                resetFailedAttempts()
+        let inputHash = try deriveKey(from: password, salt: record.salt)
+        let isValid = constantTimeComparison(inputHash, record.hash)
+        if isValid {
+            // 旧密码验证成功后迁移；写入失败不影响登录，保留旧数据待下次重试。
+            if record.isLegacy {
+                do {
+                    try savePasswordRecord(hash: record.hash, salt: record.salt)
+                    clearLegacyPassword()
+                } catch {
+                    // 原始凭据仍可用，不因可选迁移失败锁死用户。
+                }
             }
-
-            return isValid
-        } catch {
-            return false
+            resetFailedAttempts()
         }
+        return isValid
     }
 
     /// 修改密码
     func changePassword(oldPassword: String, newPassword: String) throws {
         // 验证旧密码
-        guard verifyPassword(oldPassword) else {
+        guard try verifyPassword(oldPassword) else {
             throw SecurityError.oldPasswordIncorrect
         }
 
@@ -98,6 +120,7 @@ class PasswordManager {
     func removePassword() throws {
         try deleteFromKeychain(account: passwordAccount)
         try deleteFromKeychain(account: saltAccount)
+        try deleteFromKeychain(account: credentialAccount)
         resetFailedAttempts()
     }
 
@@ -192,10 +215,38 @@ class PasswordManager {
     // MARK: - Private Methods
 
     /// 生成随机盐值
-    private func generateSalt() -> Data {
+    private func generateSalt() throws -> Data {
         var bytes = [UInt8](repeating: 0, count: saltLength)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else { throw SecurityError.keychainError(status) }
         return Data(bytes)
+    }
+
+    /// v1：版本字节 + 16 字节盐 + 32 字节哈希。新条目存在时绝不回退到旧密码。
+    private func readPasswordRecord() throws -> (hash: Data, salt: Data, isLegacy: Bool)? {
+        if let data = try readFromKeychain(account: credentialAccount) {
+            guard data.count == 1 + saltLength + keyLength, data.first == 1 else {
+                throw SecurityError.keychainError(errSecDecode)
+            }
+            return (Data(data.suffix(keyLength)), data.subdata(in: 1..<(1 + saltLength)), false)
+        }
+        let hash = try readFromKeychain(account: passwordAccount)
+        let salt = try readFromKeychain(account: saltAccount)
+        if hash == nil && salt == nil { return nil }
+        guard let hash, let salt, hash.count == keyLength, salt.count == saltLength else {
+            throw SecurityError.keychainError(errSecDecode)
+        }
+        return (hash, salt, true)
+    }
+
+    private func savePasswordRecord(hash: Data, salt: Data) throws {
+        try saveToKeychain(data: Data([1]) + salt + hash, account: credentialAccount)
+    }
+
+    private func clearLegacyPassword() {
+        // 新凭据已提交，旧副本清理失败也不能影响新密码的有效性。
+        try? deleteFromKeychain(account: passwordAccount)
+        try? deleteFromKeychain(account: saltAccount)
     }
 
     /// 使用 PBKDF2 派生密钥
@@ -245,18 +296,20 @@ class PasswordManager {
 
     /// 保存到 Keychain
     private func saveToKeychain(data: Data, account: String) throws {
-        // 先删除旧数据
-        try? deleteFromKeychain(account: account)
-
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: account,
             kSecAttrService as String: service,
+        ]
+        let attributes: [String: Any] = [
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
         ]
-
-        let status = SecItemAdd(query as CFDictionary, nil)
+        var status = keychain.update(query as CFDictionary, attributes as CFDictionary)
+        if status == errSecItemNotFound {
+            let addQuery = query.merging(attributes) { _, new in new }
+            status = keychain.add(addQuery as CFDictionary, nil)
+        }
 
         guard status == errSecSuccess else {
             throw SecurityError.keychainError(status)
@@ -264,7 +317,7 @@ class PasswordManager {
     }
 
     /// 从 Keychain 读取
-    private func readFromKeychain(account: String) -> Data? {
+    private func readFromKeychain(account: String) throws -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: account,
@@ -274,12 +327,11 @@ class PasswordManager {
         ]
 
         var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        let status = keychain.read(query as CFDictionary, &result)
 
-        guard status == errSecSuccess, let data = result as? Data else {
-            return nil
-        }
-
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess else { throw SecurityError.keychainError(status) }
+        guard let data = result as? Data else { throw SecurityError.keychainError(errSecDecode) }
         return data
     }
 
@@ -291,7 +343,7 @@ class PasswordManager {
             kSecAttrService as String: service,
         ]
 
-        let status = SecItemDelete(query as CFDictionary)
+        let status = keychain.delete(query as CFDictionary)
 
         // errSecItemNotFound 不算错误
         guard status == errSecSuccess || status == errSecItemNotFound else {
@@ -308,14 +360,14 @@ class PasswordManager {
 
     /// 获取失败次数（Keychain 优先，兼容迁移旧版 UserDefaults 数据）
     private func getFailedAttempts() -> Int {
-        if let data = readFromKeychain(account: attemptsAccount), let count = intFromData(data) {
+        if let data = try? readFromKeychain(account: attemptsAccount), let count = intFromData(data) {
             return count
         }
 
         // 兼容旧版 UserDefaults 失败次数：迁移一次后删除，保留原值避免误清零导致提前/延后锁定
-        if let legacyCount = UserDefaults.standard.object(forKey: legacyAttemptsKey) as? Int {
+        if let legacyCount = defaults.object(forKey: legacyAttemptsKey) as? Int {
             try? saveToKeychain(data: dataFromInt(legacyCount), account: attemptsAccount)
-            UserDefaults.standard.removeObject(forKey: legacyAttemptsKey)
+            defaults.removeObject(forKey: legacyAttemptsKey)
             return legacyCount
         }
 
@@ -325,7 +377,7 @@ class PasswordManager {
     /// 重置失败次数与锁定状态（Keychain + 清理旧版 UserDefaults 残留）
     private func resetFailedAttempts() {
         try? deleteFromKeychain(account: attemptsAccount)
-        UserDefaults.standard.removeObject(forKey: legacyAttemptsKey)
+        defaults.removeObject(forKey: legacyAttemptsKey)
         clearLockoutRecord()
     }
 
@@ -333,11 +385,11 @@ class PasswordManager {
     private func readLockoutRecord() -> (
         until: Date, setUptime: TimeInterval, deadlineUptime: TimeInterval
     )? {
-        if let untilData = readFromKeychain(account: lockoutUntilAccount),
+        if let untilData = try? readFromKeychain(account: lockoutUntilAccount),
             let untilTS = doubleFromData(untilData),
-            let setUptimeData = readFromKeychain(account: lockoutSetUptimeAccount),
+            let setUptimeData = try? readFromKeychain(account: lockoutSetUptimeAccount),
             let setUptime = doubleFromData(setUptimeData),
-            let deadlineData = readFromKeychain(account: lockoutDeadlineUptimeAccount),
+            let deadlineData = try? readFromKeychain(account: lockoutDeadlineUptimeAccount),
             let deadlineUptime = doubleFromData(deadlineData)
         {
             return (Date(timeIntervalSince1970: untilTS), setUptime, deadlineUptime)
@@ -345,13 +397,13 @@ class PasswordManager {
 
         // 兼容旧版 UserDefaults 锁定记录：旧数据没有单调参照，以当前系统运行时长为基准重建，
         // 迁移一次后删除
-        if let legacyTS = UserDefaults.standard.object(forKey: legacyLockoutKey) as? Double {
+        if let legacyTS = defaults.object(forKey: legacyLockoutKey) as? Double {
             let until = Date(timeIntervalSince1970: legacyTS)
             let remaining = max(0, until.timeIntervalSinceNow)
             let setUptime = ProcessInfo.processInfo.systemUptime
             let deadlineUptime = setUptime + remaining
             persistLockout(until: until, setUptime: setUptime, deadlineUptime: deadlineUptime)
-            UserDefaults.standard.removeObject(forKey: legacyLockoutKey)
+            defaults.removeObject(forKey: legacyLockoutKey)
             return (until, setUptime, deadlineUptime)
         }
 
@@ -380,7 +432,7 @@ class PasswordManager {
         try? deleteFromKeychain(account: lockoutUntilAccount)
         try? deleteFromKeychain(account: lockoutSetUptimeAccount)
         try? deleteFromKeychain(account: lockoutDeadlineUptimeAccount)
-        UserDefaults.standard.removeObject(forKey: legacyLockoutKey)
+        defaults.removeObject(forKey: legacyLockoutKey)
     }
 
     // MARK: - Byte Encoding Helpers
