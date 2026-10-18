@@ -5,27 +5,22 @@
 	};
 	objectVersion = 77;
 	objects = {
-		AB1500000000000000000010 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = zeroNetRedact/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
-		AB1500000000000000000011 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zeroNetRedact/zh-Hans.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
-		AB1500000000000000000012 = {isa = PBXVariantGroup; children = (AB1500000000000000000010, AB1500000000000000000011, ); name = Localizable.strings; sourceTree = "<group>"; };
-		AB1500000000000000000013 = {isa = PBXBuildFile; fileRef = AB1500000000000000000012; };
-		AB1500000000000000000014 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (AB1500000000000000000013, ); runOnlyForDeploymentPostprocessing = 0; };
 
-		AB1500000000000000000001 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = RedactShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		AB1500000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/ShareViewController.swift; sourceTree = SOURCE_ROOT; };
-		AB1500000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = zeroNetRedact/BusinessLogic/Share/ShareInbox.swift; sourceTree = SOURCE_ROOT; };
-		AB1500000000000000000004 = {isa = PBXBuildFile; fileRef = AB1500000000000000000002; };
-		AB1500000000000000000005 = {isa = PBXBuildFile; fileRef = AB1500000000000000000003; };
-		AB1500000000000000000006 = {isa = PBXBuildFile; fileRef = AB1500000000000000000001; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AB1500000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AB1500000000000000000004, AB1500000000000000000005, ); runOnlyForDeploymentPostprocessing = 0; };
-		AB1500000000000000000008 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (AB1500000000000000000006, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
-		AB1500000000000000000009 = {isa = PBXNativeTarget; buildConfigurationList = AB150000000000000000000A; buildPhases = (AB1500000000000000000007, AB1500000000000000000014, ); buildRules = (); dependencies = (); name = RedactShare; productName = RedactShare; productReference = AB1500000000000000000001; productType = "com.apple.product-type.app-extension"; };
-		AB150000000000000000000A = {isa = XCConfigurationList; buildConfigurations = (AB150000000000000000000B, AB150000000000000000000C, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		AB150000000000000000000B = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 11; DEVELOPMENT_TEAM = MB2PNFT9L9; INFOPLIST_FILE = ShareExtension/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.6; MARKETING_VERSION = 1.5.0; PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		AB150000000000000000000C = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 11; DEVELOPMENT_TEAM = MB2PNFT9L9; INFOPLIST_FILE = ShareExtension/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.6; MARKETING_VERSION = 1.5.0; PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
-		AB150000000000000000000D = {isa = PBXTargetDependency; target = AB1500000000000000000009; };
+/* Begin PBXBuildFile section */
+		AB1500000000000000000004 /* ShareExtension/ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1500000000000000000002 /* ShareExtension/ShareViewController.swift */; };
+		AB1500000000000000000005 /* zeroNetRedact/BusinessLogic/Share/ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1500000000000000000003 /* zeroNetRedact/BusinessLogic/Share/ShareInbox.swift */; };
+		AB1500000000000000000006 /* RedactShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AB1500000000000000000001 /* RedactShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB1500000000000000000013 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AB1500000000000000000012 /* Localizable.strings */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		408EB4C63056532F0034AC2B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40BC834D2ECD6F1900097DEC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB1500000000000000000009;
+			remoteInfo = RedactShare;
+		};
 		40BC83652ECD6F1B00097DEC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 40BC834D2ECD6F1900097DEC /* Project object */;
@@ -42,10 +37,29 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		AB1500000000000000000008 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AB1500000000000000000006 /* RedactShare.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		40BC83552ECD6F1900097DEC /* zeroNetRedact.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = zeroNetRedact.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		40BC83642ECD6F1B00097DEC /* zeroNetRedactTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = zeroNetRedactTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		40BC836E2ECD6F1B00097DEC /* zeroNetRedactUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = zeroNetRedactUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB1500000000000000000001 /* RedactShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = RedactShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB1500000000000000000002 /* ShareExtension/ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension/ShareViewController.swift; sourceTree = SOURCE_ROOT; };
+		AB1500000000000000000003 /* zeroNetRedact/BusinessLogic/Share/ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = zeroNetRedact/BusinessLogic/Share/ShareInbox.swift; sourceTree = SOURCE_ROOT; };
+		AB1500000000000000000010 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = zeroNetRedact/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		AB1500000000000000000011 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zeroNetRedact/zh-Hans.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -98,6 +112,16 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		408EB3483056532E0034AC2B /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				AB1500000000000000000002 /* ShareExtension/ShareViewController.swift */,
+				AB1500000000000000000003 /* zeroNetRedact/BusinessLogic/Share/ShareInbox.swift */,
+				AB1500000000000000000012 /* Localizable.strings */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		40BC834C2ECD6F1900097DEC = {
 			isa = PBXGroup;
 			children = (
@@ -106,6 +130,7 @@
 				40BC83712ECD6F1B00097DEC /* zeroNetRedactUITests */,
 				40BC83562ECD6F1900097DEC /* Products */,
 				103032119E17DB7EC3E6B125 /* Frameworks */,
+				408EB3483056532E0034AC2B /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -113,7 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				40BC83552ECD6F1900097DEC /* zeroNetRedact.app */,
-				AB1500000000000000000001,
+				AB1500000000000000000001 /* RedactShare.appex */,
 				40BC83642ECD6F1B00097DEC /* zeroNetRedactTests.xctest */,
 				40BC836E2ECD6F1B00097DEC /* zeroNetRedactUITests.xctest */,
 			);
@@ -132,12 +157,12 @@
 				40BC83532ECD6F1900097DEC /* Resources */,
 				ABCD00010000000000000001 /* Increment build number */,
 				ABCD00010000000000000002 /* Build MuPDF (if needed) */,
-				AB1500000000000000000008,
+				AB1500000000000000000008 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				AB150000000000000000000D,
+				AB150000000000000000000D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				40BC83572ECD6F1900097DEC /* zeroNetRedact */,
@@ -189,6 +214,22 @@
 			productReference = 40BC836E2ECD6F1B00097DEC /* zeroNetRedactUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		AB1500000000000000000009 /* RedactShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB150000000000000000000A /* Build configuration list for PBXNativeTarget "RedactShare" */;
+			buildPhases = (
+				AB1500000000000000000007 /* Sources */,
+				AB1500000000000000000014 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RedactShare;
+			productName = RedactShare;
+			productReference = AB1500000000000000000001 /* RedactShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -227,7 +268,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AB1500000000000000000009,
+				AB1500000000000000000009 /* RedactShare */,
 				40BC83542ECD6F1900097DEC /* zeroNetRedact */,
 				40BC83632ECD6F1B00097DEC /* zeroNetRedactTests */,
 				40BC836D2ECD6F1B00097DEC /* zeroNetRedactUITests */,
@@ -254,6 +295,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB1500000000000000000014 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB1500000000000000000013 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,6 +371,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AB1500000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB1500000000000000000004 /* ShareExtension/ShareViewController.swift in Sources */,
+				AB1500000000000000000005 /* zeroNetRedact/BusinessLogic/Share/ShareInbox.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -335,7 +393,24 @@
 			target = 40BC83542ECD6F1900097DEC /* zeroNetRedact */;
 			targetProxy = 40BC836F2ECD6F1B00097DEC /* PBXContainerItemProxy */;
 		};
+		AB150000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB1500000000000000000009 /* RedactShare */;
+			targetProxy = 408EB4C63056532F0034AC2B /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		AB1500000000000000000012 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AB1500000000000000000010 /* en */,
+				AB1500000000000000000011 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		40BC83762ECD6F1B00097DEC /* Debug */ = {
@@ -464,11 +539,11 @@
 		40BC83792ECD6F1B00097DEC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = zeroNetRedact/ShareApp.entitlements;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = zeroNetRedact/ShareApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -506,11 +581,11 @@
 		40BC837A2ECD6F1B00097DEC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = zeroNetRedact/ShareApp.entitlements;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = zeroNetRedact/ShareApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -550,7 +625,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
@@ -572,7 +647,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
@@ -593,7 +668,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.5.0;
@@ -613,7 +688,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = MB2PNFT9L9;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.5.0;
@@ -626,6 +701,44 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = zeroNetRedact;
+			};
+			name = Release;
+		};
+		AB150000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 13;
+				DEVELOPMENT_TEAM = MB2PNFT9L9;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AB150000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 13;
+				DEVELOPMENT_TEAM = MB2PNFT9L9;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = zeronet.zeroNetRedact.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -664,6 +777,15 @@
 			buildConfigurations = (
 				40BC837F2ECD6F1B00097DEC /* Debug */,
 				40BC83802ECD6F1B00097DEC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB150000000000000000000A /* Build configuration list for PBXNativeTarget "RedactShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB150000000000000000000B /* Debug */,
+				AB150000000000000000000C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
