@@ -121,7 +121,7 @@
 "common.loading" = "Wird geladen…";
 "video.manual.redrawHint" = "Ziehe das Ersatzrechteck und speichere anschließend zur Bestätigung. Bei Abbruch bleibt der bestehende Bereich unverändert.";
 "sensitiveType.address" = "Adresse";
-"privacy.promise.content" = "ZeroNet Redact ist eine vollständig offline arbeitende App. Wir glauben, dass der beste Datenschutz darin besteht, gar keine Daten zu sammeln. Deine Fotos und deine Privatsphäre gehören nur dir.";
+"privacy.promise.content" = "Cloakmark ist eine vollständig offline arbeitende App. Wir glauben, dass der beste Datenschutz darin besteht, gar keine Daten zu sammeln. Deine Fotos und deine Privatsphäre gehören nur dir.";
 "import.success.toast" = "Dateien importiert: %d";
 "batch.clearConfirm" = "Beim Leeren der Warteschlange bleiben Originale, Entwürfe und Exporte erhalten. Ein neuer Stapel erstellt neue Exporteinträge.";
 "crypto.error.keyGenerationFailed" = "Verschlüsselungsschlüssel konnte nicht erzeugt werden";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "Sperrverzögerung";
 "settings.clearAll.title" = "Alle Dateien löschen";
 "group.name" = "Gruppenname";
-"biometric.unlockReason" = "ZeroNet Redact entsperren";
+"biometric.unlockReason" = "Cloakmark entsperren";
 "editor.error.unsupportedType" = "Nicht unterstützter Dateityp";
 "editor.detectedRegions.otherPages" = "Weitere Bereiche auf anderen Seiten: %d";
 "group.deleteBothMessage" = "Nach dem Löschen von „%@“ werden folgende Dateien in die Standardgruppe verschoben:\n• Originaldateien: %d\n• Geschwärzte Dateien: %d";
@@ -345,7 +345,7 @@
 "export.failed" = "Export fehlgeschlagen";
 "video.manual.remove" = "Manuellen Bereich entfernen";
 "about.github.desc" = "Quellcode ansehen und mitwirken";
-"share.saved" = "Dateien sicher gespeichert: %d. Öffne ZeroNet Redact, um den Import abzuschließen.";
+"share.saved" = "Dateien sicher gespeichert: %d. Öffne Cloakmark, um den Import abzuschließen.";
 "settings.title" = "Einstellungen";
 "video.review.coverage" = "%.3f s · automatisch: %d · manuelle Bereiche: %d";
 "import.accessibility.selectHint" = "Zum Auswählen oder Abwählen tippen";
@@ -368,7 +368,7 @@
 "search.count" = "Ergebnisse: %d";
 "brush.size.label" = "Pinselgröße";
 "video.error.invalidDuration" = "Ungültige Videodauer";
-"share.instructions" = "Speichere Bilder und PDFs sicher und öffne dann ZeroNet Redact, um den Import abzuschließen. Bis zu 10 Dateien, jeweils 15 MB.";
+"share.instructions" = "Speichere Bilder und PDFs sicher und öffne dann Cloakmark, um den Import abzuschließen. Bis zu 10 Dateien, jeweils 15 MB.";
 "settings.about" = "Über die App";
 "video.sticker.description.blueSmiley" = "Ein undurchsichtiger blauer Smiley-Sticker bedeckt jedes Gesicht.";
 "password.new.enter" = "Neues Passwort eingeben";
@@ -682,7 +682,7 @@
 "draft.delete" = "Entwurf löschen";
 "sensitiveType.manual" = "Manuell";
 "album.secured" = "Sicher geschützt";
-"about.attributions.twemoji.body" = "Sticker-Grafiken von den Mitwirkenden an jdecked/Twemoji, lizenziert unter CC BY 4.0. Festgelegte Version v17.0.1 (196eef6). ZeroNet Redact platziert die transparenten Grafiken auf undurchsichtigen Hintergründen, um private Inhalte abzudecken.";
+"about.attributions.twemoji.body" = "Sticker-Grafiken von den Mitwirkenden an jdecked/Twemoji, lizenziert unter CC BY 4.0. Festgelegte Version v17.0.1 (196eef6). Cloakmark platziert die transparenten Grafiken auf undurchsichtigen Hintergründen, um private Inhalte abzudecken.";
 "export.progress.title" = "Export läuft: %d%%";
 "editor.review.explanation" = "Einige erkannte Elemente sind noch nicht abgedeckt. Tippe auf ein Element, um es zu finden und zu bearbeiten, oder wische nach links, um es zu ignorieren. Ignorierte Elemente werden nicht automatisch abgedeckt.";
 "import.move.failed" = "Datei konnte nicht in die Gruppe verschoben werden. Bitte erneut versuchen";
@@ -697,7 +697,7 @@
 "video.sticker.orangeSmiley" = "Oranger Smiley";
 "import.duplicate.message" = "Diese Datei wurde bereits importiert. Möchtest du sie erneut importieren?";
 "drawing.selectEffect" = "Effekt auswählen";
-"share.save" = "In ZeroNet Redact speichern";
+"share.save" = "In Cloakmark speichern";
 "auth.forgotPassword" = "Passwort vergessen?";
 "video.accessibility.effectHint" = "Wendet diese Abdeckung auf die Vorschau und die exportierte Kopie an.";
 "video.manual.done" = "Abdeckung speichern";

@@ -1,0 +1,29 @@
+[
+  {
+    "path": "screenshots/en-US/01-pdf-redact.png",
+    "sha256": "47dffe70da55ae46829cfa8368a9d2ca83aa0b8a9211175a11b91a0ed232609a",
+    "source": "unmodified iPhone 17 Pro Max Simulator screenshot",
+    "pixels": [
+      1320,
+      2868
+    ]
+  },
+  {
+    "path": "screenshots/en-US/02-pdf-search.png",
+    "sha256": "e3bfb53571fe544c317b8edcfafe0f99e82824346a04f2fbe1fb015d36537e27",
+    "source": "unmodified iPhone 17 Pro Max Simulator screenshot",
+    "pixels": [
+      1320,
+      2868
+    ]
+  },
+  {
+    "path": "screenshots/en-US/03-pdf-export.png",
+    "sha256": "65e00e8bcc2aca0afe8ae6c74119dbfb50cb3983a0e801204d10ad3a4b48fd38",
+    "source": "unmodified iPhone 17 Pro Max Simulator screenshot",
+    "pixels": [
+      1320,
+      2868
+    ]
+  }
+]

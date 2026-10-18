@@ -4,6 +4,46 @@ import XCTest
 /// Navigates onboarding, Settings, and Premium; does not purchase or restore an account.
 final class LocalizationSmokeUITests: XCTestCase {
     @MainActor
+    func testTenLanguagesBrandScreenshots() {
+        continueAfterFailure = false
+        let rows: [(String, String, String, String)] = [
+            ("en", "Set Up Later", "Skip", "Settings"),
+            ("zh-Hans", "稍后设置", "跳过", "设置"),
+            ("zh-Hant", "稍後設定", "跳過", "設定"),
+            ("ja", "あとで設定", "スキップ", "設定"),
+            ("pl", "Ustaw później", "Pomiń", "Ustawienia"),
+            ("de", "Später einrichten", "Überspringen", "Einstellungen"),
+            ("fr", "Configurer plus tard", "Ignorer", "Réglages"),
+            ("es", "Configurar más tarde", "Omitir", "Ajustes"),
+            ("pt-BR", "Configurar depois", "Pular", "Ajustes"),
+            ("id", "Atur nanti", "Lewati", "Pengaturan")
+        ]
+        for row in rows {
+            let app = XCUIApplication()
+            app.launchArguments = ["-AppleLanguages", "(\(row.0))", "-AppleLocale", row.0]
+            app.launch()
+            let later = app.buttons[row.1]
+            if later.waitForExistence(timeout: 3) && later.isHittable { later.tap() }
+            let skip = app.buttons[row.2]
+            if skip.waitForExistence(timeout: 2) && skip.isHittable { skip.tap() }
+            let settings = app.tabBars.buttons[row.3]
+            XCTAssertTrue(settings.waitForExistence(timeout: 5), row.0)
+            settings.tap()
+            let brand = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Cloakmark")).firstMatch
+            for _ in 0..<6 {
+                if brand.exists && brand.isHittable { break }
+                app.swipeUp()
+            }
+            XCTAssertTrue(brand.exists && brand.isHittable, row.0)
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = "Cloakmark-brand-\(row.0)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            app.terminate()
+        }
+    }
+
+    @MainActor
     func testNewLanguagesInOnboardingSettingsAndPremium() {
         continueAfterFailure = false
         let samples: [String: [String]] = [

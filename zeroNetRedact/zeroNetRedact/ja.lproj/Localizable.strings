@@ -121,7 +121,7 @@
 "common.loading" = "読み込み中…";
 "video.manual.redrawHint" = "新しい四角形をドラッグし、保存して確定します。キャンセルすると既存の領域は変わりません。";
 "sensitiveType.address" = "住所";
-"privacy.promise.content" = "ZeroNet Redactは完全にオフラインのアプリです。私たちは、データを一切収集しないことが最良のプライバシー保護だと考えています。写真もプライバシーも、あなただけのものです。";
+"privacy.promise.content" = "Cloakmarkは完全にオフラインのアプリです。私たちは、データを一切収集しないことが最良のプライバシー保護だと考えています。写真もプライバシーも、あなただけのものです。";
 "import.success.toast" = "%d個のファイルを読み込みました";
 "batch.clearConfirm" = "キューを消去しても、元のファイル、下書き、書き出したファイルは残ります。新しい一括処理では、新しい書き出し記録が作成されます。";
 "crypto.error.keyGenerationFailed" = "暗号鍵を生成できませんでした";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "ロックまでの時間";
 "settings.clearAll.title" = "すべてのファイルを削除";
 "group.name" = "グループ名";
-"biometric.unlockReason" = "ZeroNet Redactをロック解除";
+"biometric.unlockReason" = "Cloakmarkをロック解除";
 "editor.error.unsupportedType" = "対応していないファイル形式です";
 "editor.detectedRegions.otherPages" = "ほかのページにさらに%d件";
 "group.deleteBothMessage" = "\"%@\"を削除すると、\n• 元のファイル%d個\n• マスキング済みファイル%d個\nがデフォルトグループに移動します";
@@ -345,7 +345,7 @@
 "export.failed" = "書き出しに失敗しました";
 "video.manual.remove" = "手動領域を削除";
 "about.github.desc" = "ソースコードを見る・貢献する";
-"share.saved" = "%dファイルを安全に保存しました。ZeroNet Redactを開いて読み込みを完了してください。";
+"share.saved" = "%dファイルを安全に保存しました。Cloakmarkを開いて読み込みを完了してください。";
 "settings.title" = "設定";
 "video.review.coverage" = "%.3f秒 · 自動 %d件 · 手動 %d件";
 "import.accessibility.selectHint" = "タップして選択または解除";
@@ -368,7 +368,7 @@
 "search.count" = "%d件の結果";
 "brush.size.label" = "ブラシサイズ";
 "video.error.invalidDuration" = "動画の長さが無効です";
-"share.instructions" = "画像やPDFを安全に保存したら、ZeroNet Redactを開いて読み込みを完了してください。最大10ファイル、各15 MBまで。";
+"share.instructions" = "画像やPDFを安全に保存したら、Cloakmarkを開いて読み込みを完了してください。最大10ファイル、各15 MBまで。";
 "settings.about" = "情報";
 "video.sticker.description.blueSmiley" = "不透明な青いスマイルステッカーで各顔を覆います。";
 "password.new.enter" = "新しいパスワードを入力";
@@ -681,7 +681,7 @@
 "draft.delete" = "下書きを削除";
 "sensitiveType.manual" = "手動";
 "album.secured" = "安全に保護";
-"about.attributions.twemoji.body" = "ステッカー画像はjdecked/Twemojiの貢献者によるもので、CC BY 4.0ライセンスです。v17.0.1（196eef6）に固定しています。ZeroNet Redactでは、プライバシー保護のため透明な画像を不透明な背景に重ねています。";
+"about.attributions.twemoji.body" = "ステッカー画像はjdecked/Twemojiの貢献者によるもので、CC BY 4.0ライセンスです。v17.0.1（196eef6）に固定しています。Cloakmarkでは、プライバシー保護のため透明な画像を不透明な背景に重ねています。";
 "export.progress.title" = "書き出し中 %d%%";
 "editor.review.explanation" = "検出された項目の一部がまだ覆われていません。項目をタップして位置を確認して処理するか、左にスワイプして無視してください。無視した項目は自動で覆われません。";
 "import.move.failed" = "ファイルをグループへ移動できませんでした。再試行してください";
@@ -696,7 +696,7 @@
 "video.sticker.orangeSmiley" = "オレンジの笑顔";
 "import.duplicate.message" = "このファイルはすでに読み込まれています。もう一度読み込みますか？";
 "drawing.selectEffect" = "効果を選択";
-"share.save" = "ZeroNet Redactに保存";
+"share.save" = "Cloakmarkに保存";
 "auth.forgotPassword" = "パスワードを忘れた場合";
 "video.accessibility.effectHint" = "このカバーをプレビューと書き出すコピーに適用します。";
 "video.manual.done" = "カバーを保存";

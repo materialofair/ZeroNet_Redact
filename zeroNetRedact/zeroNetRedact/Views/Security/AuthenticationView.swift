@@ -177,7 +177,7 @@ struct AuthenticationView: View {
                     radius: 20, x: 0, y: 10
                 )
 
-            Text("ZeroNet Redact")
+            Text("Cloakmark")
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(DesignSystem.Colors.textPrimary)

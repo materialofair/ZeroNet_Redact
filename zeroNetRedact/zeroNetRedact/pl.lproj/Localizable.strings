@@ -121,7 +121,7 @@
 "common.loading" = "Wczytywanie…";
 "video.manual.redrawHint" = "Przeciągnij nowy prostokąt i zapisz, aby potwierdzić. Anulowanie pozostawia istniejący obszar bez zmian.";
 "sensitiveType.address" = "Adres";
-"privacy.promise.content" = "ZeroNet Redact działa całkowicie offline. Wierzymy, że najlepszą ochroną prywatności jest niezbieranie żadnych danych. Twoje zdjęcia i prywatność należą wyłącznie do Ciebie.";
+"privacy.promise.content" = "Cloakmark działa całkowicie offline. Wierzymy, że najlepszą ochroną prywatności jest niezbieranie żadnych danych. Twoje zdjęcia i prywatność należą wyłącznie do Ciebie.";
 "import.success.toast" = "Zaimportowane pliki: %d";
 "batch.clearConfirm" = "Wyczyszczenie kolejki zachowuje oryginały, szkice i eksporty. Nowa seria tworzy nowe rekordy eksportu.";
 "crypto.error.keyGenerationFailed" = "Nie udało się wygenerować klucza szyfrowania";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "Czas do blokady";
 "settings.clearAll.title" = "Usuń wszystkie pliki";
 "group.name" = "Nazwa grupy";
-"biometric.unlockReason" = "Odblokuj ZeroNet Redact";
+"biometric.unlockReason" = "Odblokuj Cloakmark";
 "editor.error.unsupportedType" = "Nieobsługiwany typ pliku";
 "editor.detectedRegions.otherPages" = "Dodatkowe wyniki na innych stronach: %d";
 "group.deleteBothMessage" = "Po usunięciu \"%@\" do grupy domyślnej zostaną przeniesione:\n• oryginalne pliki: %d\n• pliki po maskowaniu: %d";
@@ -345,7 +345,7 @@
 "export.failed" = "Eksport nie powiódł się";
 "video.manual.remove" = "Usuń obszar ręczny";
 "about.github.desc" = "Zobacz kod źródłowy i współtwórz";
-"share.saved" = "Bezpiecznie zapisano pliki: %d. Otwórz ZeroNet Redact, aby dokończyć import.";
+"share.saved" = "Bezpiecznie zapisano pliki: %d. Otwórz Cloakmark, aby dokończyć import.";
 "settings.title" = "Ustawienia";
 "video.review.coverage" = "%.3f s · automatyczne: %d · ręczne: %d";
 "import.accessibility.selectHint" = "Dotknij, aby zaznaczyć lub odznaczyć";
@@ -368,7 +368,7 @@
 "search.count" = "Wyniki: %d";
 "brush.size.label" = "Rozmiar pędzla";
 "video.error.invalidDuration" = "Nieprawidłowa długość filmu";
-"share.instructions" = "Zapisz bezpiecznie obrazy i pliki PDF, a następnie otwórz ZeroNet Redact, aby dokończyć import. Maksymalnie 10 plików, po 15 MB każdy.";
+"share.instructions" = "Zapisz bezpiecznie obrazy i pliki PDF, a następnie otwórz Cloakmark, aby dokończyć import. Maksymalnie 10 plików, po 15 MB każdy.";
 "settings.about" = "Informacje";
 "video.sticker.description.blueSmiley" = "Nieprzezroczysta niebieska naklejka z uśmiechem zasłania każdą twarz.";
 "password.new.enter" = "Wpisz nowe hasło";
@@ -682,7 +682,7 @@
 "draft.delete" = "Usuń szkic";
 "sensitiveType.manual" = "Ręcznie";
 "album.secured" = "Bezpiecznie chronione";
-"about.attributions.twemoji.body" = "Grafiki naklejek autorstwa współtwórców jdecked/Twemoji, na licencji CC BY 4.0. Wersja przypięta: v17.0.1 (196eef6). ZeroNet Redact umieszcza przezroczyste grafiki na nieprzezroczystych tłach, aby zasłaniać dane prywatne.";
+"about.attributions.twemoji.body" = "Grafiki naklejek autorstwa współtwórców jdecked/Twemoji, na licencji CC BY 4.0. Wersja przypięta: v17.0.1 (196eef6). Cloakmark umieszcza przezroczyste grafiki na nieprzezroczystych tłach, aby zasłaniać dane prywatne.";
 "export.progress.title" = "Eksportowanie: %d%%";
 "editor.review.explanation" = "Część wykrytych elementów nie została zasłonięta. Dotknij elementu, aby go znaleźć i obsłużyć, lub przesuń w lewo, aby go zignorować. Zignorowane elementy nie zostaną automatycznie zasłonięte.";
 "import.move.failed" = "Nie udało się przenieść pliku do grupy. Spróbuj ponownie.";
@@ -697,7 +697,7 @@
 "video.sticker.orangeSmiley" = "Pomarańczowy uśmiech";
 "import.duplicate.message" = "Ten plik został już zaimportowany. Zaimportować ponownie?";
 "drawing.selectEffect" = "Wybierz efekt";
-"share.save" = "Zapisz w ZeroNet Redact";
+"share.save" = "Zapisz w Cloakmark";
 "auth.forgotPassword" = "Nie pamiętasz hasła?";
 "video.accessibility.effectHint" = "Nakłada tę osłonę na podgląd i eksportowaną kopię.";
 "video.manual.done" = "Zapisz osłonę";

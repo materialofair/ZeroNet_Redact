@@ -1,2 +1,4 @@
 /* ZeroNet Redact localization. Brand names are preserved. */
-"NSFaceIDUsageDescription" = "ZeroNet Redact utiliza Face ID para desbloquear la app de forma segura y proteger tus datos privados.";
+"NSFaceIDUsageDescription" = "Cloakmark utiliza Face ID para desbloquear la app de forma segura y proteger tus datos privados.";
+
+"CFBundleDisplayName" = "Cloakmark";

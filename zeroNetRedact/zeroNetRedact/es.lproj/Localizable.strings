@@ -121,7 +121,7 @@
 "common.loading" = "Cargando…";
 "video.manual.redrawHint" = "Arrastra el rectángulo de reemplazo y guarda para confirmar. Si cancelas, la región existente se mantiene.";
 "sensitiveType.address" = "Dirección";
-"privacy.promise.content" = "ZeroNet Redact es una app totalmente sin conexión. Creemos que la mejor protección de la privacidad consiste en no recopilar datos. Tus fotos y tu privacidad te pertenecen solo a ti.";
+"privacy.promise.content" = "Cloakmark es una app totalmente sin conexión. Creemos que la mejor protección de la privacidad consiste en no recopilar datos. Tus fotos y tu privacidad te pertenecen solo a ti.";
 "import.success.toast" = "Archivos importados: %d";
 "batch.clearConfirm" = "Vaciar la cola conserva los originales, los borradores y las exportaciones. Un nuevo lote crea nuevos registros de exportación.";
 "crypto.error.keyGenerationFailed" = "No se pudo generar la clave de cifrado";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "Tiempo hasta el bloqueo";
 "settings.clearAll.title" = "Borrar todos los archivos";
 "group.name" = "Nombre del grupo";
-"biometric.unlockReason" = "Desbloquear ZeroNet Redact";
+"biometric.unlockReason" = "Desbloquear Cloakmark";
 "editor.error.unsupportedType" = "Tipo de archivo no compatible";
 "editor.detectedRegions.otherPages" = "Más resultados en otras páginas: %d";
 "group.deleteBothMessage" = "Al borrar «%@», se moverán al grupo predeterminado:\n• Archivos originales: %d\n• Archivos con datos ocultos: %d";
@@ -345,7 +345,7 @@
 "export.failed" = "Error al exportar";
 "video.manual.remove" = "Eliminar región manual";
 "about.github.desc" = "Ver el código y contribuir";
-"share.saved" = "Archivos guardados de forma segura: %d. Abre ZeroNet Redact para terminar la importación.";
+"share.saved" = "Archivos guardados de forma segura: %d. Abre Cloakmark para terminar la importación.";
 "settings.title" = "Ajustes";
 "video.review.coverage" = "%.3f s · regiones automáticas: %d · manuales: %d";
 "import.accessibility.selectHint" = "Toca para seleccionar o deseleccionar";
@@ -368,7 +368,7 @@
 "search.count" = "Resultados: %d";
 "brush.size.label" = "Tamaño del pincel";
 "video.error.invalidDuration" = "La duración del vídeo no es válida";
-"share.instructions" = "Guarda imágenes y PDF de forma segura y abre ZeroNet Redact para terminar la importación. Hasta 10 archivos de 15 MB cada uno.";
+"share.instructions" = "Guarda imágenes y PDF de forma segura y abre Cloakmark para terminar la importación. Hasta 10 archivos de 15 MB cada uno.";
 "settings.about" = "Acerca de";
 "video.sticker.description.blueSmiley" = "Un adhesivo opaco de sonrisa azul cubre cada rostro.";
 "password.new.enter" = "Introduce la nueva contraseña";
@@ -682,7 +682,7 @@
 "draft.delete" = "Eliminar borrador";
 "sensitiveType.manual" = "Manual";
 "album.secured" = "Protegidos de forma segura";
-"about.attributions.twemoji.body" = "Ilustraciones de pegatinas creadas por los colaboradores de jdecked/Twemoji, bajo licencia CC BY 4.0. Versión fijada: v17.0.1 (196eef6). ZeroNet Redact coloca las ilustraciones transparentes sobre fondos opacos para cubrir información privada.";
+"about.attributions.twemoji.body" = "Ilustraciones de pegatinas creadas por los colaboradores de jdecked/Twemoji, bajo licencia CC BY 4.0. Versión fijada: v17.0.1 (196eef6). Cloakmark coloca las ilustraciones transparentes sobre fondos opacos para cubrir información privada.";
 "export.progress.title" = "Exportando %d%%";
 "editor.review.explanation" = "Algunos elementos detectados no se han cubierto. Toca un elemento para localizarlo y tratarlo, o desliza a la izquierda para ignorarlo. Los elementos ignorados no se cubrirán automáticamente.";
 "import.move.failed" = "No se pudo mover el archivo al grupo. Inténtalo de nuevo.";
@@ -697,7 +697,7 @@
 "video.sticker.orangeSmiley" = "Sonrisa naranja";
 "import.duplicate.message" = "Este archivo ya se ha importado. ¿Quieres importarlo de nuevo?";
 "drawing.selectEffect" = "Seleccionar efecto";
-"share.save" = "Guardar en ZeroNet Redact";
+"share.save" = "Guardar en Cloakmark";
 "auth.forgotPassword" = "¿Has olvidado la contraseña?";
 "video.accessibility.effectHint" = "Aplica esta cobertura a la vista previa y a la copia exportada.";
 "video.manual.done" = "Guardar cobertura";

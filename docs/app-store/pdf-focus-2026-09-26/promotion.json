@@ -1,0 +1,25 @@
+{
+  "status": "superseded_by_all_media_positioning",
+  "locale": "en-US",
+  "app_id": "6756290503",
+  "first_change_only": {
+    "promotionalText": "Redact a PDF before you share it. Find repeated text, review each page and export a copy. Process on your device. Try 3 PDF exports a day free."
+  },
+  "preserve": [
+    "name",
+    "subtitle",
+    "keywords",
+    "description",
+    "screenshots",
+    "price",
+    "free_export_limits"
+  ],
+  "baseline_promotionalText": "Hide private details in screenshots, PDFs and videos. Process on your device, review before sharing. Free daily exports. One-time upgrade, no subscription.",
+  "download_url": "https://apps.apple.com/app/id6756290503",
+  "marketing_url_candidate": "https://zeronet-redact.materialofair.chatgpt.site/en/",
+  "saved_at": "2026-09-26T12:38:59.425409+00:00",
+  "saved_via": "Existing Comet App Store Connect tab",
+  "version": "1.5.0",
+  "current_promotionalText": "Redact photos, videos and PDFs on your device. Cover private details, review the result and share a copy. No account required. Try free; upgrade with one purchase.",
+  "current_saved_version": "1.5.0"
+}

@@ -132,14 +132,14 @@
 "about.attributions" = "开源素材署名";
 "about.attributions.desc" = "应用内置素材的许可证";
 "about.attributions.twemoji.title" = "Twemoji 图形";
-"about.attributions.twemoji.body" = "贴纸图形由 jdecked/Twemoji 贡献者创作，采用 CC BY 4.0 许可，固定使用 v17.0.1（196eef6）。ZeroNet Redact 为透明图形添加不透明背景，以确保完整遮挡隐私。";
+"about.attributions.twemoji.body" = "贴纸图形由 jdecked/Twemoji 贡献者创作，采用 CC BY 4.0 许可，固定使用 v17.0.1（196eef6）。Cloakmark 为透明图形添加不透明背景，以确保完整遮挡隐私。";
 "about.attributions.source" = "查看 Twemoji 源码";
 "about.attributions.license" = "查看 CC BY 4.0 许可证";
 
 /* Privacy Policy */
 "privacy.title" = "隐私政策";
 "privacy.promise.title" = "我们的承诺";
-"privacy.promise.content" = "ZeroNet Redact 是一款完全离线的应用。我们坚信，最好的隐私保护就是根本不收集数据。您的照片、您的隐私，只属于您自己。";
+"privacy.promise.content" = "Cloakmark 是一款完全离线的应用。我们坚信，最好的隐私保护就是根本不收集数据。您的照片、您的隐私，只属于您自己。";
 "privacy.data.title" = "数据处理";
 "privacy.data.item1" = "所有图片处理都在本地完成";
 "privacy.data.item2" = "加密文件仅存储在您的设备上";
@@ -510,7 +510,7 @@
 "auth.wrongPasswordWithLockoutWarning" = "密码错误，再错 %d 次将锁定 %@";
 "auth.wrongPassword.generic" = "密码错误";
 "auth.lockedOutCountdown" = "已锁定，请在 %@ 后重试";
-"biometric.unlockReason" = "解锁 ZeroNet Redact";
+"biometric.unlockReason" = "解锁 Cloakmark";
 "passwordSetup.warning" = "密码无法找回，请牢记。忘记密码后只能清除全部数据重新开始。";
 "accessibility.showPassword" = "显示密码";
 "accessibility.hidePassword" = "隐藏密码";
@@ -772,10 +772,10 @@
 "quickStart.gotIt" = "知道了";
 "quickStart.openImported" = "开始处理刚导入的文件";
 "Shared files" = "分享导入";
-"share.instructions" = "将图片和 PDF 加密保存到 ZeroNet Redact，随后打开应用完成导入。每次最多 10 个文件，每个不超过 15 MB。";
-"share.save" = "保存到 ZeroNet Redact";
+"share.instructions" = "将图片和 PDF 加密保存到 Cloakmark，随后打开应用完成导入。每次最多 10 个文件，每个不超过 15 MB。";
+"share.save" = "保存到 Cloakmark";
 "share.countLimit" = "请选择 1 至 10 个图片或 PDF 文件。";
-"share.saved" = "已加密保存 %d 个文件。请打开 ZeroNet Redact 完成导入。";
+"share.saved" = "已加密保存 %d 个文件。请打开 Cloakmark 完成导入。";
 "share.partial" = "已保存 %d 个文件。%@ 请关闭面板并重新分享剩余文件。";
 "share.retry" = "重试导入";
 "share.importResult" = "已导入 %d 个文件，%d 个失败。失败的文件仍以加密方式保留，可重试导入。";

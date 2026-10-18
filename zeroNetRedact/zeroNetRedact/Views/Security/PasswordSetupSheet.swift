@@ -183,7 +183,7 @@ struct PasswordSetupSheet: View {
                 .shadow(color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 10, x: 0, y: 5)
 
             // App 名称
-            Text("ZeroNet Redact")
+            Text("Cloakmark")
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(DesignSystem.Colors.textPrimary)

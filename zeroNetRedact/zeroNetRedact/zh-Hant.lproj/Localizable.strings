@@ -121,7 +121,7 @@
 "common.loading" = "載入中...";
 "video.manual.redrawHint" = "拖動繪制替換矩形，再儲存確認。取消會保留原區域不變。";
 "sensitiveType.address" = "地址";
-"privacy.promise.content" = "ZeroNet Redact 是一款完全離線的應用。我們堅信，最好的隱私保護就是根本不收集資料。您的照片、您的隱私，只屬於您自己。";
+"privacy.promise.content" = "Cloakmark 是一款完全離線的應用。我們堅信，最好的隱私保護就是根本不收集資料。您的照片、您的隱私，只屬於您自己。";
 "import.success.toast" = "已匯入 %d 個檔案";
 "batch.clearConfirm" = "清除隊列不會刪除原圖、草稿或成品。重新創建批次將使用新的匯出記錄。";
 "crypto.error.keyGenerationFailed" = "加密密鑰生成失敗";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "鎖定時間";
 "settings.clearAll.title" = "清空所有檔案";
 "group.name" = "分組名稱";
-"biometric.unlockReason" = "解鎖 ZeroNet Redact";
+"biometric.unlockReason" = "解鎖 Cloakmark";
 "editor.error.unsupportedType" = "不支持的檔案類型";
 "editor.detectedRegions.otherPages" = "其他頁還有 %d 處";
 "group.deleteBothMessage" = "刪除「%@」後：\n• %d個原檔案\n• %d個遮蔽檔案\n將全部移至預設分組";
@@ -345,7 +345,7 @@
 "export.failed" = "匯出失敗";
 "video.manual.remove" = "刪除手動區域";
 "about.github.desc" = "查看源代碼、參與貢獻";
-"share.saved" = "已加密儲存 %d 個檔案。請打開 ZeroNet Redact 完成匯入。";
+"share.saved" = "已加密儲存 %d 個檔案。請打開 Cloakmark 完成匯入。";
 "settings.title" = "設定";
 "video.review.coverage" = "%.3f 秒 · %d 個自動區域 · %d 個手動區域";
 "import.accessibility.selectHint" = "輕點選擇或取消選擇";
@@ -368,7 +368,7 @@
 "search.count" = "找到 %d 處";
 "brush.size.label" = "畫筆粗細";
 "video.error.invalidDuration" = "影片時長無效";
-"share.instructions" = "將圖片和 PDF 加密儲存到 ZeroNet Redact，隨後打開應用完成匯入。每次最多 10 個檔案，每個不超過 15 MB。";
+"share.instructions" = "將圖片和 PDF 加密儲存到 Cloakmark，隨後打開應用完成匯入。每次最多 10 個檔案，每個不超過 15 MB。";
 "settings.about" = "關於";
 "video.sticker.description.blueSmiley" = "藍色不透明笑臉貼紙，完整蓋住人臉。";
 "password.new.enter" = "輸入新密碼";
@@ -682,7 +682,7 @@
 "draft.delete" = "刪除草稿";
 "sensitiveType.manual" = "手動選擇";
 "album.secured" = "已安全保護";
-"about.attributions.twemoji.body" = "貼圖由 jdecked/Twemoji 貢獻者創作，採用 CC BY 4.0 授權，固定使用 v17.0.1（196eef6）。ZeroNet Redact 將透明圖案置於不透明背景上，以遮蔽隱私資訊。";
+"about.attributions.twemoji.body" = "貼圖由 jdecked/Twemoji 貢獻者創作，採用 CC BY 4.0 授權，固定使用 v17.0.1（196eef6）。Cloakmark 將透明圖案置於不透明背景上，以遮蔽隱私資訊。";
 "export.progress.title" = "匯出中 %d%%";
 "editor.review.explanation" = "識別結果還沒有全部應用遮擋。點擊一項定位並處理，或左滑忽略；忽略的內容不會被自動遮擋。";
 "import.move.failed" = "移動檔案到分組失敗，請重試";
@@ -697,7 +697,7 @@
 "video.sticker.orangeSmiley" = "橙色笑臉";
 "import.duplicate.message" = "該檔案已經匯入過了，是否仍要匯入？";
 "drawing.selectEffect" = "選擇遮蔽效果";
-"share.save" = "儲存到 ZeroNet Redact";
+"share.save" = "儲存到 Cloakmark";
 "auth.forgotPassword" = "忘記密碼？";
 "video.accessibility.effectHint" = "將此遮擋效果應用到預覽和匯出副本。";
 "video.manual.done" = "儲存遮擋";

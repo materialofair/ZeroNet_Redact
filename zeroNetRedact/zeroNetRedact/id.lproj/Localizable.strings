@@ -121,7 +121,7 @@
 "common.loading" = "Memuat…";
 "video.manual.redrawHint" = "Tarik persegi panjang pengganti, lalu simpan untuk konfirmasi. Membatalkan akan mempertahankan area yang ada.";
 "sensitiveType.address" = "Alamat";
-"privacy.promise.content" = "ZeroNet Redact adalah aplikasi yang sepenuhnya offline. Kami percaya perlindungan privasi terbaik adalah tidak mengumpulkan data sama sekali. Foto dan privasi Anda hanya milik Anda.";
+"privacy.promise.content" = "Cloakmark adalah aplikasi yang sepenuhnya offline. Kami percaya perlindungan privasi terbaik adalah tidak mengumpulkan data sama sekali. Foto dan privasi Anda hanya milik Anda.";
 "import.success.toast" = "%d file diimpor";
 "batch.clearConfirm" = "Mengosongkan antrean mempertahankan file asli, draf, dan hasil ekspor. Batch baru membuat catatan ekspor baru.";
 "crypto.error.keyGenerationFailed" = "Gagal membuat kunci enkripsi";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "Waktu penguncian";
 "settings.clearAll.title" = "Hapus semua file";
 "group.name" = "Nama grup";
-"biometric.unlockReason" = "Buka kunci ZeroNet Redact";
+"biometric.unlockReason" = "Buka kunci Cloakmark";
 "editor.error.unsupportedType" = "Jenis file tidak didukung";
 "editor.detectedRegions.otherPages" = "%d lagi di halaman lain";
 "group.deleteBothMessage" = "Setelah “%@” dihapus:\n• %d file asli\n• %d file yang disamarkan\nakan dipindahkan ke grup default";
@@ -345,7 +345,7 @@
 "export.failed" = "Ekspor gagal";
 "video.manual.remove" = "Hapus area manual";
 "about.github.desc" = "Lihat kode sumber, berkontribusi";
-"share.saved" = "%d file disimpan dengan aman. Buka ZeroNet Redact untuk menyelesaikan impor.";
+"share.saved" = "%d file disimpan dengan aman. Buka Cloakmark untuk menyelesaikan impor.";
 "settings.title" = "Pengaturan";
 "video.review.coverage" = "%.3f dtk · %d otomatis · %d area manual";
 "import.accessibility.selectHint" = "Ketuk untuk memilih atau membatalkan pilihan";
@@ -368,7 +368,7 @@
 "search.count" = "%d hasil";
 "brush.size.label" = "Ukuran kuas";
 "video.error.invalidDuration" = "Durasi video tidak valid";
-"share.instructions" = "Simpan gambar dan PDF dengan aman, lalu buka ZeroNet Redact untuk menyelesaikan impor. Hingga 10 file, masing-masing 15 MB.";
+"share.instructions" = "Simpan gambar dan PDF dengan aman, lalu buka Cloakmark untuk menyelesaikan impor. Hingga 10 file, masing-masing 15 MB.";
 "settings.about" = "Tentang";
 "video.sticker.description.blueSmiley" = "Stiker wajah tersenyum biru yang tidak tembus pandang menutupi setiap wajah.";
 "password.new.enter" = "Masukkan kata sandi baru";
@@ -682,7 +682,7 @@
 "draft.delete" = "Hapus draf";
 "sensitiveType.manual" = "Manual";
 "album.secured" = "Terlindungi dengan aman";
-"about.attributions.twemoji.body" = "Grafis stiker oleh kontributor jdecked/Twemoji, berlisensi CC BY 4.0. Menggunakan versi tetap v17.0.1 (196eef6). ZeroNet Redact menempatkan grafis transparan pada latar tidak tembus pandang untuk menutupi konten pribadi.";
+"about.attributions.twemoji.body" = "Grafis stiker oleh kontributor jdecked/Twemoji, berlisensi CC BY 4.0. Menggunakan versi tetap v17.0.1 (196eef6). Cloakmark menempatkan grafis transparan pada latar tidak tembus pandang untuk menutupi konten pribadi.";
 "export.progress.title" = "Mengekspor %d%%";
 "editor.review.explanation" = "Beberapa item yang terdeteksi belum ditutupi. Ketuk item untuk menemukan dan menanganinya, atau geser ke kiri untuk mengabaikannya. Item yang diabaikan tidak akan ditutupi otomatis.";
 "import.move.failed" = "Gagal memindahkan file ke grup, coba lagi";
@@ -697,7 +697,7 @@
 "video.sticker.orangeSmiley" = "Wajah tersenyum oranye";
 "import.duplicate.message" = "File ini sudah diimpor. Ingin mengimpornya lagi?";
 "drawing.selectEffect" = "Pilih efek";
-"share.save" = "Simpan ke ZeroNet Redact";
+"share.save" = "Simpan ke Cloakmark";
 "auth.forgotPassword" = "Lupa kata sandi?";
 "video.accessibility.effectHint" = "Menerapkan penutup ini pada pratinjau dan salinan hasil ekspor.";
 "video.manual.done" = "Simpan penutup";

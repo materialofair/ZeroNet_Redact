@@ -49,7 +49,7 @@ struct AboutView: View {
                 .shadow(color: DesignSystem.Colors.primaryBlue.opacity(0.3), radius: 12, x: 0, y: 6)
 
             // App 名称
-            Text("ZeroNet Redact")
+            Text("Cloakmark")
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(DesignSystem.Colors.textPrimary)

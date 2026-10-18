@@ -242,8 +242,8 @@ struct SettingsView: View {
                             if iconTapCount < 7 { iconTapCount = 0 }
                         }
                     }
-                    .accessibilityLabel("ZeroNet Redact")
-                Text("ZeroNet Redact")
+                    .accessibilityLabel("Cloakmark")
+                Text("Cloakmark")
                 Spacer()
                 Text("v\(Bundle.main.appVersion)")
                     .foregroundStyle(.secondary)

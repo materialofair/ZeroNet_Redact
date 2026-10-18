@@ -410,7 +410,7 @@ class PDFRedactionEditor: RedactionEditor, ObservableObject {
         document.documentAttributes = [
             PDFDocumentAttribute.titleAttribute: "Redacted Document",
             PDFDocumentAttribute.authorAttribute: "",
-            PDFDocumentAttribute.creatorAttribute: "ZeroNet Redact",
+            PDFDocumentAttribute.creatorAttribute: "Cloakmark",
             PDFDocumentAttribute.producerAttribute: "",
         ]
     }

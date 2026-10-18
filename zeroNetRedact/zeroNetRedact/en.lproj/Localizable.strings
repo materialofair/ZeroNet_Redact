@@ -132,14 +132,14 @@
 "about.attributions" = "Open-Source Attributions";
 "about.attributions.desc" = "Licenses for bundled artwork";
 "about.attributions.twemoji.title" = "Twemoji Graphics";
-"about.attributions.twemoji.body" = "Sticker artwork by the jdecked/Twemoji contributors, licensed under CC BY 4.0. Pinned to v17.0.1 (196eef6). ZeroNet Redact places the transparent artwork on opaque backgrounds for privacy coverage.";
+"about.attributions.twemoji.body" = "Sticker artwork by the jdecked/Twemoji contributors, licensed under CC BY 4.0. Pinned to v17.0.1 (196eef6). Cloakmark places the transparent artwork on opaque backgrounds for privacy coverage.";
 "about.attributions.source" = "View Twemoji Source";
 "about.attributions.license" = "View CC BY 4.0 License";
 
 /* Privacy Policy */
 "privacy.title" = "Privacy Policy";
 "privacy.promise.title" = "Our Promise";
-"privacy.promise.content" = "ZeroNet Redact is a completely offline app. We believe the best privacy protection is to collect no data at all. Your photos, your privacy, belong only to you.";
+"privacy.promise.content" = "Cloakmark is a completely offline app. We believe the best privacy protection is to collect no data at all. Your photos, your privacy, belong only to you.";
 "privacy.data.title" = "Data Handling";
 "privacy.data.item1" = "All image processing happens locally";
 "privacy.data.item2" = "Encrypted files are stored only on your device";
@@ -510,7 +510,7 @@
 "auth.wrongPasswordWithLockoutWarning" = "Wrong password. %d more attempt(s) will lock you out for %@.";
 "auth.wrongPassword.generic" = "Wrong password";
 "auth.lockedOutCountdown" = "Locked. Try again in %@.";
-"biometric.unlockReason" = "Unlock ZeroNet Redact";
+"biometric.unlockReason" = "Unlock Cloakmark";
 "passwordSetup.warning" = "Your password cannot be recovered — please remember it. If forgotten, you can only reset by erasing all data and starting over.";
 "accessibility.showPassword" = "Show password";
 "accessibility.hidePassword" = "Hide password";
@@ -772,10 +772,10 @@
 "quickStart.gotIt" = "Got It";
 "quickStart.openImported" = "Edit the Imported File";
 "Shared files" = "Shared Files";
-"share.instructions" = "Save images and PDFs securely, then open ZeroNet Redact to finish importing. Up to 10 files, 15 MB each.";
-"share.save" = "Save to ZeroNet Redact";
+"share.instructions" = "Save images and PDFs securely, then open Cloakmark to finish importing. Up to 10 files, 15 MB each.";
+"share.save" = "Save to Cloakmark";
 "share.countLimit" = "Select between 1 and 10 images or PDFs.";
-"share.saved" = "Saved %d files securely. Open ZeroNet Redact to finish importing.";
+"share.saved" = "Saved %d files securely. Open Cloakmark to finish importing.";
 "share.partial" = "Saved %d files. %@ Close and share the remaining files again.";
 "share.retry" = "Retry Import";
 "share.importResult" = "Imported %d files; %d failed. Failed files remain encrypted and can be retried.";

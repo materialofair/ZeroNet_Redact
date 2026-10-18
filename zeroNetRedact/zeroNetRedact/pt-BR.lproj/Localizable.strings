@@ -121,7 +121,7 @@
 "common.loading" = "Carregando…";
 "video.manual.redrawHint" = "Arraste o retângulo substituto e salve para confirmar. Cancelar mantém a região existente.";
 "sensitiveType.address" = "Endereço";
-"privacy.promise.content" = "O ZeroNet Redact é um app totalmente offline. Acreditamos que a melhor proteção da privacidade é não coletar dados. Suas fotos e sua privacidade pertencem apenas a você.";
+"privacy.promise.content" = "O Cloakmark é um app totalmente offline. Acreditamos que a melhor proteção da privacidade é não coletar dados. Suas fotos e sua privacidade pertencem apenas a você.";
 "import.success.toast" = "Arquivos importados: %d";
 "batch.clearConfirm" = "Limpar a fila mantém os originais, rascunhos e exportações. Um novo lote cria novos registros de exportação.";
 "crypto.error.keyGenerationFailed" = "Não foi possível gerar a chave de criptografia";
@@ -308,7 +308,7 @@
 "settings.lockTimeout" = "Tempo para bloquear";
 "settings.clearAll.title" = "Apagar todos os arquivos";
 "group.name" = "Nome do grupo";
-"biometric.unlockReason" = "Desbloquear ZeroNet Redact";
+"biometric.unlockReason" = "Desbloquear Cloakmark";
 "editor.error.unsupportedType" = "Tipo de arquivo não compatível";
 "editor.detectedRegions.otherPages" = "Mais resultados em outras páginas: %d";
 "group.deleteBothMessage" = "Ao apagar “%@”, serão movidos para o grupo padrão:\n• Arquivos originais: %d\n• Arquivos com dados ocultados: %d";
@@ -345,7 +345,7 @@
 "export.failed" = "Falha na exportação";
 "video.manual.remove" = "Remover região manual";
 "about.github.desc" = "Ver o código-fonte e contribuir";
-"share.saved" = "Arquivos salvos com segurança: %d. Abra o ZeroNet Redact para concluir a importação.";
+"share.saved" = "Arquivos salvos com segurança: %d. Abra o Cloakmark para concluir a importação.";
 "settings.title" = "Ajustes";
 "video.review.coverage" = "%.3f s · regiões automáticas: %d · manuais: %d";
 "import.accessibility.selectHint" = "Toque para selecionar ou desmarcar";
@@ -368,7 +368,7 @@
 "search.count" = "Resultados: %d";
 "brush.size.label" = "Tamanho do pincel";
 "video.error.invalidDuration" = "A duração do vídeo é inválida";
-"share.instructions" = "Salve imagens e PDFs com segurança e abra o ZeroNet Redact para concluir a importação. Até 10 arquivos de 15 MB cada.";
+"share.instructions" = "Salve imagens e PDFs com segurança e abra o Cloakmark para concluir a importação. Até 10 arquivos de 15 MB cada.";
 "settings.about" = "Sobre";
 "video.sticker.description.blueSmiley" = "Uma figurinha opaca de sorriso azul cobre cada rosto.";
 "password.new.enter" = "Digite a nova senha";
@@ -682,7 +682,7 @@
 "draft.delete" = "Excluir rascunho";
 "sensitiveType.manual" = "Manual";
 "album.secured" = "Protegidos com segurança";
-"about.attributions.twemoji.body" = "Ilustrações de adesivos dos colaboradores de jdecked/Twemoji, licenciadas sob CC BY 4.0. Versão fixa: v17.0.1 (196eef6). O ZeroNet Redact coloca as ilustrações transparentes sobre fundos opacos para cobrir informações privadas.";
+"about.attributions.twemoji.body" = "Ilustrações de adesivos dos colaboradores de jdecked/Twemoji, licenciadas sob CC BY 4.0. Versão fixa: v17.0.1 (196eef6). O Cloakmark coloca as ilustrações transparentes sobre fundos opacos para cobrir informações privadas.";
 "export.progress.title" = "Exportando %d%%";
 "editor.review.explanation" = "Alguns itens detectados não foram cobertos. Toque em um item para localizá-lo e tratá-lo, ou deslize para a esquerda para ignorá-lo. Os itens ignorados não serão cobertos automaticamente.";
 "import.move.failed" = "Não foi possível mover o arquivo para o grupo. Tente novamente.";
@@ -697,7 +697,7 @@
 "video.sticker.orangeSmiley" = "Sorriso laranja";
 "import.duplicate.message" = "Este arquivo já foi importado. Deseja importá-lo novamente?";
 "drawing.selectEffect" = "Selecionar efeito";
-"share.save" = "Salvar no ZeroNet Redact";
+"share.save" = "Salvar no Cloakmark";
 "auth.forgotPassword" = "Esqueceu a senha?";
 "video.accessibility.effectHint" = "Aplica esta cobertura à prévia e à cópia exportada.";
 "video.manual.done" = "Salvar cobertura";

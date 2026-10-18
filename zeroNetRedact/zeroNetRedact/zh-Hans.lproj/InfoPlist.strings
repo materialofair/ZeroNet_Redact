@@ -1,1 +1,3 @@
-"NSFaceIDUsageDescription" = "ZeroNet Redact 使用面容 ID 安全解锁应用，保护你的隐私数据。";
+"NSFaceIDUsageDescription" = "Cloakmark 使用面容 ID 安全解锁应用，保护你的隐私数据。";
+
+"CFBundleDisplayName" = "Cloakmark";
