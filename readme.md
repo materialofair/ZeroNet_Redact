@@ -1,6 +1,10 @@
 <div align="center">
 
-# ZeroNet Redact
+# Cloakmark — formerly ZeroNet Redact
+
+Cloakmark is listed on the App Store as **Video Blur: Cloakmark** (App Store ID **6756290503**). It is the same app previously named ZeroNet Redact; the repository name remains unchanged.
+
+Cloakmark 的 App Store 名称为 **Video Blur: Cloakmark**（App Store ID **6756290503**），即原 ZeroNet Redact，仓库名称保持不变。
 
 **Redact photos, videos and PDFs on your iPhone and iPad.**
 
@@ -30,7 +34,7 @@ v1.5 开发内容与验证记录见 [v1.5 开发交付说明](docs/v1.5-developm
 
 ### 为什么做这个应用？
 
-发送照片、视频或 PDF 前，先遮住不想公开的信息。ZeroNet Redact 支持图片文字与人脸复核、视频指定区域和时段遮挡、PDF 敏感文字搜索与逐页处理，再导出副本用于分享。视频手动框位置固定，请完整预览移动内容。
+发送照片、视频或 PDF 前，先遮住不想公开的信息。Cloakmark 支持图片文字与人脸复核、视频指定区域和时段遮挡、PDF 敏感文字搜索与逐页处理，再导出副本用于分享。视频手动框位置固定，请完整预览移动内容。
 
 **文件内容在设备本地处理，无需上传原文件。自动检测可能遗漏信息，分享前请检查完整导出结果。**
 
@@ -102,7 +106,7 @@ App 自身代码以 GPL-3.0 许可；二进制链接 MuPDF（AGPL-3.0）后按 A
 
 ### Why This App?
 
-Hide a phone number in a photo, cover a private detail in a video, or redact text in a PDF. ZeroNet Redact brings all three workflows together: import, review, cover, and export a copy. Manual video covers stay in a fixed position; preview moving content carefully.
+Hide a phone number in a photo, cover a private detail in a video, or redact text in a PDF. Cloakmark brings all three workflows together: import, review, cover, and export a copy. Manual video covers stay in a fixed position; preview moving content carefully.
 
 **Content is processed on your device without uploading your originals. Automatic detection can miss details; review the entire exported result before sharing.**
 
