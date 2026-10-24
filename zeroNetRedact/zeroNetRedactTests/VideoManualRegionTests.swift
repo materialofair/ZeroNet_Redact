@@ -30,6 +30,7 @@ final class VideoManualRegionTests: XCTestCase {
         let model = VideoEditorViewModel(video: video)
         model.synchronizeReviewTime(1.5)
         XCTAssertEqual(model.reviewSeconds, 1.5)
+        XCTAssertEqual(model.manualEditorEntrySeconds, 1.5, "No ready player item must not reset the logical draft time")
         model.reviewScrubbingChanged(true)
         model.synchronizeReviewTime(2)
         XCTAssertEqual(model.reviewSeconds, 1.5)

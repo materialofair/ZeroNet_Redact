@@ -722,3 +722,8 @@
 "ocr.documentScope" = "Mendeteksi nomor telepon internasional serta format identitas dan paspor tertentu. Periksa area yang disarankan sebelum berbagi.";
 
 "ocr.languageScope" = "Foto, gambar panjang, dan PDF hasil pindai memakai OCR di perangkat. Bahasa bergantung pada versi iOS. PDF teks memakai teks tertanam; teks video tetap perlu ditutupi secara manual.";
+
+"video.preview.preparing" = "Menyiapkan pratinjau tersamarkan…";
+"video.preview.unavailable" = "Pratinjau tidak tersedia. Coba buka kembali video.";
+
+"video.preview.ready" = "Pratinjau tersamarkan siap";

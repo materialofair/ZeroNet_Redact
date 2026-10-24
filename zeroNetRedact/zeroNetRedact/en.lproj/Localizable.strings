@@ -864,3 +864,7 @@
 "ocr.documentScope" = "Recognizes international phone numbers and selected ID/passport formats. Review suggested regions before sharing.";
 
 "ocr.languageScope" = "Photos, long images and scanned PDFs use on-device OCR. Languages depend on your iOS version. Text PDFs use embedded text; video text covers remain manual.";
+"video.preview.preparing" = "Preparing protected preview…";
+"video.preview.unavailable" = "Preview unavailable. Try reopening this video.";
+
+"video.preview.ready" = "Protected preview ready";

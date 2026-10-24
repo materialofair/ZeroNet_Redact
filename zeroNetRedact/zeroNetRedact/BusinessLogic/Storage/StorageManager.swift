@@ -58,6 +58,12 @@ class StorageManager {
 
     // MARK: - 保存文件
 
+    /// Persist app-owned paths independently of the installation's container UUID.
+    func documentRelativePath(for url: URL) -> String {
+        let prefix = baseURL.path + "/"
+        return url.path.hasPrefix(prefix) ? String(url.path.dropFirst(prefix.count)) : url.path
+    }
+
     /// 保存加密的原文件
     func saveEncryptedOriginal(data: Data, id: UUID, type: FileType) throws -> URL {
         let subdir = type.storageDirectoryName

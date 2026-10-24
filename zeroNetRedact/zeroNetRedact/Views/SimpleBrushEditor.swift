@@ -22,6 +22,8 @@ struct SimpleBrushEditor: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var brushStrokes: [BrushStroke] = []
     @State private var currentStroke: [CGPoint] = []
+    @State private var currentStrokePadding: CGSize = .zero
+    @State private var strokeStartSize: CGSize = .zero
     @State private var paintGestureStart: CGPoint = .zero
     @State private var imageSize: CGSize = .zero
     @State private var selectedEffect: BrushEffect = .black
@@ -48,7 +50,10 @@ struct SimpleBrushEditor: View {
     @State private var canvasScale: CGFloat = 1.0
     @State private var lastCanvasScale: CGFloat = 1.0
     @State private var canvasOffset: CGSize = .zero
-    @State private var lastCanvasOffset: CGSize = .zero
+    @State private var panTranslation: CGSize = .zero
+    @GestureState private var isPanning = false
+    @GestureState private var isPinching = false
+    @GestureState private var isDrawingOrMoving = false
 
     // MARK: - Export State
     @State private var exportTask: Task<Void, Never>?
@@ -113,11 +118,25 @@ struct SimpleBrushEditor: View {
                         Button("quickStart.gotIt") { reviewTipDismissed = true }
                     }.padding(12).background(Color.accentColor.opacity(0.08))
                 }
-                // 主编辑区域
-                editorContent
-
-                // 底部工具栏
-                bottomToolbar
+                GeometryReader { geometry in
+                    let split = EditorWorkspaceLayout.usesInspector(in: geometry.size)
+                    // AnyLayout retains canvas identity, selection and active work while resizing.
+                    let layout = split
+                        ? AnyLayout(HStackLayout(spacing: 0))
+                        : AnyLayout(VStackLayout(spacing: 0))
+                    layout {
+                        editorContent
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                            .clipped()
+                        if split {
+                            ScrollView { bottomToolbar.padding(.vertical, 12) }
+                                .frame(width: EditorWorkspaceLayout.inspectorWidth(in: geometry.size))
+                        } else {
+                            bottomToolbar
+                        }
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                }
             }
             .navigationTitle(NSLocalizedString("editor.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
@@ -271,13 +290,26 @@ struct SimpleBrushEditor: View {
         } message: {
             Text(NSLocalizedString("draft.restoreMessage", comment: ""))
         }
+        .onChange(of: isPinching) { _, active in
+            if !active { lastCanvasScale = canvasScale }
+        }
+        .onChange(of: isPanning) { _, active in
+            if !active { panTranslation = .zero }
+        }
+        .onChange(of: isDrawingOrMoving) { _, active in
+            if !active { finishCanvasGesture() }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
+                finishCanvasGesture()
+                panTranslation = .zero
+                lastCanvasScale = canvasScale
                 autoApplyPendingStrokesIfNeeded()
                 viewModel.flushDraft()
             }
         }
         .onDisappear {
+            finishCanvasGesture()
             autoApplyPendingStrokesIfNeeded()
             viewModel.flushDraft()
             viewModel.cancelFaceDetection()
@@ -338,7 +370,6 @@ struct SimpleBrushEditor: View {
                         canvasScale = 1.0
                         lastCanvasScale = 1.0
                         canvasOffset = .zero
-                        lastCanvasOffset = .zero
                     }
                 } label: {
                     Image(systemName: "arrow.counterclockwise.circle.fill")
@@ -458,61 +489,71 @@ struct SimpleBrushEditor: View {
     // MARK: - Action Buttons Bar
 
     private var actionButtonsBar: some View {
-        HStack(spacing: 12) {
-            // 左侧按钮组
-            HStack(spacing: 8) {
-                canvasModeMenu
-                    .disabled(viewModel.isExporting)
-
-                ToolbarIconButton(icon: "arrow.uturn.backward") {
-                    performUndo()
-                }
-                .disabled((brushStrokes.isEmpty && !viewModel.canUndo) || viewModel.isExporting)
-                .accessibilityLabel(NSLocalizedString("action.undoStroke", comment: ""))
-
-                ToolbarIconButton(icon: "arrow.uturn.forward") {
-                    viewModel.redo()
-                }
-                .disabled(!viewModel.canRedo || viewModel.isExporting)
-                .accessibilityLabel(NSLocalizedString("action.redoStroke", comment: ""))
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                historyButtons
+                Spacer(minLength: 8)
+                exportButtons
             }
-
-            Spacer()
-
-            // 右侧按钮组
-            HStack(spacing: 8) {
-                ToolbarButton(
-                    icon: "checkmark.circle.fill",
-                    title: NSLocalizedString("action.applyRedaction", comment: ""),
-                    tintColor: .green,
-                    isProminent: true
-                ) {
-                    applyMosaic()
-                }
-                .disabled(brushStrokes.isEmpty || canvasMode != .brush || viewModel.isExporting)
-
-                ToolbarButton(
-                    icon: viewModel.isExporting ? nil : "square.and.arrow.up",
-                    title: exportButtonTitle,
-                    tintColor: .blue,
-                    isLoading: viewModel.isExporting
-                ) {
-                    performExport()
-                }
-                .disabled(viewModel.isExporting || viewModel.isDetecting || viewModel.isDetectingFaces)
-                .accessibilityIdentifier("editor.export")
-
-                // 导出中提供显式取消（此前取消只能通过"放弃编辑"间接触发）
-                if viewModel.isExporting {
-                    ToolbarIconButton(icon: "xmark", tintColor: .red) {
-                        exportTask?.cancel()
-                    }
-                    .accessibilityLabel(NSLocalizedString("common.cancel", comment: ""))
-                }
+            VStack(spacing: 8) {
+                historyButtons.frame(maxWidth: .infinity, alignment: .leading)
+                exportButtons.frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 10)
+    }
+
+    private var historyButtons: some View {
+        HStack(spacing: 8) {
+            canvasModeMenu
+                .disabled(viewModel.isExporting)
+
+            ToolbarIconButton(icon: "arrow.uturn.backward") {
+                performUndo()
+            }
+            .disabled((brushStrokes.isEmpty && !viewModel.canUndo) || viewModel.isExporting)
+            .accessibilityLabel(NSLocalizedString("action.undoStroke", comment: ""))
+
+            ToolbarIconButton(icon: "arrow.uturn.forward") {
+                viewModel.redo()
+            }
+            .disabled(!viewModel.canRedo || viewModel.isExporting)
+            .accessibilityLabel(NSLocalizedString("action.redoStroke", comment: ""))
+        }
+    }
+
+    private var exportButtons: some View {
+        HStack(spacing: 8) {
+            ToolbarButton(
+                icon: "checkmark.circle.fill",
+                title: NSLocalizedString("action.applyRedaction", comment: ""),
+                tintColor: .green,
+                isProminent: true
+            ) {
+                applyMosaic()
+            }
+            .disabled(brushStrokes.isEmpty || canvasMode != .brush || viewModel.isExporting)
+
+            ToolbarButton(
+                icon: viewModel.isExporting ? nil : "square.and.arrow.up",
+                title: exportButtonTitle,
+                tintColor: .blue,
+                isLoading: viewModel.isExporting
+            ) {
+                performExport()
+            }
+            .disabled(viewModel.isExporting || viewModel.isDetecting || viewModel.isDetectingFaces)
+            .accessibilityIdentifier("editor.export")
+
+            // 导出中提供显式取消（此前取消只能通过"放弃编辑"间接触发）
+            if viewModel.isExporting {
+                ToolbarIconButton(icon: "xmark", tintColor: .red) {
+                    exportTask?.cancel()
+                }
+                .accessibilityLabel(NSLocalizedString("common.cancel", comment: ""))
+            }
+        }
     }
 
     /// 导出按钮标题：导出中显示百分比进度
@@ -671,6 +712,8 @@ struct SimpleBrushEditor: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: displaySize.width, height: displaySize.height)
+                .accessibilityLabel(Text("editor.title"))
+                .accessibilityIdentifier("editor.image")
                 // 以图片实际渲染帧为准同步显示尺寸(布局变化如检测结果条弹出时也会触发),
                 // 否则涂抹/手势的屏幕坐标换算会基于陈旧尺寸而整体偏移
                 .onGeometryChange(for: CGSize.self) { proxy in
@@ -686,7 +729,7 @@ struct SimpleBrushEditor: View {
                 let drawConverter = CoordinateConverter(
                     imageSize: canvasSize, viewModel: viewModel)
                 drawDetectedRegionHighlights(context: context, converter: drawConverter)
-                drawBrushStrokes(context: context)
+                drawBrushStrokes(context: context, displaySize: canvasSize)
                 if canvasMode == .drag {
                     drawRedactionBorders(context: context, converter: drawConverter)
                 }
@@ -698,7 +741,7 @@ struct SimpleBrushEditor: View {
                 including: canvasMode == .zoom || viewModel.isReviewingFaces ? .none : .all
             )
             .gesture(
-                zoomPanGesture(),
+                zoomPanGesture(displaySize: displaySize),
                 including: canvasMode == .zoom && !viewModel.isReviewingFaces ? .all : .none
             )
 
@@ -708,7 +751,8 @@ struct SimpleBrushEditor: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .scaleEffect(canvasScale, anchor: .center)
-        .offset(canvasOffset)
+        .offset(x: canvasOffset.width * displaySize.width,
+                y: canvasOffset.height * displaySize.height)
     }
 
     private func faceCandidateOverlay(displaySize: CGSize) -> some View {
@@ -802,35 +846,21 @@ struct SimpleBrushEditor: View {
         }
     }
 
-    private func drawBrushStrokes(context: GraphicsContext) {
+    private func drawBrushStrokes(context: GraphicsContext, displaySize: CGSize) {
         // 绘制已完成的涂抹（所见即所得：与applyMosaic相同的外接矩形）
         for stroke in brushStrokes {
-            drawStrokePreview(context: context, points: stroke.points, opacity: 0.5)
+            drawStrokePreview(context: context, points: stroke.points, padding: stroke.padding, displaySize: displaySize, opacity: 0.5)
         }
 
         // 绘制当前正在进行的涂抹
         if !currentStroke.isEmpty {
-            drawStrokePreview(context: context, points: currentStroke, opacity: 0.35)
+            drawStrokePreview(context: context, points: currentStroke, padding: currentStrokePadding, displaySize: displaySize, opacity: 0.35)
         }
     }
 
-    private func drawStrokePreview(context: GraphicsContext, points: [CGPoint], opacity: Double) {
-        guard !points.isEmpty else { return }
-
-        let xs = points.map { $0.x }
-        let ys = points.map { $0.y }
-        let minX = xs.min() ?? 0
-        let maxX = xs.max() ?? 0
-        let minY = ys.min() ?? 0
-        let maxY = ys.max() ?? 0
-        let padding = brushWidth / 2
-
-        let rect = CGRect(
-            x: minX - padding,
-            y: minY - padding,
-            width: maxX - minX + padding * 2,
-            height: maxY - minY + padding * 2
-        )
+    private func drawStrokePreview(context: GraphicsContext, points: [CGPoint], padding: CGSize,
+                                   displaySize: CGSize, opacity: Double) {
+        guard let rect = EditorCanvasGeometry.strokeBounds(points: points, padding: padding, in: displaySize) else { return }
         let path = Path(roundedRect: rect, cornerRadius: 4)
 
         switch selectedEffect {
@@ -851,7 +881,7 @@ struct SimpleBrushEditor: View {
             for (index, pdfBounds) in annotations {
                 if let screenRect = converter.pdfRectToScreen(pdfBounds) {
                     drawRegionBorder(
-                        context: context, rect: screenRect, index: index)
+                        context: context, rect: screenRect, index: index, displaySize: converter.imageSize)
                 }
             }
         } else if viewModel.isImageFile {
@@ -859,16 +889,16 @@ struct SimpleBrushEditor: View {
             for (index, imageBounds) in regions {
                 if let screenRect = converter.imageRectToScreen(imageBounds) {
                     drawRegionBorder(
-                        context: context, rect: screenRect, index: index)
+                        context: context, rect: screenRect, index: index, displaySize: converter.imageSize)
                 }
             }
         }
     }
 
-    private func drawRegionBorder(context: GraphicsContext, rect: CGRect, index: Int) {
+    private func drawRegionBorder(context: GraphicsContext, rect: CGRect, index: Int, displaySize: CGSize) {
         var adjustedRect = rect
         if index == selectedAnnotationIndex {
-            adjustedRect = rect.offsetBy(dx: currentDragOffset.width, dy: currentDragOffset.height)
+            adjustedRect = rect.offsetBy(dx: currentDragOffset.width * displaySize.width, dy: currentDragOffset.height * displaySize.height)
         }
 
         let borderPath = Path(roundedRect: adjustedRect, cornerRadius: 4)
@@ -884,19 +914,19 @@ struct SimpleBrushEditor: View {
 
     private func paintOrDragGesture(displaySize: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .updating($isDrawingOrMoving) { _, active, _ in active = true }
             .onChanged { value in
                 handleDragChanged(location: value.location, displaySize: displaySize)
             }
             .onEnded { _ in
-                handleDragEnded()
-                autoApplyPendingStrokesIfNeeded()
-                viewModel.scheduleDraftSave()
+                finishCanvasGesture()
             }
     }
 
-    private func zoomPanGesture() -> some Gesture {
+    private func zoomPanGesture(displaySize: CGSize) -> some Gesture {
         SimultaneousGesture(
             MagnificationGesture()
+                .updating($isPinching) { _, active, _ in active = true }
                 .onChanged { value in
                     canvasScale = min(max(lastCanvasScale * value, minCanvasScale), maxCanvasScale)
                 }
@@ -904,14 +934,17 @@ struct SimpleBrushEditor: View {
                     lastCanvasScale = canvasScale
                 },
             DragGesture()
+                .updating($isPanning) { _, active, _ in active = true }
                 .onChanged { value in
-                    canvasOffset = CGSize(
-                        width: lastCanvasOffset.width + value.translation.width,
-                        height: lastCanvasOffset.height + value.translation.height
-                    )
+                    let delta = EditorCanvasGeometry.normalized(
+                        CGSize(width: value.translation.width - panTranslation.width,
+                               height: value.translation.height - panTranslation.height), in: displaySize)
+                    canvasOffset.width += delta.width
+                    canvasOffset.height += delta.height
+                    panTranslation = value.translation
                 }
                 .onEnded { _ in
-                    lastCanvasOffset = canvasOffset
+                    panTranslation = .zero
                 }
         )
     }
@@ -924,22 +957,27 @@ struct SimpleBrushEditor: View {
 
         switch canvasMode {
         case .drag:
-            handleDragModeChanged(location: location)
+            handleDragModeChanged(location: location, displaySize: displaySize)
         case .brush:
             if currentStroke.isEmpty {
-                paintGestureStart = location
+                paintGestureStart = EditorCanvasGeometry.normalized(location, in: displaySize)
+                strokeStartSize = displaySize
+                currentStrokePadding = EditorCanvasGeometry.normalized(
+                    CGSize(width: brushWidth / 2, height: brushWidth / 2), in: displaySize)
             }
-            currentStroke.append(location)
+            currentStroke.append(EditorCanvasGeometry.normalized(location, in: displaySize))
         case .zoom:
             break
         }
     }
 
-    private func handleDragModeChanged(location: CGPoint) {
+    private func handleDragModeChanged(location: CGPoint, displaySize: CGSize) {
+        let normalizedLocation = EditorCanvasGeometry.normalized(location, in: displaySize)
+        let coordinateConverter = CoordinateConverter(imageSize: displaySize, viewModel: viewModel)
         if isDraggingRegion {
             currentDragOffset = CGSize(
-                width: location.x - dragStartLocation.x,
-                height: location.y - dragStartLocation.y
+                width: normalizedLocation.x - dragStartLocation.x,
+                height: normalizedLocation.y - dragStartLocation.y
             )
         } else {
             var tappedIndex: Int? = nil
@@ -955,7 +993,7 @@ struct SimpleBrushEditor: View {
 
             if let index = tappedIndex {
                 selectedAnnotationIndex = index
-                dragStartLocation = location
+                dragStartLocation = normalizedLocation
                 currentDragOffset = .zero
                 isDraggingRegion = true
             } else {
@@ -963,6 +1001,13 @@ struct SimpleBrushEditor: View {
                 currentDragOffset = .zero
             }
         }
+    }
+
+    private func finishCanvasGesture() {
+        guard !currentStroke.isEmpty || isDraggingRegion else { return }
+        handleDragEnded()
+        autoApplyPendingStrokesIfNeeded()
+        viewModel.scheduleDraftSave()
     }
 
     private func handleDragEnded() {
@@ -973,15 +1018,16 @@ struct SimpleBrushEditor: View {
             isDraggingRegion = false
         case .brush:
             let endPoint = currentStroke.last ?? paintGestureStart
-            let movement = hypot(endPoint.x - paintGestureStart.x, endPoint.y - paintGestureStart.y)
+            let movement = hypot((endPoint.x - paintGestureStart.x) * strokeStartSize.width, (endPoint.y - paintGestureStart.y) * strokeStartSize.height)
 
-            if !viewModel.detectedRegions.isEmpty, movement < 6,
-                let hitRegion = detectedRegion(at: paintGestureStart)
+            if imageSize.width > 0, imageSize.height > 0,
+                !viewModel.detectedRegions.isEmpty, movement < 6,
+                let hitRegion = detectedRegion(at: CGPoint(x: paintGestureStart.x * imageSize.width, y: paintGestureStart.y * imageSize.height))
             {
                 applyDetectedRegion(hitRegion)
                 currentStroke.removeAll()
             } else if !currentStroke.isEmpty {
-                brushStrokes.append(BrushStroke(points: currentStroke))
+                brushStrokes.append(BrushStroke(points: currentStroke, padding: currentStrokePadding))
                 currentStroke = []
                 autoApplyPendingStrokesIfNeeded()
             }
@@ -1003,11 +1049,11 @@ struct SimpleBrushEditor: View {
         guard let index = selectedAnnotationIndex else { return }
 
         if viewModel.isPDFFile {
-            if let pdfDelta = coordinateConverter.screenDragToPDFDelta(currentDragOffset) {
+            if let pdfDelta = coordinateConverter.screenDragToPDFDelta(CGSize(width: currentDragOffset.width * imageSize.width, height: currentDragOffset.height * imageSize.height)) {
                 viewModel.moveAnnotation(at: index, offset: pdfDelta)
             }
         } else if viewModel.isImageFile {
-            if let imageDelta = coordinateConverter.screenDragToImageDelta(currentDragOffset) {
+            if let imageDelta = coordinateConverter.screenDragToImageDelta(CGSize(width: currentDragOffset.width * imageSize.width, height: currentDragOffset.height * imageSize.height)) {
                 viewModel.moveImageRedactionRegion(at: index, offset: imageDelta)
             }
         }
@@ -1017,6 +1063,9 @@ struct SimpleBrushEditor: View {
 
     private func setCanvasMode(_ mode: CanvasMode) {
         guard mode != canvasMode else { return }
+        finishCanvasGesture()
+        panTranslation = .zero
+        lastCanvasScale = canvasScale
         if canvasMode == .brush {
             autoApplyPendingStrokesIfNeeded()
         }
@@ -1097,39 +1146,20 @@ struct SimpleBrushEditor: View {
 
     private func applyMosaic() {
         guard let originalImage = viewModel.currentImage else { return }
-        guard imageSize.width > 0, imageSize.height > 0 else { return }
-
-        let scaleX = originalImage.size.width / imageSize.width
-        let scaleY = originalImage.size.height / imageSize.height
         let effect = selectedEffect.redactionEffect
-        let padding: CGFloat = brushWidth / 2
-
-        var rects: [CGRect] = []
-        rects.reserveCapacity(brushStrokes.count)
-
-        for stroke in brushStrokes {
-            guard !stroke.points.isEmpty else { continue }
-
-            let xs = stroke.points.map { $0.x }
-            let ys = stroke.points.map { $0.y }
-            let minX = xs.min() ?? 0
-            let maxX = xs.max() ?? 0
-            let minY = ys.min() ?? 0
-            let maxY = ys.max() ?? 0
-
-            let rect: CGRect
-            if viewModel.isPDFFile {
-                rect = calculatePDFRect(
-                    minX: minX, minY: minY, maxX: maxX, maxY: maxY, padding: padding)
-            } else {
-                rect = CGRect(
-                    x: (minX - padding) * scaleX,
-                    y: (minY - padding) * scaleY,
-                    width: (maxX - minX + padding * 2) * scaleX,
-                    height: (maxY - minY + padding * 2) * scaleY
-                )
-            }
-            rects.append(rect)
+        let contentSize: CGSize
+        if viewModel.isPDFFile,
+           let editor = viewModel.editor?.baseEditor as? PDFRedactionEditor,
+           let page = editor.currentPage {
+            contentSize = page.bounds(for: .mediaBox).size
+        } else {
+            contentSize = originalImage.size
+        }
+        let rects = brushStrokes.compactMap { stroke -> CGRect? in
+            guard var rect = EditorCanvasGeometry.strokeBounds(
+                points: stroke.points, padding: stroke.padding, in: contentSize) else { return nil }
+            if viewModel.isPDFFile { rect.origin.y = contentSize.height - rect.maxY }
+            return rect
         }
 
         // 批量应用：单快照 + 单次合成渲染（逐笔整图重绘曾致大图卡顿数秒）
@@ -1141,32 +1171,6 @@ struct SimpleBrushEditor: View {
         if viewModel.isPDFFile {
             viewModel.refreshPDFPageImage()
         }
-    }
-
-    private func calculatePDFRect(
-        minX: CGFloat, minY: CGFloat, maxX: CGFloat, maxY: CGFloat, padding: CGFloat
-    ) -> CGRect {
-        guard let pdfEditor = viewModel.editor?.baseEditor as? PDFRedactionEditor,
-            let page = pdfEditor.currentPage
-        else {
-            return .zero
-        }
-
-        let pageRect = page.bounds(for: .mediaBox)
-        let pdfPageWidth = pageRect.width
-        let pdfPageHeight = pageRect.height
-
-        let pdfScaleX = pdfPageWidth / imageSize.width
-        let pdfScaleY = pdfPageHeight / imageSize.height
-
-        let pdfX = (minX - padding) * pdfScaleX
-        let pdfY = (minY - padding) * pdfScaleY
-        let pdfWidth = (maxX - minX + padding * 2) * pdfScaleX
-        let pdfHeight = (maxY - minY + padding * 2) * pdfScaleY
-
-        let flippedY = pdfPageHeight - pdfY - pdfHeight
-
-        return CGRect(x: pdfX, y: flippedY, width: pdfWidth, height: pdfHeight)
     }
 
     // MARK: - Detection Actions
@@ -1266,7 +1270,6 @@ struct SimpleBrushEditor: View {
             canvasScale = 1
             lastCanvasScale = 1
             canvasOffset = .zero
-            lastCanvasOffset = .zero
             selectedDetectedIDs = [region.id]
             flashRegionID = region.id
         }

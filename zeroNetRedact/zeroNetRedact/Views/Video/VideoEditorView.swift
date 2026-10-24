@@ -7,8 +7,6 @@ struct VideoEditorView: View {
     @ObservedObject private var appState = AppState.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.dismiss) private var dismiss
     @State private var editorOrientation: VideoEditorOrientation = .portrait
     @State private var initialOrientation: VideoEditorOrientation?
@@ -24,10 +22,8 @@ struct VideoEditorView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                // 双栏布局：横屏，或 iPad 全屏竖屏（尺寸等级为 regular/regular）时并排展示。
-                // 仅按宽高比判断会把 iPad 竖屏误当成手机单栏，导致控制区被推到首屏之下。
-                let usesSplitLayout = geometry.size.width > geometry.size.height
-                    || (horizontalSizeClass == .regular && verticalSizeClass == .regular)
+                // Use available window dimensions for Duo, iPad windows and ordinary phones.
+                let usesSplitLayout = EditorWorkspaceLayout.usesVideoColumns(in: geometry.size)
 
                 Group {
                     if usesSplitLayout {
@@ -43,18 +39,10 @@ struct VideoEditorView: View {
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     bottomBar
                 }
-                .onAppear {
-                    syncOrientation(withSplitLayout: usesSplitLayout)
-                }
-                .onChange(of: usesSplitLayout) { _, isSplit in
-                    editorOrientation = isSplit ? .landscape : .portrait
-                }
-                .onChange(of: editorOrientation) { _, orientation in
-                    VideoOrientationController.request(orientation) {
-                        // 系统拒绝了旋转请求（例如方向锁边缘情况）：把选择器
-                        // 恢复为实际几何方向，避免 UI 展示设备并未采纳的布局。
-                        editorOrientation = layoutOrientation(for: geometry.size)
-                    }
+                .onAppear { syncOrientation() }
+                .onChange(of: geometry.size) { _, _ in
+                    // Folding, keyboard and window resizing are layout changes, not rotation requests.
+                    syncOrientation()
                 }
                 .navigationTitle(NSLocalizedString("video.editor.title", comment: ""))
                 .navigationBarTitleDisplayMode(.inline)
@@ -70,9 +58,8 @@ struct VideoEditorView: View {
             }
         }
         .interactiveDismissDisabled(isBusy)
-        .sheet(item: $editingManualRegion) { region in
+        .fullScreenCover(item: $editingManualRegion) { region in
             VideoManualRegionEditor(model: viewModel, region: region)
-                .presentationDetents([.large])
         }
         .confirmationDialog(NSLocalizedString("draft.keepAndClose", comment: ""), isPresented: $showCloseOptions) {
             Button(NSLocalizedString("draft.keepAndClose", comment: "")) { if viewModel.flushDraft() { dismiss() } }
@@ -133,6 +120,12 @@ struct VideoEditorView: View {
         .sensoryFeedback(.success, trigger: viewModel.phase == .completed)
         .task { viewModel.start() }
         .onDisappear {
+            // A full-screen region editor temporarily covers this view; it still needs the source asset.
+            if editingManualRegion != nil {
+                viewModel.player.pause()
+                viewModel.flushDraft()
+                return
+            }
             // 导出中不清理：后台任务保护导出继续完成（此前无条件 cleanup 会直接取消导出）
             viewModel.viewDidDisappear()
             if let initialOrientation {
@@ -150,12 +143,6 @@ struct VideoEditorView: View {
 
     private var isPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
-    }
-
-    /// iPad 全屏竖屏/横屏（horizontal/vertical 均为 regular）时使用双栏布局，
-    /// 并给预览列留出更多空间。
-    private var usesiPadFullScreenLayout: Bool {
-        horizontalSizeClass == .regular && verticalSizeClass == .regular
     }
 
     private var portraitContent: some View {
@@ -255,7 +242,10 @@ struct VideoEditorView: View {
     private var orientationControl: some View {
         Picker(
             NSLocalizedString("video.orientation.title", comment: ""),
-            selection: $editorOrientation
+            selection: Binding(get: { editorOrientation }, set: { orientation in
+                editorOrientation = orientation
+                VideoOrientationController.request(orientation) { syncOrientation() }
+            })
         ) {
             ForEach(VideoEditorOrientation.allCases) { orientation in
                 Label(orientation.displayName, systemImage: orientation.icon)
@@ -304,6 +294,15 @@ struct VideoEditorView: View {
                 if viewModel.phase == .ready, !viewModel.selectedTrackIDs.isEmpty {
                     VideoSelectedTracksOverlay(model: viewModel)
                 }
+                if viewModel.isPreparingVisualPreview {
+                    VStack {
+                        ProgressView().tint(.white)
+                        Text(NSLocalizedString("video.preview.preparing", value: "Preparing protected preview…", comment: ""))
+                            .font(.caption).foregroundStyle(.white)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black)
+                }
             }
             .aspectRatio(CGFloat(max(1, viewModel.video.width)) / CGFloat(max(1, viewModel.video.height)), contentMode: .fit)
             .overlay {
@@ -312,6 +311,15 @@ struct VideoEditorView: View {
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(NSLocalizedString("video.accessibility.preview", comment: ""))
+            .accessibilityIdentifier("video.preview")
+            .accessibilityValue(NSLocalizedString(
+                viewModel.player.currentItem?.status == .readyToPlay && !viewModel.isPreparingVisualPreview
+                    ? "video.preview.ready" : "common.loading", comment: ""))
+
+            if let error = viewModel.visualPreviewError {
+                Text(NSLocalizedString("video.preview.unavailable", value: "Preview unavailable. Try reopening this video.", comment: "") + " " + error)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
 
             if viewModel.phase == .ready {
                 Button {
@@ -829,11 +837,7 @@ struct VideoEditorView: View {
     }
 
     private func controlsMaxWidth(for availableWidth: CGFloat) -> CGFloat {
-        if usesiPadFullScreenLayout { return 360 }
-        // 手机横屏：控制列占可用宽度的 45%（340–420pt），窄屏（如 iPhone SE 横屏）
-        // 下自动收紧，避免预览列被挤到看不清。
-        let usable = max(0, availableWidth - 2 * DesignSystem.Spacing.lg)
-        return min(420, max(340, usable * 0.45))
+        EditorWorkspaceLayout.inspectorWidth(in: CGSize(width: availableWidth, height: 0))
     }
 
     private var processingTitle: String {
@@ -873,17 +877,12 @@ struct VideoEditorView: View {
             }
     }
 
-    private func syncOrientation(withSplitLayout isSplit: Bool) {
-        let current: VideoEditorOrientation = isSplit ? .landscape : .portrait
-        if initialOrientation == nil {
-            initialOrientation = current
-        }
+    private func syncOrientation() {
+        guard let current = VideoOrientationController.current else { return }
+        if initialOrientation == nil { initialOrientation = current }
         editorOrientation = current
     }
 
-    private func layoutOrientation(for size: CGSize) -> VideoEditorOrientation {
-        size.width > size.height ? .landscape : .portrait
-    }
 }
 
 private enum VideoEditorOrientation: String, CaseIterable, Identifiable {
@@ -918,6 +917,13 @@ private enum VideoEditorOrientation: String, CaseIterable, Identifiable {
 
 @MainActor
 private enum VideoOrientationController {
+    static var current: VideoEditorOrientation? {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else { return nil }
+        return scene.interfaceOrientation.isLandscape ? .landscape : .portrait
+    }
+
     static func request(
         _ orientation: VideoEditorOrientation,
         onDenial: @escaping () -> Void

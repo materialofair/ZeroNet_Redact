@@ -1,6 +1,20 @@
 # Changelog
 
-## 1.5.3 (Unreleased)
+## 1.5.5
+
+- Preserve normalized brush/media coordinates across resizing windows and use available space for editor controls.
+- Recover protected video previews when the live display composition fails, and refresh paused preview readiness.
+- Store new video export paths relative to Documents and resolve legacy container paths after app updates.
+- Include regression tests for geometry, protected previews and saved export paths.
+- Source project is 1.5.5 (26); the prior release archive is 1.5.5 (25). See [release/build notes](docs/releases/1.5.5.md).
+- Correct the privacy policy for local media processing and Apple StoreKit network use; document automatic face trajectories followed by manual overlays.
+
+## 1.5.4
+
+- Rename ZeroNet Redact to Cloakmark, retaining the existing app identity.
+
+
+## 1.5.3
 
 ### Password protection
 
@@ -9,7 +23,7 @@
 - 密码存储读取失败时保持锁定并提示重试，不再自动关闭密码保护或消耗错误密码次数。
 - 更新十种语言的密码存储错误提示，并补充密码回归及 Keychain 集成测试。
 
-## Unreleased
+## 1.5.0
 
 ### Editing workflow
 

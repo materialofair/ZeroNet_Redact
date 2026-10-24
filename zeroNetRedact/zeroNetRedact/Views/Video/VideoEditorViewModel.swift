@@ -77,7 +77,7 @@ final class VideoEditorViewModel: ObservableObject {
         do {
             var state = DraftVideoState(sticker: sticker, voice: voicePreset,
                                         timeline: analyzedTimelineAvailable ? timeline : nil,
-                                        playbackSeconds: player.currentTime().seconds)
+                                        playbackSeconds: manualEditorEntrySeconds)
             state.manualRegions = manualRegions
             state.groups = groups
             let draft = EditorDraft(originalID: video.id, masks: [], pageIndex: 0,
@@ -180,7 +180,8 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     func synchronizeReviewTime(_ seconds: Double) {
-        guard !isReviewScrubbing, pendingReviewSeek == nil, seconds.isFinite else { return }
+        guard !isReviewScrubbing, !isPreparingVisualPreview, pendingReviewSeek == nil,
+              player.currentItem?.status != .failed, seconds.isFinite else { return }
         reviewSeconds = min(video.duration, max(0, seconds))
     }
 
@@ -251,6 +252,12 @@ final class VideoEditorViewModel: ObservableObject {
     @Published private(set) var isPreparingVoicePreview = false
     @Published private(set) var voicePreviewError: String?
     @Published var player = AVPlayer()
+    @Published private(set) var isPreparingVisualPreview = false
+    @Published private(set) var visualPreviewError: String?
+    private lazy var protectedPreview = ProtectedVideoPreview(player: player) { [weak self] preparing, error in
+        self?.isPreparingVisualPreview = preparing
+        self?.visualPreviewError = error
+    }
 
     let video: OriginalVideo
     private var workspace: URL?
@@ -273,7 +280,13 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     var hasNoDetectedFaces: Bool { phase == .ready && faceCount == 0 }
-    var canExport: Bool { phase == .ready }
+    var canExport: Bool { phase == .ready && !isPreparingVisualPreview }
+    var manualSourceAsset: AVAsset? { sourceURL.map { AVURLAsset(url: $0) } }
+    var manualEditorEntrySeconds: Double {
+        let current = player.currentTime().seconds
+        return !isPreparingVisualPreview && player.currentItem?.status == .readyToPlay && current.isFinite
+            ? current : reviewSeconds
+    }
     /// 试听按钮是否可用：就绪、有音轨且不是原声。
     var canPreviewVoice: Bool { phase == .ready && video.hasAudio && voicePreset != .original }
 
@@ -310,7 +323,7 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     func export() {
-        guard phase == .ready, let sourceURL, let workspace else { return }
+        guard canExport, let sourceURL, let workspace else { return }
         let effects = groups.map(\.effect) + manualRegions.map(\.effect)
         if let locked = effects.compactMap(VideoRedactionSticker.init(rawValue:)).first(where: { $0.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess) }) {
             requestStickerSelection(locked)
@@ -487,6 +500,7 @@ final class VideoEditorViewModel: ObservableObject {
                 removePlaybackTimeObserver()
                 player.pause()
                 player.replaceCurrentItem(with: nil)
+                protectedPreview.invalidate()
                 releasePlaybackAudioSession()
                 StorageManager.shared.removeVideoWorkspace(workspace)
                 if self.workspace == workspace {
@@ -504,6 +518,7 @@ final class VideoEditorViewModel: ObservableObject {
         previewTask?.cancel()
         player.pause()
         player.replaceCurrentItem(with: nil)
+        protectedPreview.invalidate()
         releasePlaybackAudioSession()
         previewTask = nil
         previewAsset = nil
@@ -640,6 +655,7 @@ final class VideoEditorViewModel: ObservableObject {
             phase = .ready
             progress = 1
             if let seconds = restoredPlaybackSeconds {
+                reviewSeconds = min(video.duration, max(0, seconds))
                 await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
                 synchronizeReviewTime(player.currentTime().seconds)
                 restoredPlaybackSeconds = nil
@@ -672,20 +688,21 @@ final class VideoEditorViewModel: ObservableObject {
     }
 
     private func installPreviewItem(asset: AVAsset) {
+        guard let workspace else { return }
         observePlaybackTime()
-        let item = AVPlayerItem(asset: asset)
-        item.videoComposition = VideoCompositionFactory.make(
+        let composition = VideoCompositionFactory.make(
             asset: asset,
             timeline: timeline,
             sticker: sticker,
             manualRegions: manualRegions,
             groups: groups
         )
-        let resumeTime = VideoPlaybackTime.resumeTime(from: player)
-        player.replaceCurrentItem(with: item)
-        if let resumeTime {
-            player.seek(to: resumeTime, toleranceBefore: .zero, toleranceAfter: .zero)
-        }
+        let resumeTime = restoredPlaybackSeconds.map { CMTime(seconds: $0, preferredTimescale: 600) }
+            ?? VideoPlaybackTime.resumeTime(from: player)
+        protectedPreview.install(asset: asset, composition: composition, workspace: workspace, resumeTime: resumeTime,
+                                 latestRequestedTime: { [weak self] in
+            self.map { CMTime(seconds: $0.reviewSeconds, preferredTimescale: 600) }
+        })
     }
 
     private func persistExport(stagedURL: URL) throws -> RedactedFile {
@@ -709,12 +726,12 @@ final class VideoEditorViewModel: ObservableObject {
                 in: context,
                 id: id,
                 fileType: .video,
-                filePath: finalURL!.path,
+                filePath: StorageManager.shared.documentRelativePath(for: finalURL!),
                 fileSize: StorageManager.shared.getFileSize(at: finalURL!),
                 originalFile: video
             )
             insertedRedacted = redacted
-            redacted.thumbnailPath = thumbnailURL?.path ?? ""
+            redacted.thumbnailPath = thumbnailURL.map { StorageManager.shared.documentRelativePath(for: $0) } ?? ""
             redacted.group = video.group
             try context.save()
             return redacted

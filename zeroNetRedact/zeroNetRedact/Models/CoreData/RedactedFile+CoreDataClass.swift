@@ -30,8 +30,12 @@ public class RedactedFile: NSManagedObject, RedactableFile {
     var fileURL: URL {
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
 
-        // 如果路径包含完整的容器路径（/var/mobile/Containers...），直接使用
+        // Container UUIDs can change during an update or restore. Legacy absolute
+        // app-owned Documents paths must follow the file into the current container.
         if filePath.contains("/Containers/Data/Application/") {
+            if let separator = filePath.range(of: "/Documents/") {
+                return documentsURL.appendingPathComponent(String(filePath[separator.upperBound...]))
+            }
             return URL(fileURLWithPath: filePath)
         }
 
@@ -54,6 +58,9 @@ public class RedactedFile: NSManagedObject, RedactableFile {
 
         // 如果路径包含完整的容器路径，直接使用
         if thumbnailPath.contains("/Containers/Data/Application/") {
+            if let separator = thumbnailPath.range(of: "/Documents/") {
+                return documentsURL.appendingPathComponent(String(thumbnailPath[separator.upperBound...])).path
+            }
             return thumbnailPath
         }
 

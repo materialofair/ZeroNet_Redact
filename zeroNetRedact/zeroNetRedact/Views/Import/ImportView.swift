@@ -165,7 +165,7 @@ struct ImportView: View {
             .sheet(isPresented: $viewModel.showDocumentPicker) {
                 DocumentPickerView(viewModel: viewModel)
             }
-            .sheet(item: $selectedOriginalFile) { originalFile in
+            .fullScreenCover(item: $selectedOriginalFile) { originalFile in
                 SimpleBrushEditor(file: originalFile)
             }
             .fullScreenCover(item: $selectedVideo) { video in

@@ -15,6 +15,10 @@ struct VideoManualRegionEditor: View {
     @State private var player = AVPlayer()
     @State private var moveOrigin: CGRect?
     @State private var resizeOrigin: CGRect?
+    @State private var moveTranslation: CGSize = .zero
+    @State private var resizeTranslation: CGSize = .zero
+    @GestureState private var isMoving = false
+    @GestureState private var isResizing = false
     private let entrySeconds: Double
 
     init(model: VideoEditorViewModel, region: VideoManualRegion) {
@@ -25,7 +29,7 @@ struct VideoManualRegionEditor: View {
         _end = State(initialValue: region.end)
         _effect = State(initialValue: region.effect)
         _preset = State(initialValue: region.start == 0 && region.end == model.video.duration ? 0 : 2)
-        let current = model.player.currentTime().seconds
+        let current = model.manualEditorEntrySeconds
         let time = min(max(0, current.isFinite ? current : 0), max(0, model.video.duration - 0.001))
         entrySeconds = time
         _seconds = State(initialValue: time)
@@ -34,62 +38,16 @@ struct VideoManualRegionEditor: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                VStack(spacing: 12) {
-                    Text("video.manual.positionHint").font(.subheadline)
-                        .padding(.horizontal)
-                    canvas.frame(height: max(130, min(360, geometry.size.height * 0.44)))
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("video.manual.sourceHint").font(.caption).foregroundStyle(.secondary)
-                            Text("video.manual.size").font(.headline)
-                            HStack {
-                                Text("video.manual.width")
-                                Slider(value: Binding(get: { rect.width }, set: {
-                                    rect = VideoRegionGeometry.resized(rect, width: $0, height: rect.height)
-                                }), in: 0.05...1).accessibilityLabel(Text("video.manual.width"))
-                            }
-                            HStack {
-                                Text("video.manual.height")
-                                Slider(value: Binding(get: { rect.height }, set: {
-                                    rect = VideoRegionGeometry.resized(rect, width: rect.width, height: $0)
-                                }), in: 0.05...1).accessibilityLabel(Text("video.manual.height"))
-                            }
-                            Text("video.manual.when").font(.headline)
-                            Picker("video.manual.when", selection: $preset) {
-                                Text("video.manual.whole").tag(0)
-                                Text("video.manual.fromHere").tag(1)
-                                Text("video.manual.custom").tag(2)
-                            }.pickerStyle(.segmented)
-                                .onChange(of: preset) { _, value in
-                                    if value == 0 { start = 0; end = model.video.duration }
-                                    if value == 1 { start = entrySeconds; end = model.video.duration }
-                                }
-                            if preset == 2 {
-                                Text("video.manual.startLabel") + Text("  " + timeLabel(start))
-                                Slider(value: Binding(get: { start }, set: { start = $0; seek($0) }),
-                                       in: 0...max(0, end - minimumInterval))
-                                    .accessibilityLabel(Text("video.manual.startLabel"))
-                                Text("video.manual.endLabel") + Text("  " + timeLabel(end))
-                                Slider(value: Binding(get: { end }, set: { end = $0; seek(max(start, $0 - minimumInterval)) }),
-                                       in: min(model.video.duration, start + minimumInterval)...model.video.duration)
-                                    .accessibilityLabel(Text("video.manual.endLabel"))
-                            }
-                            Text(timeLabel(start) + " – " + timeLabel(end)).monospacedDigit().font(.caption)
-                            Text("video.manual.checkFrame").font(.headline)
-                            Slider(value: Binding(get: { seconds }, set: seek), in: 0...max(0.001, model.video.duration))
-                                .accessibilityLabel(Text("video.manual.checkFrame"))
-                            Text(timeLabel(seconds)).monospacedDigit().font(.caption)
-                            Text("video.manual.fixedHint").font(.footnote).foregroundStyle(.secondary)
-                            Picker("video.effect.title", selection: $effect) {
-                                Text("video.effect.blur").tag("blur")
-                                ForEach(VideoRedactionSticker.allCases.filter {
-                                    !$0.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess)
-                                }) { sticker in
-                                    Text(sticker.displayName).tag(sticker.rawValue)
-                                }
-                            }
-                        }.padding(.horizontal).padding(.bottom)
+                let split = EditorWorkspaceLayout.usesInspector(in: geometry.size)
+                let layout = split ? AnyLayout(HStackLayout(spacing: 12)) : AnyLayout(VStackLayout(spacing: 12))
+                layout {
+                    VStack(spacing: 12) {
+                        Text("video.manual.positionHint").font(.subheadline).padding(.horizontal)
+                        canvas.frame(height: split ? nil : max(130, min(360, geometry.size.height * 0.44)))
                     }
+                    .frame(maxWidth: .infinity, maxHeight: split ? .infinity : nil)
+                    controls
+                        .frame(width: split ? EditorWorkspaceLayout.inspectorWidth(in: geometry.size) : nil)
                 }
             }
             .navigationTitle("video.manual.positionTitle")
@@ -112,12 +70,73 @@ struct VideoManualRegionEditor: View {
                 model.player.pause()
                 // Sheet state can survive dismissal. Recreate the source item on every presentation.
                 player.isMuted = true
-                if let asset = model.player.currentItem?.asset {
+                if let asset = model.manualSourceAsset {
                     player.replaceCurrentItem(with: AVPlayerItem(asset: asset))
                 }
                 seek(seconds)
             }
+            .onChange(of: isMoving) { _, active in
+                if !active { moveOrigin = nil; moveTranslation = .zero }
+            }
+            .onChange(of: isResizing) { _, active in
+                if !active { resizeOrigin = nil; resizeTranslation = .zero }
+            }
             .onDisappear { player.pause(); player.replaceCurrentItem(with: nil) }
+        }
+    }
+
+    private var controls: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("video.manual.sourceHint").font(.caption).foregroundStyle(.secondary)
+                Text("video.manual.size").font(.headline)
+                HStack {
+                    Text("video.manual.width")
+                    Slider(value: Binding(get: { rect.width }, set: {
+                        rect = VideoRegionGeometry.resized(rect, width: $0, height: rect.height)
+                    }), in: 0.05...1).accessibilityLabel(Text("video.manual.width"))
+                }
+                HStack {
+                    Text("video.manual.height")
+                    Slider(value: Binding(get: { rect.height }, set: {
+                        rect = VideoRegionGeometry.resized(rect, width: rect.width, height: $0)
+                    }), in: 0.05...1).accessibilityLabel(Text("video.manual.height"))
+                }
+                Text("video.manual.when").font(.headline)
+                Picker("video.manual.when", selection: $preset) {
+                    Text("video.manual.whole").tag(0)
+                    Text("video.manual.fromHere").tag(1)
+                    Text("video.manual.custom").tag(2)
+                }.pickerStyle(.segmented)
+                    .onChange(of: preset) { _, value in
+                        if value == 0 { start = 0; end = model.video.duration }
+                        if value == 1 { start = entrySeconds; end = model.video.duration }
+                    }
+                if preset == 2 {
+                    Text("video.manual.startLabel") + Text("  " + timeLabel(start))
+                    Slider(value: Binding(get: { start }, set: { start = $0; seek($0) }),
+                           in: 0...max(0, end - minimumInterval))
+                        .accessibilityLabel(Text("video.manual.startLabel"))
+                    Text("video.manual.endLabel") + Text("  " + timeLabel(end))
+                    Slider(value: Binding(get: { end }, set: { end = $0; seek(max(start, $0 - minimumInterval)) }),
+                           in: min(model.video.duration, start + minimumInterval)...model.video.duration)
+                        .accessibilityLabel(Text("video.manual.endLabel"))
+                }
+                Text(timeLabel(start) + " – " + timeLabel(end)).monospacedDigit().font(.caption)
+                Text("video.manual.checkFrame").font(.headline)
+                Slider(value: Binding(get: { seconds }, set: seek), in: 0...max(0.001, model.video.duration))
+                    .accessibilityLabel(Text("video.manual.checkFrame"))
+                Text(timeLabel(seconds)).monospacedDigit().font(.caption)
+                Text("video.manual.fixedHint").font(.footnote).foregroundStyle(.secondary)
+                Picker("video.effect.title", selection: $effect) {
+                    Text("video.effect.blur").tag("blur")
+                    ForEach(VideoRedactionSticker.allCases.filter {
+                        !$0.isLocked(hasUnlimitedAccess: AppState.shared.hasUnlimitedAccess)
+                    }) { sticker in
+                        Text(sticker.displayName).tag(sticker.rawValue)
+                    }
+                }
+            }.padding(.horizontal).padding(.bottom)
         }
     }
 
@@ -148,8 +167,9 @@ struct VideoManualRegionEditor: View {
                     .frame(width: rect.width * size.width, height: rect.height * size.height)
                     .position(x: rect.midX * size.width, y: (1 - rect.midY) * size.height)
                     .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("manualCanvas"))
+                        .updating($isMoving) { _, active, _ in active = true }
                         .onChanged { value in
-                            if moveOrigin == nil { moveOrigin = rect }
+                            if moveOrigin == nil { moveOrigin = rect; moveTranslation = .zero }
                             move(value.translation, size: size)
                         }
                         .onEnded { value in move(value.translation, size: size); moveOrigin = nil })
@@ -160,8 +180,9 @@ struct VideoManualRegionEditor: View {
                     .frame(width: 48, height: 48).contentShape(Rectangle())
                     .position(x: rect.maxX * size.width, y: (1 - rect.minY) * size.height)
                     .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("manualCanvas"))
+                        .updating($isResizing) { _, active, _ in active = true }
                         .onChanged { value in
-                            if resizeOrigin == nil { resizeOrigin = rect }
+                            if resizeOrigin == nil { resizeOrigin = rect; resizeTranslation = .zero }
                             resize(value.translation, size: size)
                         }
                         .onEnded { value in resize(value.translation, size: size); resizeOrigin = nil })
@@ -175,14 +196,24 @@ struct VideoManualRegionEditor: View {
 
     private func move(_ translation: CGSize, size: CGSize) {
         guard let origin = moveOrigin else { return }
-        rect = VideoRegionGeometry.centered(origin, at: CGPoint(x: origin.midX + translation.width / size.width, y: origin.midY - translation.height / size.height))
+        let delta = EditorCanvasGeometry.normalized(
+            CGSize(width: translation.width - moveTranslation.width,
+                   height: translation.height - moveTranslation.height), in: size)
+        rect = VideoRegionGeometry.centered(origin, at: CGPoint(x: origin.midX + delta.width, y: origin.midY - delta.height))
+        moveOrigin = rect
+        moveTranslation = translation
     }
 
     private func resize(_ translation: CGSize, size: CGSize) {
         guard let origin = resizeOrigin else { return }
-        let width = min(1 - origin.minX, max(0.05, origin.width + translation.width / size.width))
-        let height = min(origin.maxY, max(0.05, origin.height + translation.height / size.height))
+        let delta = EditorCanvasGeometry.normalized(
+            CGSize(width: translation.width - resizeTranslation.width,
+                   height: translation.height - resizeTranslation.height), in: size)
+        let width = min(1 - origin.minX, max(0.05, origin.width + delta.width))
+        let height = min(origin.maxY, max(0.05, origin.height + delta.height))
         rect = CGRect(x: origin.minX, y: origin.maxY - height, width: width, height: height)
+        resizeOrigin = rect
+        resizeTranslation = translation
     }
 }
 

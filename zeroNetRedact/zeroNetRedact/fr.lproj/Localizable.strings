@@ -722,3 +722,8 @@
 "ocr.documentScope" = "Détecte les numéros de téléphone internationaux et certains formats de pièces d’identité et de passeports. Vérifiez les zones proposées avant de partager.";
 
 "ocr.languageScope" = "Les photos, images longues et PDF numérisés utilisent l’OCR sur l’appareil. Les langues dépendent de votre version d’iOS. Les PDF texte utilisent le texte intégré ; le texte des vidéos reste à masquer manuellement.";
+
+"video.preview.preparing" = "Préparation de l’aperçu masqué…";
+"video.preview.unavailable" = "Aperçu indisponible. Essayez de rouvrir la vidéo.";
+
+"video.preview.ready" = "Aperçu masqué prêt";

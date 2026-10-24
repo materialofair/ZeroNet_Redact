@@ -12,7 +12,9 @@ import SwiftUI
 /// 涂抹路径
 struct BrushStroke: Identifiable {
     let id = UUID()
+    /// Points and padding are normalized to the unzoomed media, never the window.
     var points: [CGPoint]
+    var padding: CGSize
 }
 
 // MARK: - Brush Effect Enum

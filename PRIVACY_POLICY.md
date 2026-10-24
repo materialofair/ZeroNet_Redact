@@ -1,159 +1,63 @@
-# Privacy Policy / 隐私政策
+# Cloakmark Privacy Policy / 隐私政策
 
-**Last Updated / 最后更新: 2025-11-26**
+Last updated / 最后更新：2026-10-24
 
-## Unreleased v1.5 storage update / 未发布 v1.5 存储说明
+Cloakmark, listed as **Video Blur: Cloakmark** (formerly ZeroNet Redact), processes photos, videos and PDFs on your device. This policy describes the source in this repository; it is not an independent privacy audit or proof that a store binary matches this source.
 
-Editing drafts are stored locally in encrypted files, including editing operations, pending recognition results, video settings, and any rotated replacement image needed for restoration. The share extension stores incoming images/PDFs in an encrypted App Group inbox with a separate key. The containing app imports these files after authentication. Successfully imported entries are removed; failed entries remain locally encrypted for retry. No draft or inbox content is sent to a server.
-
-编辑草稿以加密文件保存在设备本地，包含编辑操作、待处理识别结果、视频设置，以及恢复时必要的旋转替换图片。分享扩展使用独立密钥，将图片/PDF 加密存入 App Group 收件箱。主应用通过认证后导入；成功条目删除，失败条目保留为本地加密文件以便重试。草稿和收件箱内容不会发送到服务器。
-
----
+Cloakmark 的商店名称为 **Video Blur: Cloakmark**（原 ZeroNet Redact），在设备上处理照片、视频和 PDF。本说明对应本仓库源码，不代表独立隐私审计，也不证明商店二进制与源码完全一致。
 
 ## English
 
-### Introduction
+### Processing and network use
 
-ZeroNet Redact ("we", "our", or "the app") is committed to protecting your privacy. This Privacy Policy explains how we handle your information when you use our application.
+Media recognition, redaction, video face analysis and voice effects run locally. Processing does not require uploading your original media to a server. No app account is required. The reviewed source does not include developer-operated media upload, advertising, analytics or remote crash-reporting services.
 
-### Our Core Principle: We Collect Nothing
+The app **can use the network** through Apple StoreKit. `StoreManager` requests product information at initialization (`Product.products`), handles purchases (`product.purchase`), listens for transaction updates and restores purchases (`AppStore.sync`). Apple may process account, transaction and service data under its own policies. Product queries can occur without you pressing Buy. Offline media processing does not mean that the app never connects to the internet.
 
-ZeroNet Redact is designed with privacy as its foundation. **We do not collect, store, transmit, or share any personal data whatsoever.**
+Opening external links or choosing a destination in the system share sheet uses the selected website, app or service and its privacy practices. Apple platform diagnostics, Photos, Files providers and device backup/synchronization settings are outside the app's local processing promise.
 
-### Data Collection
+### Local storage and exported copies
 
-**We do NOT collect:**
-- Personal information (name, email, phone number, etc.)
-- Device identifiers or advertising IDs
-- Location data
-- Usage analytics or behavioral data
-- Crash reports or diagnostics
-- Any images or documents you process
+- Imported originals and editing drafts are encrypted locally using the app's CryptoKit storage paths; keys are held in Keychain. Video originals use authenticated chunk encryption.
+- Drafts can contain editing operations, recognition results, video settings and rotated replacement images needed for restoration.
+- The share extension encrypts incoming images/PDFs in an App Group inbox using a separate key. The containing app consumes the inbox after authentication. Successfully imported entries are removed; failed entries remain encrypted for retry.
+- Exported redacted copies are stored **unencrypted** for preview and sharing. Processing can also create temporary decrypted files or decoded data. Encryption of originals does not encrypt every copy or every processing buffer.
+- You can delete files managed by the app. Copies saved to Photos, Files, backups or other apps must be managed in those destinations; deleting the app does not remove all such copies. Keychain has its own lifecycle.
 
-### How the App Works
+### Detection and security limits
 
-- **Completely Offline**: The app operates entirely offline and has no network capabilities. It does not request internet permissions and cannot connect to any servers.
-- **Local Processing**: All image and PDF redaction is performed locally on your device.
-- **Local Storage**: All files are stored exclusively on your device in encrypted form. We have no access to your data.
-- **No Accounts**: The app does not require registration or login. There are no user accounts.
+`VideoFaceAnalyzer` uses Apple's Vision face rectangle detection with adaptive sampling and `FaceTrackSmoother` to build local face trajectories. `VideoCompositionFactory` renders automatic face covers first, then active manual regions. Manual rectangles stay at the chosen position during their time interval; they do not become motion tracking. Track association and user-confirmed grouping are not identity recognition.
 
-### Data Storage
+Detection can miss faces or other private details, especially during rapid motion, occlusion or sparse sampling. Blur, stickers, voice effects and encryption do not guarantee anonymity or eliminate privacy risk. Review the entire exported file, including audio and all pages/frames relevant to your material, before sharing. Device access, software defects, temporary files, backups and the destinations you choose can affect privacy.
 
-- Original files you import are encrypted using AES-256 encryption and stored locally on your device.
-- Encryption keys are stored securely in your device's Keychain.
-- Redacted files are stored locally in unencrypted form for easy sharing.
-- You have full control over your data and can delete it at any time.
+### Contact and changes
 
-### Third-Party Services
-
-ZeroNet Redact does not integrate any third-party services, including:
-- Analytics services
-- Advertising networks
-- Crash reporting tools
-- Social media SDKs
-- Cloud storage services
-
-### Children's Privacy
-
-Our app does not collect any personal information from anyone, including children under the age of 13.
-
-### Data Security
-
-Since we do not collect or transmit any data, there is no risk of data breach from our end. Your files remain on your device, protected by:
-- AES-256 encryption for original files
-- iOS Keychain for encryption key storage
-- Optional Face ID / Touch ID / Password protection
-
-### Your Rights
-
-Since we do not collect any data:
-- There is no data to access, correct, or delete from our servers
-- You have complete control over all data stored locally on your device
-- You can delete all app data at any time through the app settings or by uninstalling the app
-
-### Changes to This Policy
-
-We may update this Privacy Policy from time to time. We will notify you of any changes by updating the "Last Updated" date at the top of this policy.
-
-### Contact Us
-
-If you have any questions about this Privacy Policy, please contact us via:
-- GitHub Issues: https://github.com/materialofair/ZeroNet-Redact/issues
-
----
+Policy updates are recorded by the date above. For questions, use [GitHub Issues](https://github.com/materialofair/ZeroNet_Redact/issues). Issues are public; do not attach private originals, credentials or sensitive examples.
 
 ## 中文
 
-### 简介
+### 处理与联网
 
-ZeroNet Redact（"我们"、"本应用"）致力于保护您的隐私。本隐私政策说明了您在使用本应用时，我们如何处理您的信息。
+媒体识别、脱敏、视频人脸分析和声音效果均在本地运行，处理无需将原始素材上传到服务器，也无需注册应用账号。此次审查的源码未包含开发者运营的媒体上传、广告、使用分析或远程崩溃上报服务。
 
-### 核心原则：我们不收集任何数据
+应用**可以通过 Apple StoreKit 联网**。`StoreManager` 初始化时查询商品信息（`Product.products`），并处理购买（`product.purchase`）、交易更新与恢复购买（`AppStore.sync`）。Apple 可依其自身政策处理账号、交易和服务数据；未点击购买也可能触发商品查询。本地媒体处理不等于应用从不联网。
 
-ZeroNet Redact 以隐私保护为设计基础。**我们不收集、存储、传输或分享任何个人数据。**
+打开外部链接或在系统分享面板选择目的地，会使用所选网站、应用或服务及其隐私规则。Apple 平台诊断、照片、文件提供程序以及设备备份/同步设置，不属于应用本地处理承诺的范围。
 
-### 数据收集
+### 本地存储与导出副本
 
-**我们不收集：**
-- 个人信息（姓名、邮箱、电话号码等）
-- 设备标识符或广告 ID
-- 位置数据
-- 使用分析或行为数据
-- 崩溃报告或诊断信息
-- 您处理的任何图片或文档
+- 导入的原件和编辑草稿通过应用的 CryptoKit 存储路径在本地加密，密钥存于 Keychain；视频原件使用认证分块加密。
+- 草稿可能包含编辑操作、识别结果、视频设置和恢复所需的旋转替换图片。
+- 分享扩展使用独立密钥，将图片/PDF 加密保存在 App Group 收件箱，主应用通过认证后导入。成功条目删除，失败条目保留为加密内容以便重试。
+- 导出的脱敏副本以**未加密形式**保存在本地，便于预览和分享。处理过程也可能产生临时解密文件或解码数据。原件加密不表示所有副本及处理缓冲区均已加密。
+- 可删除应用管理的文件；保存到照片、文件、备份或其他应用的副本需在相应目的地管理。卸载应用不会删除所有这些副本，Keychain 也有自身的存续规则。
 
-### 应用如何运作
+### 检测与安全限制
 
-- **完全离线**：本应用完全离线运行，没有任何网络功能。应用不请求网络权限，无法连接任何服务器。
-- **本地处理**：所有图片和 PDF 脱敏处理都在您的设备上本地完成。
-- **本地存储**：所有文件都以加密形式仅存储在您的设备上。我们无法访问您的数据。
-- **无需账号**：本应用不需要注册或登录，没有用户账号系统。
+`VideoFaceAnalyzer` 通过 Apple Vision 人脸矩形检测、自适应采样与 `FaceTrackSmoother` 生成本地人脸轨迹。`VideoCompositionFactory` 先渲染自动人脸覆盖，再叠加当前时段的手动区域。手动矩形在指定时段保持选定位置，不会因此自动跟随运动；轨迹关联和用户确认的分组不等于身份识别。
 
-### 数据存储
+检测可能遗漏人脸或其他隐私信息，快速移动、遮挡和稀疏采样等情况尤其需要复核。模糊、贴纸、声音效果和加密均不能保证匿名或消除隐私风险。分享前请检查完整导出文件，包括音频及相关页面/帧。设备访问、软件缺陷、临时文件、备份和所选分享目的地都可能影响隐私。
 
-- 您导入的原始文件使用 AES-256 加密后存储在您的设备本地。
-- 加密密钥安全存储在您设备的钥匙串（Keychain）中。
-- 脱敏后的文件以未加密形式存储在本地，方便分享。
-- 您对数据拥有完全控制权，可以随时删除。
+### 联系与变更
 
-### 第三方服务
-
-ZeroNet Redact 不集成任何第三方服务，包括：
-- 分析服务
-- 广告网络
-- 崩溃报告工具
-- 社交媒体 SDK
-- 云存储服务
-
-### 儿童隐私
-
-本应用不收集任何人的个人信息，包括 13 岁以下的儿童。
-
-### 数据安全
-
-由于我们不收集或传输任何数据，因此不存在来自我们的数据泄露风险。您的文件保留在您的设备上，受到以下保护：
-- 原始文件采用 AES-256 加密
-- 加密密钥存储在 iOS 钥匙串中
-- 可选的 Face ID / Touch ID / 密码保护
-
-### 您的权利
-
-由于我们不收集任何数据：
-- 我们的服务器上没有需要访问、更正或删除的数据
-- 您对本地存储在设备上的所有数据拥有完全控制权
-- 您可以随时通过应用设置或卸载应用来删除所有应用数据
-
-### 政策变更
-
-我们可能会不时更新本隐私政策。如有变更，我们将更新本政策顶部的"最后更新"日期。
-
-### 联系我们
-
-如果您对本隐私政策有任何疑问，请通过以下方式联系我们：
-- GitHub Issues: https://github.com/materialofair/ZeroNet-Redact/issues
-
----
-
-**ZeroNet Redact - Your privacy, truly protected.**
-
-**ZeroNet Redact - 真正保护您的隐私。**
+政策更新以顶部日期记录。如有问题，请使用 [GitHub Issues](https://github.com/materialofair/ZeroNet_Redact/issues)。Issues 为公开内容，请勿附上私人原件、凭据或敏感示例。

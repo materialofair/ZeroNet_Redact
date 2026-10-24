@@ -722,3 +722,8 @@
 "ocr.documentScope" = "辨識國際電話號碼及部分證件、護照格式。分享前請檢查建議遮蓋區域。";
 
 "ocr.languageScope" = "照片、長圖及掃描 PDF 使用本機 OCR；可選語言取決於 iOS 版本。文字 PDF 直接擷取文字，影片文字仍需手動遮蓋。";
+
+"video.preview.preparing" = "正在準備去識別化預覽…";
+"video.preview.unavailable" = "暫時無法預覽，請重新開啟影片。";
+
+"video.preview.ready" = "去識別化預覽已就緒";

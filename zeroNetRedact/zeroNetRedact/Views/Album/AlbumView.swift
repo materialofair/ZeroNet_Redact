@@ -101,7 +101,7 @@ struct AlbumView: View {
                         .toolbar { Button("common.close") { showStatistics = false } }
                 }.presentationDetents([.medium, .large])
             }
-            .sheet(item: $sourceToOpen) { file in
+            .fullScreenCover(item: $sourceToOpen) { file in
                 if let video = file as? OriginalVideo {
                     VideoEditorView(video: video)
                 } else { SimpleBrushEditor(file: file) }

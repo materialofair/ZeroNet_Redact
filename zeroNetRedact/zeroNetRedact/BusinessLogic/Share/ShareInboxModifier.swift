@@ -20,7 +20,7 @@ struct ShareInboxModifier: ViewModifier {
                 Button("share.retry") { message = nil; Task { await consume() } }
                 Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) { message = nil }
             } message: { Text(message ?? "") }
-            .sheet(item: $selectedFile) { file in
+            .fullScreenCover(item: $selectedFile) { file in
                 if !appState.shouldAuthenticate() { SimpleBrushEditor(file: file) }
                 else { AuthenticationView() }
             }

@@ -10,7 +10,7 @@
 
 ### License note
 
-ZeroNet Redact's own source code is licensed under GPL-3.0. When the app
+Cloakmark's own source code is licensed under GPL-3.0. When the app
 binary links MuPDF (AGPL-3.0), the combined work is distributed under the
 terms of AGPL-3.0, per GPLv3 section 13. The complete, unmodified source of
 MuPDF is available at the upstream URL above and via the git submodule
@@ -31,7 +31,7 @@ details.
 - **License**: Creative Commons Attribution 4.0 International (CC-BY-4.0)
 - **License text**: https://creativecommons.org/licenses/by/4.0/legalcode
 - **Assets used**: `1f60e`, `1f43c`, `1f47d`, `1f60d`, `1f916`, `1f921`, and `1f981`
-- **Usage and modifications**: bundled as vector artwork for video face-cover stickers. ZeroNet Redact places the original transparent graphics on app-created opaque colored backgrounds and scales them to fit the covered face rectangle so underlying video pixels cannot show through.
+- **Usage and modifications**: bundled as vector artwork for video face-cover stickers. Cloakmark places the original transparent graphics on app-created opaque colored backgrounds and scales them to fit the covered face rectangle so underlying video pixels cannot show through.
 
 The pinned asset checksums are recorded in
 `third_party/twemoji-stickers/SHA256SUMS`.

@@ -864,3 +864,7 @@
 "ocr.documentScope" = "识别国际电话号码及部分证件、护照格式。分享前请复核建议遮盖区域。";
 
 "ocr.languageScope" = "照片、长图及扫描 PDF 使用本机 OCR；可选语言取决于 iOS 版本。文字 PDF 直接提取文字，视频文字仍需手动遮盖。";
+"video.preview.preparing" = "正在准备脱敏预览…";
+"video.preview.unavailable" = "暂时无法预览，请重新打开视频。";
+
+"video.preview.ready" = "脱敏预览已就绪";

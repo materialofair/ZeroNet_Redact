@@ -141,6 +141,7 @@ struct OriginalFileGridItem: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabelText)
+        .accessibilityIdentifier("files.original.\(file.fileType.rawValue)")
         .accessibilityHint(
             NSLocalizedString(
                 isSelectionMode ? "import.accessibility.selectHint" : "import.accessibility.editHint",

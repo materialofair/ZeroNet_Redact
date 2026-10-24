@@ -48,6 +48,37 @@ final class ImageRedactionEditorRenderTests: XCTestCase {
         image?.pngData()
     }
 
+    func testFoldedStrokeUsesSamePixelsThroughExportUndoAndRedo() async throws {
+        let original = makeTestImage()
+        let editor = makeEditor(image: original)
+        let originalData = data(editor.currentImage)
+        let points = [
+            EditorCanvasGeometry.normalized(CGPoint(x: 25, y: 25), in: CGSize(width: 100, height: 100)),
+            EditorCanvasGeometry.normalized(CGPoint(x: 200, y: 200), in: CGSize(width: 400, height: 400))
+        ]
+        let padding = EditorCanvasGeometry.normalized(CGSize(width: 10, height: 10), in: CGSize(width: 100, height: 100))
+        let bounds = try XCTUnwrap(EditorCanvasGeometry.strokeBounds(points: points, padding: padding, in: original.size))
+        editor.applyRedaction(at: bounds, effect: .solidBlack)
+        let exportedData = try await editor.exportRedactedFile()
+        let exported = try XCTUnwrap(UIImage(data: exportedData))
+        let covered = CGPoint(x: 0.4, y: 0.4)
+        let untouched = CGPoint(x: 0.8, y: 0.8)
+        XCTAssertNotEqual(pixelColor(exported, at: covered), pixelColor(original, at: covered))
+        XCTAssertEqual(pixelColor(exported, at: untouched), pixelColor(original, at: untouched))
+        let expected = makeEditor(image: original)
+        expected.applyRedaction(at: CGRect(x: 30, y: 30, width: 90, height: 90), effect: .solidBlack)
+        await expected.waitForPendingRender()
+        await editor.waitForPendingRender()
+        XCTAssertEqual(data(editor.currentImage), data(expected.currentImage))
+        editor.undo()
+        await editor.waitForPendingRender()
+        XCTAssertEqual(data(editor.currentImage), originalData)
+        editor.redo()
+        let redoneData = try await editor.exportRedactedFile()
+        let redone = try XCTUnwrap(UIImage(data: redoneData))
+        XCTAssertEqual(pixelColor(redone, at: covered), pixelColor(exported, at: covered))
+    }
+
     // MARK: - 批量应用
 
     func testApplySolidBlackChangesPixels() async throws {

@@ -60,7 +60,7 @@ struct BatchRedactionView: View {
             }
             .navigationTitle("batch.title")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("common.close") { queue.cancel(); dismiss() } } }
-            .sheet(item: $review, onDismiss: queue.reconcile) { item in
+            .fullScreenCover(item: $review, onDismiss: queue.reconcile) { item in
                 if let file = try? queue.original(id: item.originalID) {
                     SimpleBrushEditor(file: file, batchItem: item)
                 } else { ContentUnavailableView("batch.missing", systemImage: "photo.badge.exclamationmark") }
@@ -71,7 +71,7 @@ struct BatchRedactionView: View {
             .confirmationDialog("batch.clearConfirm", isPresented: $confirmClear) {
                 Button("batch.clear", role: .destructive) { queue.clear() }
             }
-            .onDisappear { queue.cancel() }
+            .onDisappear { if review == nil { queue.cancel() } }
         }
     }
 }

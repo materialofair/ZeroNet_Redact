@@ -14,10 +14,13 @@ nonisolated class CryptoEngine: @unchecked Sendable {
     static let shared = CryptoEngine()
 
     private let keychain = KeychainManager()
-    private let masterKeyTag = "com.zeronet.redact.masterkey"
+    private let masterKeyTag: String
     private let masterKeyLock = NSLock()
 
-    private init() {}
+    private convenience init() { self.init(masterKeyTag: "com.zeronet.redact.masterkey") }
+
+    /// Separate namespaces let tests exercise key rotation without changing the application's key.
+    init(masterKeyTag: String) { self.masterKeyTag = masterKeyTag }
 
     // MARK: - 主密钥管理
 

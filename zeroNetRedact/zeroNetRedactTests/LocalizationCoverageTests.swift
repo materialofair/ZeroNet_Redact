@@ -9,7 +9,7 @@ final class LocalizationCoverageTests: XCTestCase {
         let app = Bundle.main
         let english = try languageBundle("en", in: app)
         let baseline = try strings(in: english)
-        XCTAssertEqual(baseline.count, 718)
+        XCTAssertEqual(baseline.count, 721)
         for language in languages {
             let bundle = try languageBundle(language, in: app)
             let values = try strings(in: bundle)
@@ -65,7 +65,7 @@ final class LocalizationCoverageTests: XCTestCase {
         for language in languages {
             let bundle = try languageBundle(language, in: share)
             let values = try strings(in: bundle)
-            XCTAssertEqual(values.count, 718, language)
+            XCTAssertEqual(values.count, 721, language)
             for key in ["share.instructions", "share.save", "share.saved", "share.error.size", "common.ok"] {
                 XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, language)
             }

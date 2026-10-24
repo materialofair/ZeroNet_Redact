@@ -30,19 +30,21 @@ Actual app screens with fictional examples. The orange video box is an editing s
 
 ## 中文
 
+当前源码版本为 **1.5.5（26）**，保留发布脚本推进后的构建号。发布归档为 **1.5.5（25）**；两者区别和构建方式见 [版本与构建说明](docs/releases/1.5.5.md)。
+
 v1.5 开发内容与验证记录见 [v1.5 开发交付说明](docs/v1.5-development-notes.md)，包括加密草稿、文字搜索、PDF 导航、系统分享导入与导出处理记录。
 
 ### 为什么做这个应用？
 
-发送照片、视频或 PDF 前，先遮住不想公开的信息。Cloakmark 支持图片文字与人脸复核、视频指定区域和时段遮挡、PDF 敏感文字搜索与逐页处理，再导出副本用于分享。视频手动框位置固定，请完整预览移动内容。
+发送照片、视频或 PDF 前，先遮住不想公开的信息。Cloakmark 支持图片文字与人脸复核、视频指定区域和时段遮挡、PDF 敏感文字搜索与逐页处理，再导出副本用于分享。视频会先应用本地自动人脸轨迹，再叠加指定时段的手动区域。手动框位置固定；自动检测与轨迹关联可能遗漏或错配，请完整检查导出结果。
 
 **文件内容在设备本地处理，无需上传原文件。自动检测可能遗漏信息，分享前请检查完整导出结果。**
 
 ### 核心理念
 
-- **离线处理** — 脱敏操作无需网络；购买和恢复购买使用 Apple 服务
-- **本地处理** — 所有脱敏操作都在你的设备上完成，没有云端、没有服务器
-- **隐私至上** — 无账号、无追踪、无广告，我们不知道你是谁，也不想知道
+- **离线处理** — 脱敏操作无需网络；商品查询、购买和恢复购买可通过 Apple StoreKit 联网
+- **本地处理** — 所有脱敏操作都在你的设备上完成，处理无需上传原始素材
+- **隐私设计** — 处理无需应用账号；源码未集成广告或使用分析服务
 - **开源透明** — 开源不是为了免费，而是为了让你可以验证我们的承诺，建立彼此的信任
 
 ### 功能特性
@@ -75,19 +77,14 @@ v1.5 开发内容与验证记录见 [v1.5 开发交付说明](docs/v1.5-developm
 或克隆代码自行编译：
 
 ```bash
-git clone https://github.com/materialofair/ZeroNet_Redact.git
+git clone --recurse-submodules https://github.com/materialofair/ZeroNet_Redact.git
 cd ZeroNet_Redact/zeroNetRedact
 open zeroNetRedact.xcodeproj
 ```
 
 ### 隐私政策
 
-**我们的承诺：不收集任何数据。**
-
-- 所有图片、PDF 和视频处理都在本地完成
-- 加密文件仅存储在你的设备上
-- 我们不会上传任何图片或数据
-- 我们不会追踪你的使用行为
+媒体在本地处理，无需上传原始素材。StoreKit 商品查询、购买和恢复购买可联网；导出副本未加密，系统分享、备份和外部目的地另有隐私影响。详见 [隐私政策](PRIVACY_POLICY.md)。
 
 ### 反馈与建议
 
@@ -104,17 +101,19 @@ App 自身代码以 GPL-3.0 许可；二进制链接 MuPDF（AGPL-3.0）后按 A
 
 ## English
 
+Current source: **1.5.5 (26)**, preserving the build number advanced by the release script. The release archive was **1.5.5 (25)**. See [version and build notes](docs/releases/1.5.5.md).
+
 ### Why This App?
 
-Hide a phone number in a photo, cover a private detail in a video, or redact text in a PDF. Cloakmark brings all three workflows together: import, review, cover, and export a copy. Manual video covers stay in a fixed position; preview moving content carefully.
+Hide a phone number in a photo, cover a private detail in a video, or redact text in a PDF. Cloakmark brings all three workflows together: import, review, cover, and export a copy. Video processing applies local automatic face trajectories first, then active manual regions. Manual covers stay in a fixed position. Detection and track association can miss or mismatch faces; review the entire export.
 
 **Content is processed on your device without uploading your originals. Automatic detection can miss details; review the entire exported result before sharing.**
 
 ### Core Philosophy
 
-- **Offline Processing** — Redaction works offline. Purchases and restoring purchases use Apple services.
-- **Local Processing** — All redaction happens on your device. No cloud, no servers.
-- **Privacy First** — No accounts, no tracking, no ads. We don't know who you are, and we don't want to.
+- **Offline Processing** — Redaction works offline. Product queries, purchases and restores can connect through Apple StoreKit.
+- **Local Processing** — All redaction happens on your device. Processing does not require uploading originals.
+- **Privacy Design** — No app account needed for processing; the source does not integrate advertising or usage analytics services.
 - **Open Source** — Open source isn't about being free—it's about letting you verify our promises and building mutual trust.
 
 ### Features
@@ -147,19 +146,14 @@ Try 3 PDF exports and 3 combined photo/video exports per day for free. Free vide
 Or clone and build:
 
 ```bash
-git clone https://github.com/materialofair/ZeroNet_Redact.git
+git clone --recurse-submodules https://github.com/materialofair/ZeroNet_Redact.git
 cd ZeroNet_Redact/zeroNetRedact
 open zeroNetRedact.xcodeproj
 ```
 
 ### Privacy Policy
 
-**Our Promise: We collect nothing.**
-
-- All image, PDF, and video processing happens locally
-- Encrypted files are stored only on your device
-- We never upload any images or data
-- We never track your usage
+Media is processed locally without requiring upload of originals. StoreKit product queries, purchases and restores can use the network. Exported copies are unencrypted; system sharing, backups and external destinations have separate privacy implications. See the [privacy policy](PRIVACY_POLICY.md).
 
 ### Feedback
 

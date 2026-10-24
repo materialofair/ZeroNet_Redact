@@ -722,3 +722,8 @@
 "ocr.documentScope" = "Erkennt internationale Telefonnummern und bestimmte Ausweis- und Passformate. Prüfen Sie vorgeschlagene Bereiche vor dem Teilen.";
 
 "ocr.languageScope" = "Fotos, lange Bilder und gescannte PDFs verwenden OCR auf dem Gerät. Die Sprachen hängen von Ihrer iOS-Version ab. Text-PDFs verwenden eingebetteten Text; Text in Videos wird weiterhin manuell verdeckt.";
+
+"video.preview.preparing" = "Geschützte Vorschau wird vorbereitet…";
+"video.preview.unavailable" = "Vorschau nicht verfügbar. Öffne das Video erneut.";
+
+"video.preview.ready" = "Geschützte Vorschau bereit";

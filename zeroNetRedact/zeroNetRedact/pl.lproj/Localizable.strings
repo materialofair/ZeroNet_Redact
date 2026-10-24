@@ -722,3 +722,8 @@
 "ocr.documentScope" = "Wykrywa międzynarodowe numery telefonów oraz wybrane formaty dokumentów tożsamości i paszportów. Sprawdź proponowane obszary przed udostępnieniem.";
 
 "ocr.languageScope" = "Zdjęcia, długie obrazy i skanowane pliki PDF korzystają z OCR na urządzeniu. Języki zależą od wersji iOS. Tekstowe pliki PDF używają osadzonego tekstu; tekst w filmach nadal wymaga ręcznego zasłonięcia.";
+
+"video.preview.preparing" = "Przygotowywanie podglądu z maskowaniem…";
+"video.preview.unavailable" = "Podgląd niedostępny. Otwórz film ponownie.";
+
+"video.preview.ready" = "Podgląd z maskowaniem gotowy";

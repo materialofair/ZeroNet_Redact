@@ -12,19 +12,28 @@ import CryptoKit
 final class CryptoEngineTests: XCTestCase {
 
     var cryptoEngine: CryptoEngine!
+    private var testKeyTag: String!
 
     override func setUp() {
         super.setUp()
-        cryptoEngine = CryptoEngine.shared
+        testKeyTag = "com.zeronet.redact.tests.\(UUID())"
+        cryptoEngine = CryptoEngine(masterKeyTag: testKeyTag)
     }
 
     override func tearDown() {
         // 清理测试数据
-        try? cryptoEngine.resetMasterKey()
+        try? KeychainManager().deleteKey(tag: testKeyTag)
         super.tearDown()
     }
 
     // MARK: - 加密/解密往返测试
+
+    func testRotatingTestNamespacePreservesApplicationKey() throws {
+        let sentinel = Data("synthetic namespace isolation check".utf8)
+        let protected = try CryptoEngine.shared.encrypt(data: sentinel)
+        try cryptoEngine.resetMasterKey()
+        XCTAssertEqual(try CryptoEngine.shared.decrypt(data: protected), sentinel)
+    }
 
     /// 测试基本的加密解密往返
     func testEncryptDecryptRoundtrip() throws {
