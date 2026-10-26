@@ -10,11 +10,11 @@ Cloakmark 的 App Store 名称为 **Video Blur: Cloakmark**（App Store ID **675
 
 **照片、视频、PDF，一处完成本地脱敏。**
 
-[Download on the App Store](https://apps.apple.com/app/id6756290503) · [Website / 官网](https://zeronet-redact.materialofair.chatgpt.site/en/)
+[Download on the App Store](https://apps.apple.com/app/id6756290503) · [Website / 官网](https://redact.siproducers.com/)
 
 No account required · On-device processing · One-time upgrade, no subscription
 
-[Product facts / 产品资料](docs/marketing/product-facts.md) · [Photo guide](https://zeronet-redact.materialofair.chatgpt.site/en/guides/redact-photos-iphone/) · [Video guide](https://zeronet-redact.materialofair.chatgpt.site/en/guides/redact-video-iphone/) · [PDF guide](https://zeronet-redact.materialofair.chatgpt.site/en/guides/redact-pdf-iphone/)
+[Product facts / 产品资料](docs/marketing/product-facts.md) · [Photo guide](https://redact.siproducers.com/en/guides/redact-photos-iphone/) · [Video guide](https://redact.siproducers.com/en/guides/redact-video-iphone/) · [PDF guide](https://redact.siproducers.com/en/guides/redact-pdf-iphone/)
 
 [English](#english) | [中文](#中文)
 
@@ -70,7 +70,7 @@ v1.5 开发内容与验证记录见 [v1.5 开发交付说明](docs/v1.5-developm
 
 ### 安装
 
-从 [App Store](https://apps.apple.com/app/id6756290503) 下载，或访问[产品官网](https://zeronet-redact.materialofair.chatgpt.site/)。
+从 [App Store](https://apps.apple.com/app/id6756290503) 下载，或访问[产品官网](https://redact.siproducers.com/)。
 
 免费版每天可导出 3 个 PDF，以及合计 3 个图片/视频；免费视频源文件上限为 300 MB。一次性内购可解除这些限制并解锁高级贴纸，无订阅。价格以当地 App Store 为准。
 
@@ -139,7 +139,7 @@ Hide a phone number in a photo, cover a private detail in a video, or redact tex
 
 ### Installation
 
-Download from the [App Store](https://apps.apple.com/app/id6756290503) or visit the [product website](https://zeronet-redact.materialofair.chatgpt.site/en/).
+Download from the [App Store](https://apps.apple.com/app/id6756290503) or visit the [product website](https://redact.siproducers.com/).
 
 Try 3 PDF exports and 3 combined photo/video exports per day for free. Free video exports support source files up to 300 MB. A one-time purchase removes these limits and unlocks premium stickers. No subscription; see your local App Store for pricing.
 
