@@ -30,7 +30,7 @@ Actual app screens with fictional examples. The orange video box is an editing s
 
 ## 中文
 
-当前源码版本为 **1.5.5（26）**，保留发布脚本推进后的构建号。发布归档为 **1.5.5（25）**；两者区别和构建方式见 [版本与构建说明](docs/releases/1.5.5.md)。
+当前公开源码已同步至 **1.5.6（26）** 的正式发布源码副本，主应用与分享扩展的版本均与本地上传归档一致。版本来源、文件哈希、验证范围和构建方式见 [1.5.6 源码说明](docs/releases/1.5.6.md)。这不代表独立安全审计或商店二进制逐字节复现。
 
 v1.5 开发内容与验证记录见 [v1.5 开发交付说明](docs/v1.5-development-notes.md)，包括加密草稿、文字搜索、PDF 导航、系统分享导入与导出处理记录。
 
@@ -101,7 +101,7 @@ App 自身代码以 GPL-3.0 许可；二进制链接 MuPDF（AGPL-3.0）后按 A
 
 ## English
 
-Current source: **1.5.5 (26)**, preserving the build number advanced by the release script. The release archive was **1.5.5 (25)**. See [version and build notes](docs/releases/1.5.5.md).
+Current public source is synchronized with the **1.5.6 (26)** release-source copy. App and share-extension versions match the local uploaded archive. See [1.5.6 source notes](docs/releases/1.5.6.md) for provenance, file hashes, validation and build instructions. This is not an independent security audit or proof of byte-for-byte App Store binary reproducibility.
 
 ### Why This App?
 

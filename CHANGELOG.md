@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.6
+
+- Synchronize app and share-extension project settings to the uploaded release source: 1.5.6 (26).
+- Preserve the release-source script fix: validate a common build number without mutating the project during compilation. Set the next build number before the next Archive.
+- Product implementation is unchanged from the previously synchronized 1.5.5 source. Existing privacy clarifications, license notices and official website links are retained.
+- Add [release-source provenance and verification](docs/releases/1.5.6.md) and a SHA-256 manifest of the matching app, extension, test and build inputs.
+
 ## 1.5.5
 
 - Preserve normalized brush/media coordinates across resizing windows and use available space for editor controls.

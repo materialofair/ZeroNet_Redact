@@ -1,0 +1,1049 @@
+{
+  "app": "Cloakmark",
+  "version": "1.5.6",
+  "build": "26",
+  "verified_on": "2026-11-07",
+  "scope": "Tracked app, share-extension, test and build input files, compared byte-for-byte against the retained release-source copy. Dependency source is pinned separately; local signing, build products and private operational evidence are excluded.",
+  "files": [
+    {
+      "path": ".gitmodules",
+      "sha256": "35acec916f29a09465d70d2a69a79d4cf5cd37046c9cefa6b599a18d94ca713e"
+    },
+    {
+      "path": "scripts/build-mupdf.sh",
+      "sha256": "f2dafe4f0b8543c33b182361c0408dea3f1a8f0e142b5237cf93baa164d4ff0e"
+    },
+    {
+      "path": "scripts/make-duo-fixture.py",
+      "sha256": "103febff330140f7d7c9d8c8f3ffc33be41887e17a43b7dc895b396fc913a552"
+    },
+    {
+      "path": "scripts/make-duo-video-fixture.swift",
+      "sha256": "63a95e7f8cea48f3bab5ace6903d1e5556c06a2239f4d23ef0b78bc1382a5cc3"
+    },
+    {
+      "path": "scripts/test-editor-geometry.sh",
+      "sha256": "acb3451920fec8bf7cd143320f262dbaf176791db761125694933116f29ed179"
+    },
+    {
+      "path": "third_party/twemoji-stickers/SHA256SUMS",
+      "sha256": "58120b217d197766700b58adb4e65e9881802c31fefaba662900a6ea052c65aa"
+    },
+    {
+      "path": "zeroNetRedact/BusinessLogic/Editor/AnyRedactionEditor+Extensions.swift",
+      "sha256": "21966c29497e412c553572bf78eb6eb55fe9602ca92a40c686042f6abf21d86d"
+    },
+    {
+      "path": "zeroNetRedact/BusinessLogic/Storage/StorageManager+Extensions.swift",
+      "sha256": "6648b7d5e9d242793ea930558af4acac47c25137c87de02e35b2c19b7a94b5fb"
+    },
+    {
+      "path": "zeroNetRedact/Models/CoreData/PersistenceController.swift",
+      "sha256": "5ebac876ec70f6080ca54cd935f9662dc25cbf251e754cc7f039397b7b19577a"
+    },
+    {
+      "path": "zeroNetRedact/ShareExtension/Info.plist",
+      "sha256": "96cc116b477aeceac9b8b7741878863cb1fa0c976d90ef07ff3e633e2dff01b1"
+    },
+    {
+      "path": "zeroNetRedact/ShareExtension/ShareExtension.entitlements",
+      "sha256": "bb2e379dcb0d40ed1bb11d5d56d6bc728c988eedfbb754e0add52651e6427e1d"
+    },
+    {
+      "path": "zeroNetRedact/ShareExtension/ShareViewController.swift",
+      "sha256": "4e377bae90f490f774b18d7a74bfba28608a923413c3072c6e5a63cb13c5db69"
+    },
+    {
+      "path": "zeroNetRedact/install_tesseract.sh",
+      "sha256": "8d4a6701d0c70cc4fc1840b9f92fbf948da011f5090897418553d30fdbc70ffc"
+    },
+    {
+      "path": "zeroNetRedact/scripts/bump-build-number.sh",
+      "sha256": "10999762bb6ff6fcd24b21a01e5db0ad54915ef1567694381eb1e9638e311546"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact.xcodeproj/project.pbxproj",
+      "sha256": "7c3561438542d6985bcb23338673a61f829174346a40478765184690de70ce02"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "sha256": "7f3b00b5c3fdb45242d7b87e1e5c4e25d1fa8129a16c94295ecc4e8ea2235c5f"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact.xcodeproj/xcshareddata/xcschemes/zeroNetRedact.xcscheme",
+      "sha256": "132b9bef5766b0cf3f5c36e4875683388ad38bc8af64bdb309aa361e5beb8483"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AccentColor.colorset/Contents.json",
+      "sha256": "9af65086fa30b49252fae1a1225731691de794f7775af74d71befeb507d12b7c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sha256": "ae2b3284e76a2349969b7c5a1c5d59dc2df51987aa7638497592d1bd395a51cf"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIcon.appiconset/appicon.png",
+      "sha256": "ae37f63fe8581cb6ca79fd464a5424bf7b5ab92b940e177cd59d3f3dcede87f2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIcon.appiconset/appicon@2x.png",
+      "sha256": "260dd187b905067ea194fab6f172187d29cf993909af117661e779b6c7f1b50d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIcon.appiconset/appicon@3x.png",
+      "sha256": "669489c7526c74bfaea26d2f9cc39aea019c1465d2856b0833a6e339dcc5e724"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIcon.appiconset/appicon_1024.png",
+      "sha256": "ca689230d0ff0573391d85ab865aef313a7e36ff5fddcae25ad4663461f0fbe1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIconImage.imageset/Contents.json",
+      "sha256": "9b395633255668bc3d0958e54f0eeefcced9f39b0d7cb739a3be9fe9212ec0d4"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIconImage.imageset/appicon.png",
+      "sha256": "ca689230d0ff0573391d85ab865aef313a7e36ff5fddcae25ad4663461f0fbe1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIconImage.imageset/appicon@2x.png",
+      "sha256": "e8b721203930cdbbbea78464f7b8e6c5a9f22bd476fd6b25702770722a5c0999"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/AppIconImage.imageset/appicon@3x.png",
+      "sha256": "6de4dcc788d531553c2d6ee7907b2cee8b99c44f9936dc700341bae694d6704e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/Contents.json",
+      "sha256": "0fd49ba3c3585c709678e0046a821c3c60685ec7063720d30d3a3448be3a208b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/LaunchScreen.imageset/Contents.json",
+      "sha256": "19ec9852cdc4d88885b27147a6f8ff0ec0297061c3a0674b30c28d8d8f5068f7"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/LaunchScreen.imageset/launch_screen.png",
+      "sha256": "c3449a953385969251deeb0559264454ec6faebcdd00d8a6da1a908f9f6cb326"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/LaunchScreen.imageset/launch_screen@2x.png",
+      "sha256": "0771920df175d0abaa5d27c10cc7128e43ae221c356f696047816981eb3e4e58"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/LaunchScreen.imageset/launch_screen@3x.png",
+      "sha256": "465f2b9f923ca7eaafc88e6cc5c555508f31576f54b9c092c721951d56334640"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/Contents.json",
+      "sha256": "0fd49ba3c3585c709678e0046a821c3c60685ec7063720d30d3a3448be3a208b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerAlien.imageset/1f47d.svg",
+      "sha256": "bbf1271e53bd11b2bd29b696e72d9b1bac3d8712a55eed300a510b05137e7b84"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerAlien.imageset/Contents.json",
+      "sha256": "66c8fbb12d5fac65ebe77c62b1e5cc933a280403d29ed43f40f2eefd3ca94004"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerClown.imageset/1f921.svg",
+      "sha256": "af994faab9784136d88fe8ed524dabd98062143cbd87314eec1a14d8f967637c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerClown.imageset/Contents.json",
+      "sha256": "5688541bb0b41e22904a470949925c876e6e58aa9a299740f43377f65c156175"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerHeartEyes.imageset/1f60d.svg",
+      "sha256": "e17d4d0339ce34ba1ee3274fdc98a1bd5ca4a8f309861b63b746970a609d7d63"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerHeartEyes.imageset/Contents.json",
+      "sha256": "47b7089569f7fc06bcb0d706c5b2e1dcd183741d6e156a062cf6ae862fd056cd"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerLion.imageset/1f981.svg",
+      "sha256": "bd269f15a1e303fda5c87a4ff92f3e981a4ed5c4eab175393a73897d714c5f84"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerLion.imageset/Contents.json",
+      "sha256": "30359503bd6bf44f95d8ecdbb6ca74ef7ffde4640ed80a1f52cbeba11a2d9867"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerPanda.imageset/1f43c.svg",
+      "sha256": "f62d0a2b082c192743e4ea6e3ec841c76efb17fe882c068e00d5264e9ad42128"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerPanda.imageset/Contents.json",
+      "sha256": "d192fe605f9893a5611da7d8a6a7202292a51ea19f5df71f8c6843640f98944b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerRobot.imageset/1f916.svg",
+      "sha256": "20e5f9466f9c909d9cdf67a83af252df198ba686c57cfc0271afab9d48cee699"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerRobot.imageset/Contents.json",
+      "sha256": "dd120244a5addb967b711a2fed2d9f65468f480874bf08568b7d4624c571a537"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerSunglasses.imageset/1f60e.svg",
+      "sha256": "d32bd9f51b2a54f620f9693e833935c5e2cb2304cbf89aab75fd10f054711ce5"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Assets.xcassets/VideoStickers/StickerSunglasses.imageset/Contents.json",
+      "sha256": "0787cd1adaaa8d6576d53860db378ac6a7dc3212c70200ef19ed6eb4c84d6e80"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Batch/BatchRedactionQueue.swift",
+      "sha256": "2fea81652acaeded01f4c283040fb2d20cb9a5951cc61363ded61802d2515440"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Crypto/ChunkedFileCipher.swift",
+      "sha256": "65b43a64f620498268a929e27d593e4a6fa95660a0c6c317764f87476d7510a1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Crypto/CryptoEngine.swift",
+      "sha256": "eab4a50643bcf86662b24f218bbe24ffed665c38fda5bc50fbcb768765255c40"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Editor/EditorFactory.swift",
+      "sha256": "9724c2dafb813e65c5898c4ea681aff02e9c2cf6e449ab0c0343d9d2b00fcc53"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Editor/ImageRedactionEditor.swift",
+      "sha256": "94168465c64a2af6d35a03e3386381b7146498ba8af88c960a474920342514e9"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Editor/PDFRedactionEditor.swift",
+      "sha256": "0e6bc9338afd142ca680fb552c543cd986441768afd41fb88425a0bcb1a19ef7"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Group/GroupManager.swift",
+      "sha256": "a5d0aa6956a7e9237c28673b8dced05bfe98fe072a1e9790507a7987d635881c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Import/FileImportProcessor.swift",
+      "sha256": "726bd394381abaa431bfcb9cd2663ce62cd011968d1b48832de4c94e69c57e9e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Import/ImportManager.swift",
+      "sha256": "5f1c9b2df02a39a63e19e75e9be71087063c541377247b7aeecc5038c7df48d9"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Import/VideoImportService.swift",
+      "sha256": "2c3c8dfd4075b4ad1700a2f07755c5b020ee5a20712d85722308a03fbd1a5e15"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Import/VideoTransferable.swift",
+      "sha256": "3dd9bdc1e0e59be045e0f8ef60f26fc8dd9bab07cb89ca88a64f90cc9ac7db1d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/PDFRedaction/MuPDFBridging.h",
+      "sha256": "8343e168d3f1996892345f5ebac267624d4c6116859933119463acbc3233dbdc"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/PDFRedaction/MuPDFRedactor.swift",
+      "sha256": "147e43080136fba131fd925fb045a2b42e26e78537b3ebef397fe2bf3c459aef"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/PDFRedaction/mupdf_redact.c",
+      "sha256": "98216e464225928891d0281edd0002c2202e13a8149f7daca48e9d364fb145c2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/PDFRedaction/mupdf_redact.h",
+      "sha256": "cabcc832fe071e1673dc0092b7bcdf4ca9862222c3b83f90b86f028a9c59e120"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Recognition/ImageFaceAnalyzer.swift",
+      "sha256": "80b6bfd3a70e2699aec285b2663790e3b8a0c266201eaa3abccda6f26be5c6d1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Recognition/OCRLanguageConfiguration.swift",
+      "sha256": "8c67d935086301703e83cd8d623eed88f082ecc2e33899c11c2b7bac5b3701a0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Recognition/TextRecognizer.swift",
+      "sha256": "3448762d4b3f893f48fc39d38ed84aa311cf5ee0d9e3de83a95c06d523a7129d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Recognition/TextSearch.swift",
+      "sha256": "40d7d7655fc8db4bd0720b36d0ebbbe04a4af7713d8784c54a8385fe231af2b3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Redaction/FaceGeometry.swift",
+      "sha256": "907aae08829d47ade821e9878c055b39e22f4f0d62b2683eacdfbc44800f645b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Redaction/FaceRedactionSticker.swift",
+      "sha256": "fe29b08e0f45f2f83d243a0a6648e8cdfe7e2403988597b699e83b4229fb6ab9"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Redaction/FaceStickerRenderer.swift",
+      "sha256": "b3aeb0d455cd4883d1a57183a2f8f5c6e783be0d9f746b67b16f26f6aa46c61e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Security/BiometricAuthManager.swift",
+      "sha256": "3680fce9c723da47d66f63696c6e7bf792b1b8fb57527194bbe472d9eeeb537d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Security/PasswordManager.swift",
+      "sha256": "1f4d62f2f4d7c721ccc757b400cf801d76b44e258b2bfa83787e5b4087f10a38"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Security/SecurityError.swift",
+      "sha256": "77879844188bf84072c967fdc3406fcefdcd9b6c2c465adc70eda39863d6e6a9"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Share/ShareInbox.swift",
+      "sha256": "f9c7255ad6668c0708f5a7e2be68f8c66f3beaf6f107bca7aa4b6771126a9b94"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Share/ShareInboxModifier.swift",
+      "sha256": "b680f801d9d772fa6490dd43151e498eab494c6c1277f8632c979e373279723a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Stitch/OverlapDetector.swift",
+      "sha256": "3e234d05eb300d8597deffec30e630b813bad5ee6fdcf60ea7dbdd1fe8646e99"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Stitch/StitchEngine.swift",
+      "sha256": "b83ba3b9de5e026f2cf4fa5dcc8fde253a018678699830062ab2135e914b26f8"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Stitch/StitchModels.swift",
+      "sha256": "d29690fd858022ecc381373156209469cf4180f0c1624a51f6c85cc2f4e3c92b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Stitch/StitchRenderer.swift",
+      "sha256": "78422b67ac7cbb39a7d199d62dafb83965ec54d90d481ed6dce3c716c6964b39"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Storage/EditorDraftStore.swift",
+      "sha256": "4ae3c70a42a1df49b41390564e643dcc720cbc2a98143ad138d3bdc644e637aa"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Storage/StorageManager.swift",
+      "sha256": "5173e580f4ddaf36c223479a122a2adf42317998adb2b273e939fe4d59e6722d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Store/StoreManager.swift",
+      "sha256": "1c7f90cf60e1e2a4205c177eb086e5c82ed24330c6459145f36b84bb0ba57512"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Store/UsageTracker.swift",
+      "sha256": "000afb97084285e374fa69be7d2ed950eb2939d87727def2a93ba6ec3e853955"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/FaceTrackSmoother.swift",
+      "sha256": "df2c10d39c135f73c127c005426b83756aed0eda72a74ade584a0f97b2391fbe"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/ProtectedVideoPreview.swift",
+      "sha256": "1cef1906399b02c95601d2ea637371527844397b7bcdf9df5ee662f115d5432e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoAudioProcessor.swift",
+      "sha256": "37d406465c286862231d66a9fdc4bebb5014ff8fef18c15b72848c617a143c65"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoCompositionFactory.swift",
+      "sha256": "7773ff0e40fe665bb9ef94d14e32a3d59cbe3005efea9f72e06a1da074d4a4b2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoExporter.swift",
+      "sha256": "469699be8daf877242bb351d759d49e4519490ab7c3451173c71d00f85979f85"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoFaceAnalyzer.swift",
+      "sha256": "dbf1cbd1ee7dc2d943d2489f97165483800beab3091708147d292b964668f5dd"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoManualRegion.swift",
+      "sha256": "69b0802c97caa4b9b4c747360940dc03815358feda8da6c26afeae709fc12b95"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoModels.swift",
+      "sha256": "cc108a092ea2091514c4c951a888d0f9b496279a60a782e484c5afc52599d28e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoMuxer.swift",
+      "sha256": "48a0de671be80d9ac4b5e15d347c457e00f5f8cbc113a2fecaa485d5883ff213"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoRedactionRenderer.swift",
+      "sha256": "faec035dfd1b0a9d5bb0d215e4677b3d8f45c17e986d1b25b83faa844e9ce354"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/BusinessLogic/Video/VideoThumbnailGenerator.swift",
+      "sha256": "fae2a7686b83a2a31a052e3ede71e6bd26a29322074de9ed4ed154e7b6063178"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/ContentView.swift",
+      "sha256": "61e528fd1fb3baf0e5c17b81ae489d13e4b32acbbaf38862d2ccb384ed4f0b28"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Item.swift",
+      "sha256": "89adbcd36419d9641b41e9dc2cec3117ea4caba613c05278c86e47b004827da0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/LaunchScreen.swift",
+      "sha256": "154ae04f28c3f5ee89ef48c9b7ad7c2ce1da5fdb4bfcafb867f18836b1b8e305"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/AppState.swift",
+      "sha256": "78eb537fc10949e0635b44684a9e28b7f07982189b6e024ee17c541b401d1214"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalFile+CoreDataClass.swift",
+      "sha256": "837945c2d8e50a490eb11a988a54f9233bb8950cc6ec7beb37539e07b32db2cc"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalFile+CoreDataProperties.swift",
+      "sha256": "23297073209fd2073a030c8bde387ee86e43ce762416ca2a28672881486566a6"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalImage+CoreDataClass.swift",
+      "sha256": "5f97cbaaa9aef2fb552368b6aa662176f1108f1bf865c49e46f54840818c083d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalImage+CoreDataProperties.swift",
+      "sha256": "08281d4b571be7d8acc03f465229c53149b30cd6930b4ea46f446e94c2c19573"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalPDF+CoreDataClass.swift",
+      "sha256": "afd38eb6e51beece9191789f2677d6dabee6a6acdd66fbcbe2c6dfd95b00d289"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalPDF+CoreDataProperties.swift",
+      "sha256": "c2b47b7de7c257e1642bb328d567486fde6919bf0b2a12369ca51047d8f1b404"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalVideo+CoreDataClass.swift",
+      "sha256": "95737d3fea11c1f12f6f707db896cac1fc836d2bf29a6b6e8a8c591576a1ea53"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/OriginalVideo+CoreDataProperties.swift",
+      "sha256": "942f7511a35a1f2656ac58791ac84e8354417f80b5b496b6c766f240121eacc3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/RedactedFile+CoreDataClass.swift",
+      "sha256": "3761d8342623bf25d511304ea3d51f6810e554e227187cc781d78154e0d31f9a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/RedactedFile+CoreDataProperties.swift",
+      "sha256": "5c5b5e15f0fcc422883563fe19de3eed49e71b9dce4de2743888e5c16af5275a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/CoreData/ZeroNetRedact.xcdatamodeld/ZeroNetRedact.xcdatamodel/contents",
+      "sha256": "538ae7e9c187ebc4cc1c2d12859826980963a9426be9b773f46de717f223e5fe"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Enums/FileType.swift",
+      "sha256": "d9f4c39010feb4f47da8270cd7f92acab3113845dac30d19fdcf377c625bc9e9"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Enums/RedactionEffect.swift",
+      "sha256": "b3356c068e9b5cbaab679db7c0a4357e5929ab2dba8b2f3b8e25491288f4c76e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Enums/SensitiveType.swift",
+      "sha256": "3b680179c06f22110992d5b8f837b87ed6874b956bcc06d8f7386b60160bcb2f"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Enums/VoicePreset.swift",
+      "sha256": "772909bfd7ec1f35a801741c5b248629ca64d443d816704221db81a5d496cf9d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/FileWrapper.swift",
+      "sha256": "cd9a3677b7808f54243d2d183a7dd1cfa3ffb15c6e22946787487df2c3d40ed5"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Protocols/RedactableFile.swift",
+      "sha256": "8aa97809160e8731c5e1d40911aa0627f2fb7a4be0fea698b596d64571f677cd"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Protocols/RedactionEditor.swift",
+      "sha256": "145ed042b4c6a96dc112a79728a22cf9e91283f27236953d2393463414a1c7a2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Models/Protocols/TextRecognition.swift",
+      "sha256": "1d3b8b8aedda67b44634b82dc78615f57379779f6a008eed29b04bfd4b38942e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Products.storekit",
+      "sha256": "fe6385c281ab14df2ef60c1c6d4e4dda9213db4f9a55fd92caa13d968718863d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/ShareApp.entitlements",
+      "sha256": "bb2e379dcb0d40ed1bb11d5d56d6bc728c988eedfbb754e0add52651e6427e1d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Utils/Bundle+Version.swift",
+      "sha256": "3713a7e9f241fc91291a705790a47607df8cd2944e67efeaa204f7832c2b4133"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Utils/FeatureFlags.swift",
+      "sha256": "4c3c0665608f55b7bbb382dbf9e00b8b5cbdf9c9610e9485a51145de74560409"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Utils/ImageCache.swift",
+      "sha256": "71ca4dfb107b0c6ddc647f23b6187f7434327b00eca2f86dfc9cc28e716579ed"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Utils/InternationalSensitiveDetector.swift",
+      "sha256": "e71a7e55e834fe92d0dbedd215ed6f7492e51e836d9bd91c2ab7595b5a349818"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Utils/SensitivePatterns.swift",
+      "sha256": "d4534929fb40a89e9d3f9178f4e1ac3ee0f1ac347ad9e9872fecba8490a5bd5c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/ViewModels/AuthenticationViewModel.swift",
+      "sha256": "5247c1be3e615e7a16b586409d9b56a91842bbd6cdb180669faa77435bca8c2a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Album/AlbumView.swift",
+      "sha256": "e1a9e705c167a8bd57751dac1cdd12acd2bf76206ffb1be45b2c7deef457d705"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Album/AlbumViewModel.swift",
+      "sha256": "788c6b4ad472fc69e7122b5e1e5e47aa5a4e794ace4113aa4045797c29e40a8b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Album/Components/EmptyStateView.swift",
+      "sha256": "d75b62061bb347228bc7e56acaad02f94fe2d7de21c0da018cb40755d21748d9"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Album/Components/StatisticsCardView.swift",
+      "sha256": "709d72e6ce05289090090f2ef2ffc938ef5fd8c91132000f0e90822a7cb2c0cf"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Album/PDFPreviewView.swift",
+      "sha256": "013bbb8546b5f34663718d579bb0a536ae0c1579d5a597007344af41ab6376d4"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Batch/BatchRedactionView.swift",
+      "sha256": "43dc9d650a22f6c3ac69145fb738d3b172af9d5ed0e07b128d7604d6ac81edc0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/BrushEditorComponents.swift",
+      "sha256": "5f74d5373fcdc3f4af790810189e934d60f380708eae4e50dd41c6eec72b3df4"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/BrushEditorModels.swift",
+      "sha256": "f3a99abe8dfca92c5813af37f4eb40a587f44d14332bfcd9971d25bfabf66d8a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/CoordinateConverter.swift",
+      "sha256": "db96cd7322cac5049f5fe846bcab4af7882a05230bbed8924f0fdd7ec9e1b86c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/DetectionReviewView.swift",
+      "sha256": "4bf3c063bf1dce9cb09afa1f8d95baa1aba196e91a0ac16af1191bab1ce452ef"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/EditorCanvasGeometry.swift",
+      "sha256": "4f69a6a184c6c8111eebea255f9e1ba281c5786c4a8306f819072b7e46c1ae59"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/EditorExportCompletionView.swift",
+      "sha256": "fe8562786e22364766db80b69a2ce78119a4a90cac3dd9445a8316bb0ccb1f51"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/ExportProcessingReport.swift",
+      "sha256": "5cd400d213b54629df3743075ed2756c90eafbcb8dcea26d2c7a95c9f9c59b23"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/ImageFaceReviewBar.swift",
+      "sha256": "3d7f2c620e5b31ad4f739203d95d76b4b885464993842043fc1f0d9318ca96f0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/OCRTextSelectionView.swift",
+      "sha256": "65e616bc9929588f1de8e6355cafa78338e11cc19b297ef24b2de98f7bea666c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/PDFReviewNavigator.swift",
+      "sha256": "a679b900641da9fb69f0d1f46be10b5283f7c520954439f9def397acc0a1d760"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/BrushEditor/SensitiveTextSearchView.swift",
+      "sha256": "163a1083333c181ed7a58e1c95617bd55ea24acc754570f3c201910e1a6bfa26"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Components/DesignSystem.swift",
+      "sha256": "a67576cecb7e8ac498df51c8f0160316a5cfc073e7388a78299ad15803ca061e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Components/FileTypeFilterBar.swift",
+      "sha256": "c597837a366e9630b9cb367a29456f98100680914690555f5beff641f65f22e3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Components/ImportActionTile.swift",
+      "sha256": "eb619a0e21a1256a36062f3a13d5b956db2e6e5c4e580796273a9b67f893b2f7"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Editor/EditorViewModel.swift",
+      "sha256": "a4e9523cfeb0a79ad4ae6f9ce62f0b6fdb433560a8c95cbd7e92974ff6a2f9c2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Editor/ImageFaceReviewState.swift",
+      "sha256": "cb9787feaf613c38b112f7bf029f9f09666c96b9ba1e0c5656d0065ce808fb43"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Editor/ImageOperationsHandler.swift",
+      "sha256": "1d6a5bab4c1d87cab1e4fcbd274d8d84b331e5f2a23fbbd8e875d6b789d1777c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Editor/PDFOperationsHandler.swift",
+      "sha256": "19998cf0b17cb847e0588e4c00ca478981c25214d450ceb65bd132b734bbd2c6"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/Components/CreateGroupSheet.swift",
+      "sha256": "e16a2e3cd5251746087c64a187f8826e0060dd604e5e3b0fe3fb59d3516f146d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/Components/GroupManagementSheet.swift",
+      "sha256": "ff1db36b6c5b779511a85fa5fc38eadba9828b8be8b24c7d252c6c242619e384"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/Components/ImportAction.swift",
+      "sha256": "432213fe17180a8329508bf6eeafd62fdf2d2a75a6b3554b0cf5b8068c5bc7ba"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/Components/ImportEmptyStateView.swift",
+      "sha256": "d7a3cdce28d87d699029998a026c3b51fbb2422a3866b6809b29c41e674146f3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/Components/OriginalFileGridItem.swift",
+      "sha256": "de400b60ae15015839b284d4b6f0a49f4c71abc7bf75c79c7160efd18420e087"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/DocumentPickerView.swift",
+      "sha256": "d8f63776c2d1c03312296d44b75c94571b3396e97815dd665ac81059303d7d13"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/ImportView.swift",
+      "sha256": "6026b31868e30c703c9a34343882e0d10da565ba57b99adf85fcef2bd27b4abb"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Import/ImportViewModel.swift",
+      "sha256": "4783a2f49f9fbe164ba3585b4e2c16487dd94a66816a4cda37bd9ac859e0f8ea"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Onboarding/OnboardingView.swift",
+      "sha256": "2bb2cfe848f84e845ebd199fdfeebc1f03b29e8c984e645912ce3b241347cb52"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Premium/PremiumView.swift",
+      "sha256": "1ad5aae3249e23dfe21cf38bab62584132d0eaf5c612ff1333ba07f42744fd5f"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Premium/StoreKitDebugView.swift",
+      "sha256": "78aa5da9881f2f1698074bc35f1d2ab9013cac6dffa9542322efd913d8f21a2a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Security/AuthenticationView.swift",
+      "sha256": "0b0ed07c1da9bbdc399a2c18cc3d3f0453c2c7f8d62f661c09c6e8634a17725f"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Security/PasswordSetupSheet.swift",
+      "sha256": "c8423de6b8abb2441de596d48a2cfe9ba8f7e4e5e6b9bc430f3c391559e1bc33"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Security/PasswordStrengthView.swift",
+      "sha256": "b3db31259f4ccae83906f0824d91cfb6641de9696c56bb67ae6824eae8cde0ab"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Settings/AboutView.swift",
+      "sha256": "00cda592d5ad4f291ef96125a4bfe4043c8b95798c5c5e5a051d5d458a4b0f5e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Settings/OCRSettingsSection.swift",
+      "sha256": "b9aa3701d3e81c8eab58dfd053bf1e4956966c4b8cc840b011eb1964c44267ca"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Settings/SettingsView.swift",
+      "sha256": "6745463e312bd79451b31cca8da2e56e46a26e8fc482067406a10fba456fdf49"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Settings/SettingsViewModel.swift",
+      "sha256": "af9da11a4f5822fbcaf6ca79840dd43b71b39442bd1aa343a502f1ebf9c0c153"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/SimpleBrushEditor.swift",
+      "sha256": "6b03278fbc6b217e589194ead095c67178fef5ff49f877ab0e8b224882a840e6"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Stitch/SeamAdjustView.swift",
+      "sha256": "16f018ece4051e93a0a43e59ccbd190b56418bf66a22a77dfa801661b3ab5920"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Stitch/StitchEditorView.swift",
+      "sha256": "3bef7093f0b683cfe680d5abbb920771fbb9313ae1be8fdb335a306f7a230b56"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Stitch/StitchViewModel.swift",
+      "sha256": "8a9bf9d7edfe8cfaca4fbd86f9d91ec11bcccbe78f309bfae24f3a6e39039759"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Video/VideoEditorView.swift",
+      "sha256": "ddcc40bbc523e1c0e12ce45b5914cc7e69756e58edc6a007a15977c7cb9480f3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Video/VideoEditorViewModel.swift",
+      "sha256": "9e7a998c1923cc8172fc69a6af5eb85d61bcc8da0ebe94f84670e565b578e00b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Video/VideoManualRegionEditor.swift",
+      "sha256": "1582bef89f443dc3a1eb75ef1a38760f5febe3f1cc778f0346d667e20b1900f8"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/Views/Video/VideoRegionControls.swift",
+      "sha256": "92c941737b8a78f7109ff001b6edf452c20c40dd793e003cf133861088ccb05e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/de.lproj/InfoPlist.strings",
+      "sha256": "b9c5fd2f4e19703e1362572afc521c82a4d82ae74da4bc442e3067b59ac79f21"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/de.lproj/Localizable.strings",
+      "sha256": "51cb1c1a1cc8f26441b72467354acb1fe80bed0d7348ae6a51985c4eab7e5683"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/de.lproj/Localizable.stringsdict",
+      "sha256": "7572e66edcb1d95a8d63a9ca1f9f3b08212a2beb4928269f2842ed9b9fc0260f"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/en.lproj/InfoPlist.strings",
+      "sha256": "8f11f16eb744e4751ccfdae50e4ff142c28d3d78b8d126a8c48d33f186d09680"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/en.lproj/Localizable.strings",
+      "sha256": "9786f6815164023cb1d6359da1c65d0dd1a9793c8f979c5df3418528c5332970"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/en.lproj/Localizable.stringsdict",
+      "sha256": "93a17f6ed2454fa3f2a9e294d0f1029be7bae64218e269932dc35bf0043d503e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/es.lproj/InfoPlist.strings",
+      "sha256": "c24cd925b481654035bc19270ad15d1d57f65b767b61e3021913312df52e341b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/es.lproj/Localizable.strings",
+      "sha256": "f701452a5842201bf02b7bc2d3fae160a63762545de1162f282c5cfdc94521cc"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/es.lproj/Localizable.stringsdict",
+      "sha256": "319b681a3d0c6a96961ab684261226d1650e5e468949f03846b56e77b4ff5f9b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/fr.lproj/InfoPlist.strings",
+      "sha256": "2873a8622f6f7a3aa565ca68302ea57f0db98b24fecd6e44be004d851b6c3f4b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/fr.lproj/Localizable.strings",
+      "sha256": "53376cdd0d86715621575439e0b9cd548ccc7aa070a151059b672892e69f32c5"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/fr.lproj/Localizable.stringsdict",
+      "sha256": "b67682fb172e394251c58e439c641577caa2b58745d5d1c6c6288bba8fba995c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/id.lproj/InfoPlist.strings",
+      "sha256": "89f181176eb378346c8cb6179b23190f5d3079bf0cdeef7257d19f4f7b5c1632"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/id.lproj/Localizable.strings",
+      "sha256": "25a3f227a226e4f011fa47e7b3093e2344d9df02b4736c4e1ada155535b3deb8"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/id.lproj/Localizable.stringsdict",
+      "sha256": "e5a8f01f77a8cd5c5907c5baefb43128e44ecea5a2c1bece41a86b81fb0133f2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/ja.lproj/InfoPlist.strings",
+      "sha256": "e7df618b5c721494cdaa81938e88ee03b6b5a55a325e83bfd50c77764f4ef631"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/ja.lproj/Localizable.strings",
+      "sha256": "3a7591cc9fbdf0ad72fe081de49a1dffc144daabe0563d38b34ba0c39cec09ad"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/ja.lproj/Localizable.stringsdict",
+      "sha256": "c221c424413b45d4afdf1d569d500ca6a5922a9b9f2ae0568673ce89a04a9ef6"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/pl.lproj/InfoPlist.strings",
+      "sha256": "9f10ecde8b6f3c42736c04dd9a83183c8fd93d565122bfa3739a38917326ec22"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/pl.lproj/Localizable.strings",
+      "sha256": "dc78f8904f17fe175f16c8cd5cce23c746c455cfae45ae5237f1b660c05df737"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/pl.lproj/Localizable.stringsdict",
+      "sha256": "e2d4207fbc646bb94417b0af865647dcf0d38a5c8307b2cc88d9319a1afa8c84"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/pt-BR.lproj/InfoPlist.strings",
+      "sha256": "9e1361100972da76c0c276d06310cfb60391e05c65b2d77ed7734f01cff6f4d3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/pt-BR.lproj/Localizable.strings",
+      "sha256": "d84b39c844a6af0cd1472a32433d94e01249de2f751b431a0e7456954c85076c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/pt-BR.lproj/Localizable.stringsdict",
+      "sha256": "1a5a18ac36cd67f927403feb8258277686152a839e789ea9efa7828ec3369782"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zeroNetRedact.entitlements",
+      "sha256": "f01685eb87aef167e4d34fe80f7e05b0b2fae9d11ba4b5e095e1f78dbe26800d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zeroNetRedactApp.swift",
+      "sha256": "9eaadd70b43c23550081aa439478042b6ab3d6c88eddfb0a441f3275efb74d8d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zh-Hans.lproj/InfoPlist.strings",
+      "sha256": "90ed70a0333c22a5346e9c4cd912be8893e715d1629f0663ff79932d3d8a44f2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zh-Hans.lproj/Localizable.strings",
+      "sha256": "c44b96739d70b72ef4242ccea377bc369b12cf0d48c5bd13ef4606dde8d1c3cd"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zh-Hans.lproj/Localizable.stringsdict",
+      "sha256": "1a4d376be67dd224a447daec2b90e12f884fdde540d92e1042914ad0b207ca6e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zh-Hant.lproj/InfoPlist.strings",
+      "sha256": "73924fc0ff713b749963b71e9489bcb91c47c1712a3c4b25e49695d5e8a8618c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zh-Hant.lproj/Localizable.strings",
+      "sha256": "33e1b4d8ad4a17d27256847bc909ab9170d72acc22040500692cf98bffb9b0f0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedact/zh-Hant.lproj/Localizable.stringsdict",
+      "sha256": "a7405d548ea7f040e01cd6d04220e3de5656ec3c4ed4576db33ed45c6a57ab76"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/BatchRedactionQueueTests.swift",
+      "sha256": "9581c5d621215d761b9e32f2f60071105510af9133504f49355206d6e53a1bb1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ChunkedFileCipherTests.swift",
+      "sha256": "df5270daeb28d0fc8111eef91b2df4c8ce88bd7d865eeaead8f73b92d4221101"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/CryptoEngineTests.swift",
+      "sha256": "e1cc3fe9455c3cebd8089c01158622123fafe4d1899cd38e2df6c9e9a2fb52cb"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/DeleteReproTests.swift",
+      "sha256": "8b1622c100db6a56bee695366d638f210992fd43efae706379ed0f2030a847b5"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/DetectionCoordinateTests.swift",
+      "sha256": "fca23357ab9c7750683e939bb8d711d706e756df91073cf63484494246db48ae"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/DetectionReviewTests.swift",
+      "sha256": "93dea651d0f960c211652243a59a834a23d9c364a0e6a3b7cd0dfc9c7f9ad529"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/EditorCanvasGeometryTests.swift",
+      "sha256": "cbb96363733c04947d7bcc06b62e5c853c35fc4025449bf1df40d890ae81a85b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/EditorDraftStoreTests.swift",
+      "sha256": "775eaf73cbb39c18cc8a34719aa8db8c8ebb95bf8befd104a7e42eec92f39905"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/EditorViewModelFaceDetectionTests.swift",
+      "sha256": "106c4ab33e1377a4386f8276bda746edc89f03b40904731d102fe1080875ae35"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ExportProcessingReportTests.swift",
+      "sha256": "4db8355f897db476ede46de3adf8058c59820d6b21f9a5477fdace8aabc5b126"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/FaceStickerPolicyTests.swift",
+      "sha256": "c0bff2c663df32471fb3659e3cdceb6bd0a172023b46c7d1fe7035f9a4391cde"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/FaceTrackSmootherTests.swift",
+      "sha256": "7803eec74731f71f6811b8501cef7220d2c20015ab81a2f749654cd4691a6350"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ImageFaceAnalyzerTests.swift",
+      "sha256": "4afde7c98d77d4988fc701d1f7c52119883ea3332a1406242654084f43d12e87"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ImageFaceReviewStateTests.swift",
+      "sha256": "c96cf28193eb057d6caa028350a217990f03f4380f47f327a0140ae874ed61c1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ImageImportProcessorTests.swift",
+      "sha256": "bbc9393becb27642fcd1c8931f536ef8548578bd928621960b745fb2a402f398"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ImageRedactionEditorRenderTests.swift",
+      "sha256": "14faf8f7d3d6181494bdc8d4270d242cea4458c59719b2abdd5f8fe00c4de5b2"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/InternationalRecognitionTests.swift",
+      "sha256": "8a084436c9cb3f78f0673acfd946d4c87101dbc75efe186edf5c7afd68b8984e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/LocalizationCoverageTests.swift",
+      "sha256": "4554e40fe446be9fc8e99ae0bc09f89e49b0d1fe6fbe5c3a76246d944abbc462"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/LongImageOCRTests.swift",
+      "sha256": "9c2323bc05a6733fbdb23df037d128d5e02c43a354199f2e445168624a3c2f6c"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/MuPDFRedactorTests.swift",
+      "sha256": "b3146ceb9a9f1f60c95d852cabb801a070011e3f59ec48c8c3ba2eca85f93a75"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/OverlapDetectorTests.swift",
+      "sha256": "26a81d610fa173ff70c26af1d2a742d0b4401f2ee287f4062ceb386de4bd8c69"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/PDFReviewNavigatorTests.swift",
+      "sha256": "81a0ba072f93bc8af93a749bc7e7f51b1397c2348e33e15190ab3c026d829755"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/PageIndexDedupTests.swift",
+      "sha256": "c066c9190268427476f9e55ebcce24ac1bc90b9f66c84602c41f2253b649715a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/PasswordManagerTests.swift",
+      "sha256": "5fedaec569b7a2005f2d1305c922707f76ae7cb75d2100778da2595fee0d05a3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/RedactedFilePathTests.swift",
+      "sha256": "7f2c9371192a09b17495d98fd086ab63a5e8cbde27fe495fc93d8f7d00c64300"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/RedactionRenderScaleTests.swift",
+      "sha256": "edbfc22e27f88416c0a486aa292fe7743186e3648a28643b1438d93dc6f83a1d"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ReleaseExportAcceptanceTests.swift",
+      "sha256": "90530317a8379689f144da7f34774a8c6933dd6686da9ad87460c504d05501ca"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/SensitiveDetectionTests.swift",
+      "sha256": "c2a2eda24e5acf03f201f22c0120d070d9484d43e51cc85e7acb5720ff5c347e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/ShareInboxTests.swift",
+      "sha256": "aed5a1c22cc7f2fb0d9e9172d0d93f6f8fed59c554d15ec84ed71e2172321ae8"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/StitchEngineTests.swift",
+      "sha256": "dc5f7020f86b4a4c6af5370e9159db443f621d8952b6d780e07ff2942485e4ab"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/StitchRendererTests.swift",
+      "sha256": "b603adcf41ff46d01431e57b3cdb161687121052e9349ed6d98295837acb5f09"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/StitchTestImages.swift",
+      "sha256": "36fcb29a984db46a3b6efe7edcbf9ebb8d79fc0b5030cb45560d3741ace3d38a"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/StitchViewModelTests.swift",
+      "sha256": "2d6507044b24dd71264fe1f32d43c66ee64da6bd99be9a057413b5e8fa186979"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/StorageManagerTests.swift",
+      "sha256": "9b65c2486f004c9d8a94cfe71c5ef8674dd2d0333f941bfb56da0f4c355de33b"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/TextSearchTests.swift",
+      "sha256": "a31e2a484ea2a22df7a11b016422251dbbabf6f7bc509282c8f71281df8b0270"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/TextSelectionGeometryTests.swift",
+      "sha256": "5e53f5b9733a062732ee22fcd0217d1037b41a42f8422d68ba274df50038da3e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoAudioProcessorTests.swift",
+      "sha256": "f34a7e098e943132f462952ed639fffef4f265becc4356a6ec2975538e7523f3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoExporterTests.swift",
+      "sha256": "fe429f637830145bd10d348ef244d4c4beed2ca8b54efc24e715610e3625bbff"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoFaceAnalyzerTests.swift",
+      "sha256": "c5d8da3a1f9a46fb686619b72b710a3edb515ea51564a015cce434795f72df72"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoManualRegionTests.swift",
+      "sha256": "b1b22fd271d7373a9c3223556c5e3f153a27eb3b1ebdc15d7c3b14c2f5c7e0b1"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoPlaybackTimeTests.swift",
+      "sha256": "8fe65fd2a97ef7266ab41f4ca7f3deb63933710724b7e050aac64bc77f3fa471"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoPreviewPlaybackTests.swift",
+      "sha256": "6584f14f711144c9e7bfa205bd6dd0b33ada6450af7015ceae493a44bd978872"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoRedactionRendererTests.swift",
+      "sha256": "0ac2804b847d3fbc548598e7e7a2291eae29ef9392ef4276270c8b0c874234ea"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoStickerPolicyTests.swift",
+      "sha256": "26de4174e29d09c24ba7d3a7782f2f47b912f32d35f75c9fc2c5d9f22c1ef3f0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoSystemSymbolTests.swift",
+      "sha256": "c7ccd47b2c03b2a79c39aaa2c41d94f8bf5bcf6668337c2d04bfaa5519e7c09e"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/VideoTestFixture.swift",
+      "sha256": "a69315a10546ab7277c0220324654f885cb2be737d01238a3d94a53df19f74e3"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactTests/zeroNetRedactTests.swift",
+      "sha256": "97074cce7e23fdf9e4ac9fd98d3cdaa8db8b905e932d4cbacd8062d44e150d16"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactUITests/DuoEditorUITests.swift",
+      "sha256": "023b6d75d6a1afb269aa24899f1c59a93bde17aee5bb003185e9ad508e9827d0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactUITests/LocalizationSmokeUITests.swift",
+      "sha256": "f992bcab4c46b288e5c96ed92a07efd25bde3849c8c10a720c9948cf5f5e2ea0"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactUITests/zeroNetRedactUITests.swift",
+      "sha256": "133f6c555970cf8089b3472522cf16221906a2e22a8932360cd2dcc57da429cb"
+    },
+    {
+      "path": "zeroNetRedact/zeroNetRedactUITests/zeroNetRedactUITestsLaunchTests.swift",
+      "sha256": "35c826b34d009a267f10947b472da5ace2017f2d4baeac999b001516976faf4c"
+    }
+  ],
+  "dependencies": {
+    "MuPDF": {
+      "version": "1.28.2",
+      "commit": "fe374accd98a43174a328fa7980d7675e06d5b0d",
+      "source": "https://github.com/ArtifexSoftware/mupdf"
+    },
+    "Twemoji": {
+      "version": "17.0.1",
+      "commit": "196eef6169eccb902ae42a3c827034a22153a61a",
+      "checksums": "third_party/twemoji-stickers/SHA256SUMS"
+    }
+  }
+}

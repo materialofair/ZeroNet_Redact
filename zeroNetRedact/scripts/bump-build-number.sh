@@ -1,6 +1,6 @@
 #!/bin/sh
-# 为下一次 Release 自动递增项目构建号；本次 app/扩展使用同一个已解析值。
-# 不修改已生成或已签名的产物，避免主应用与分享扩展的版本号不一致。
+# Release 构建期间只校验构建号；下一次构建号须在 Archive 开始前统一设置。
+# 不在构建中修改工程或产物，避免工程重新载入及主应用/扩展版本不一致。
 if [ "${CONFIGURATION}" != "Release" ]; then
   exit 0
 fi
@@ -18,7 +18,4 @@ case "${current}" in
   ''|*[!0-9]*) echo "error: bump-build-number: 各目标构建号必须是同一整数"; exit 1 ;;
 esac
 
-next=$((current + 1))
-/usr/bin/sed -i '' "s/CURRENT_PROJECT_VERSION = ${current};/CURRENT_PROJECT_VERSION = ${next};/g" "${PBXPROJ}"
-
-echo "Current build: ${current}; next Release build: ${next}"
+echo "Validated Release build: ${current}; project remains unchanged"
