@@ -28,6 +28,10 @@ Actual app screens with fictional examples. The orange video box is an editing s
 
 ---
 
+## Export review guide / 导出复核指南
+
+[Check the exported copy: photos, videos and PDFs](docs/EXPORT_REVIEW_CHECKLIST.md) · 含中文清单，分别检查图片、视频声音和 PDF 导出副本。
+
 ## 中文
 
 当前公开源码已同步至 **1.5.6（26）** 的正式发布源码副本，主应用与分享扩展的版本均与本地上传归档一致。版本来源、文件哈希、验证范围和构建方式见 [1.5.6 源码说明](docs/releases/1.5.6.md)。这不代表独立安全审计或商店二进制逐字节复现。
